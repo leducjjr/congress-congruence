@@ -82,10 +82,13 @@ def build_roll_calls(chamber: str, rollcalls: list[dict], votes: list[dict],
         if m["chamber"] == name and m.get("bioguide_id"):
             icpsr_to_bio[m["icpsr"]] = m["bioguide_id"]
     member_info = {m["icpsr"]: m for m in members if m["chamber"] == name}
+    # Voteview records the President's announced position on some roll calls as a
+    # row in the chamber's vote file. It is not a member vote and not in the tally.
+    presidents = {m["icpsr"] for m in members if m["chamber"] == "President"}
 
     by_roll = defaultdict(list)
     for v in votes:
-        if v["chamber"] == name and v["cast_code"] != SKIP_CODE:
+        if v["chamber"] == name and v["cast_code"] != SKIP_CODE and v["icpsr"] not in presidents:
             by_roll[v["rollnumber"]].append(v)
 
     out = []

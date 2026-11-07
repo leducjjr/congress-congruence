@@ -24,6 +24,7 @@ VOTES = b"""congress,chamber,rollnumber,icpsr,cast_code,prob
 119,Senate,1,42102,6,90.0
 119,Senate,1,99999,0,
 119,President,1,99912,1,
+119,Senate,2,99912,1,
 119,Senate,2,14226,1,100.0
 119,Senate,2,14435,1,99.0
 119,Senate,2,42102,9,
@@ -57,6 +58,14 @@ def test_maps_icpsr_to_bioguide_and_skips_non_members_and_president():
     first = parsed()[0][0]
     assert sorted(v.member_id for v in first.votes) == ["B001277", "K000383", "T000278"]
     assert {v.member_id: v.position for v in first.votes}["T000278"] == "nay"
+
+
+def test_presidents_position_listed_in_senate_file_is_not_a_member_vote():
+    """Found in the live S119 file: icpsr 99912 (the President) appears with chamber
+    'Senate' on 145 roll calls, which pushed yea counts one over the published total."""
+    second = parsed()[0][1]
+    assert sorted(v.member_id for v in second.votes) == ["B001277", "K000383", "T000278"]
+    voteview.validate_voteview(second)
 
 
 def test_cast_codes():
