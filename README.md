@@ -22,6 +22,7 @@ src/congress_congruence/      Python package
   ingest/members.py           Loads members, terms and ID crosswalk
   ingest/vote_parsers.py      Parses House Clerk and Senate LIS vote XML
   ingest/votes.py             Fetches, validates and loads votes (both chambers)
+  ingest/voteview.py          Loads votes from Voteview (Senate fallback, history)
 tests/                        Automated tests (pytest)
   fixtures/                   Real vote files used by the tests
 data/raw/                     Downloaded source files, kept as-is (not committed)
@@ -74,6 +75,22 @@ twice, and every member must already exist in the member table. A vote that
 fails is skipped and logged; `sync` keeps going and exits with code 1 so a
 scheduler can alert on it. Re-loading a vote replaces it.
 
+### Senate votes: use Voteview for now
+
+The Senate's website refuses downloads from server addresses (HTTP 403), and
+the Congress.gov API has no Senate votes yet. Until the Senate grants access,
+load Senate votes from Voteview (UCLA), which republishes every roll call
+with a lag of days to weeks:
+
+```bash
+python -m congress_congruence.ingest.voteview senate 119
+```
+
+Voteview votes get the same IDs as the Senate's own files (`s-119-1-77`), and
+are stored with `source = 'voteview'`. A vote loaded from the official Senate
+file is never overwritten by Voteview, and an official file loaded later
+replaces the Voteview copy. Voteview has dates but no times of day.
+
 Arguments are congress and session (e.g. `119 1` = 119th Congress, 1st
 session, 2025). On a first `sync` this downloads the whole session one file at
 a time with a one-second pause between requests.
@@ -107,6 +124,9 @@ Tests that need a database use `TEST_DATABASE_URL` and are skipped if it isn't s
   load date. Check whether that reflects real vacancies or lag in the dataset.
 - The two test fixtures were rebuilt from browser printouts of the official
   files, so line breaks inside long text fields may differ from the originals.
-  The parsers collapse whitespace, so this doesn't affect results. The download
-  code (`fetch`, `sync`) was tested with a stand-in and still needs a first
-  real run.
+  The parsers collapse whitespace, so this doesn't affect results.
+- First live run (Nov 7, 2026, from the dev server): House download works.
+  senate.gov returned 403 for every request from the server. Voteview's Senate
+  files were reachable but last updated Oct 1, 2026.
+- In Voteview, paired and announced positions are stored as `not_voting`, with
+  their meaning kept in `raw_position`, matching how the official tallies count them.

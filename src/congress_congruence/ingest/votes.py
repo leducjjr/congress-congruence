@@ -109,25 +109,27 @@ def save_raw(conn, chamber: str, congress: int, content: bytes, filename: str, u
 
 
 def load_roll_call(conn, rc: ParsedRollCall, raw_sha: str | None = None,
-                   source_url: str | None = None, lis_map: dict[str, str] | None = None) -> int:
-    """Validate and write one roll call and its member votes. Re-loading replaces it."""
-    validate(rc)
+                   source_url: str | None = None, lis_map: dict[str, str] | None = None,
+                   source: str | None = None, validator=None) -> int:
+    """Validate and write one roll call and its member votes. Re-loading replaces it.
 
-    if rc.chamber == "senate":
+    source/validator default to the official chamber feed; other sources (Voteview)
+    pass their own."""
+    (validator or validate)(rc)
+
+    if any(v.id_type == "lis" for v in rc.votes):
         lis_map = lis_map if lis_map is not None else lis_to_bioguide(conn)
         unknown = sorted({v.member_id for v in rc.votes if v.member_id not in lis_map})
         if unknown:
             raise ValidationError(
                 f"{rc.roll_call_id}: Senate IDs not in member table: {unknown}. "
                 "Refresh members (ingest.members) and retry.")
-        to_bioguide = lambda v: lis_map[v.member_id]  # noqa: E731
-    else:
-        to_bioguide = lambda v: v.member_id  # noqa: E731
+    to_bioguide = lambda v: lis_map[v.member_id] if v.id_type == "lis" else v.member_id  # noqa: E731
 
     rows = [(rc.roll_call_id, to_bioguide(v), v.position, v.raw_position, v.party, v.state) for v in rc.votes]
 
     with conn.transaction(), conn.cursor() as cur:
-        if rc.chamber == "house":
+        if any(v.id_type == "bioguide" for v in rc.votes):
             cur.execute("select array_agg(x) from unnest(%s::text[]) x "
                         "where not exists (select 1 from core.member m where m.bioguide_id = x)",
                         ([r[1] for r in rows],))
@@ -149,7 +151,7 @@ def load_roll_call(conn, rc: ParsedRollCall, raw_sha: str | None = None,
              rc.vote_time, rc.question, rc.vote_type, rc.result, rc.description,
              rc.congress if rc.bill_type else None, rc.bill_type, rc.bill_number,
              rc.amendment_number, rc.yea_total, rc.nay_total, rc.present_total, rc.not_voting_total,
-             rc.tie_breaker, SOURCE[rc.chamber], source_url, raw_sha),
+             rc.tie_breaker, source or SOURCE[rc.chamber], source_url, raw_sha),
         )
         with cur.copy("copy core.member_vote (roll_call_id, bioguide_id, position, raw_position, party, state) "
                       "from stdin") as cp:
@@ -165,6 +167,10 @@ def download(url: str, session: requests.Session) -> bytes | None:
     resp = session.get(url, timeout=60)
     if resp.status_code == 404:
         return None
+    if resp.status_code == 403:
+        raise PermissionError(
+            f"{url} refused the request (403). The Senate's site blocks server addresses; "
+            "use the Voteview loader for Senate votes until access is granted.")
     resp.raise_for_status()
     body = resp.content
     # Some servers answer a missing file with an HTML page instead of a 404.
