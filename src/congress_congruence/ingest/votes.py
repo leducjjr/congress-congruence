@@ -197,13 +197,21 @@ def fetch_one(conn, chamber: str, congress: int, session_no: int, roll: int,
 
 
 def sync(conn, chamber: str, congress: int, session_no: int) -> dict[str, int]:
-    """Load every vote after the newest one already in the database, stopping at the first missing number."""
+    """Load every vote of the session not yet loaded from the official feed, from vote 1
+    upward, stopping at the first vote number the chamber hasn't posted.
+
+    Votes copied from Voteview count as missing, so the official file replaces them."""
     with conn.cursor() as cur:
-        cur.execute("select coalesce(max(roll_number), 0) from core.roll_call "
-                    "where chamber=%s and congress=%s and session=%s", (chamber, congress, session_no))
-        roll = cur.fetchone()[0] + 1
-    http, loaded, failed = http_session(), 0, 0
+        cur.execute("select roll_number from core.roll_call where chamber=%s and congress=%s "
+                    "and session=%s and source <> 'voteview'", (chamber, congress, session_no))
+        have = {row[0] for row in cur.fetchall()}
+    http, loaded, failed, roll = http_session(), 0, 0, 1
     while True:
+        if roll in have:
+            roll += 1
+            continue
+        if loaded and loaded % 25 == 0:
+            log.info("%s %s-%s: %d loaded so far, now at vote %d", chamber, congress, session_no, loaded, roll)
         try:
             n = fetch_one(conn, chamber, congress, session_no, roll, http)
         except ValidationError as e:

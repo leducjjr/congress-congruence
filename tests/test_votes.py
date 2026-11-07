@@ -190,3 +190,26 @@ def test_sync_loads_until_first_missing_vote_and_skips_bad_files(conn, tmp_path,
     result = votes.sync(conn, "house", 119, 1)
     assert result == {"loaded": 1, "failed": 1, "next_roll": 3}
     assert requested[0].endswith("/2025/roll001.xml") and len(requested) == 3
+
+
+def test_sync_fills_gaps_from_vote_one_and_skips_votes_already_loaded(conn, tmp_path, monkeypatch):
+    """Loading one test vote (362) must not make sync skip votes 1-361."""
+    monkeypatch.setenv("RAW_DATA_DIR", str(tmp_path))
+    monkeypatch.setattr(votes, "REQUEST_PAUSE_SECONDS", 0)
+    votes.load_roll_call(conn, parse_house(HOUSE))          # vote 362 already present
+    requested = []
+
+    def fake_download(url, session):
+        n = int(url.rsplit("roll", 1)[1].split(".")[0])
+        requested.append(n)
+        if n in (1, 2):
+            return HOUSE.replace(b"<rollcall-num>362</rollcall-num>", f"<rollcall-num>{n}</rollcall-num>".encode())
+        return None                                          # vote 3 not posted yet
+
+    monkeypatch.setattr(votes, "download", fake_download)
+    result = votes.sync(conn, "house", 119, 1)
+    assert requested == [1, 2, 3]
+    assert result["loaded"] == 2 and result["failed"] == 0
+    with conn.cursor() as cur:
+        cur.execute("select roll_number from core.roll_call order by 1")
+        assert [r[0] for r in cur.fetchall()] == [1, 2, 362]
