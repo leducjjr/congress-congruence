@@ -8,8 +8,8 @@ import os
 
 import pytest
 
-from reptracker import db
-from reptracker.ingest import members
+from congress_congruence import db
+from congress_congruence.ingest import members
 
 # Two people shaped like the real dataset: one House-then-Senate career with
 # a mid-term party switch, one House member with an at-large seat.

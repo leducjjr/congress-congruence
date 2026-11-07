@@ -4,7 +4,7 @@ Migrations are the .sql files in sql/, applied once each in filename order.
 Applied files are recorded in core.schema_migration so re-running is safe.
 
 Usage:
-    python -m reptracker.db migrate
+    python -m congress_congruence.db migrate
 """
 
 import sys

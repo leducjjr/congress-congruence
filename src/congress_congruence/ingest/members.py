@@ -4,7 +4,7 @@ Source: https://github.com/unitedstates/congress-legislators
 Files used: legislators-current.yaml, legislators-historical.yaml
 
 Usage:
-    python -m reptracker.ingest.members <path to congress-legislators folder>
+    python -m congress_congruence.ingest.members <path to congress-legislators folder>
 
 Members are upserted (vote rows point at them, so they are never deleted).
 IDs, terms and party changes are fully replaced on every run, in one transaction.

@@ -3,7 +3,7 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "reptracker"
+name = "congress-congruence"
 version = "0.1.0"
 description = "Tracks how often members of Congress vote with their constituents"
 requires-python = ">=3.11"

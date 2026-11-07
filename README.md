@@ -1,4 +1,4 @@
-# Rep Tracker
+# congress-congruence
 
 Measures how often members of the U.S. House and Senate vote with the
 estimated majority opinion of their own constituents, per vote and over time.
@@ -16,7 +16,7 @@ See the systems inventory doc for the full design. This repo implements it in ph
 
 ```
 sql/                    Database schema, applied in filename order
-src/reptracker/         Python package
+src/congress_congruence/         Python package
   config.py             Settings read from environment / .env
   db.py                 Database connection and schema migration
   ingest/members.py     Loads members, terms and ID crosswalk
@@ -36,7 +36,7 @@ pip install -e .
 
 cp .env.example .env          # then edit DATABASE_URL
 createdb congress             # or create it however you manage Postgres
-python -m reptracker.db migrate
+python -m congress_congruence.db migrate
 ```
 
 ## Load members
@@ -45,7 +45,7 @@ python -m reptracker.db migrate
 # Get the member dataset (re-run `git pull` inside it to refresh)
 git clone --depth 1 https://github.com/unitedstates/congress-legislators.git data/raw/congress-legislators
 
-python -m reptracker.ingest.members data/raw/congress-legislators
+python -m congress_congruence.ingest.members data/raw/congress-legislators
 ```
 
 Safe to re-run: every load replaces the member tables inside one transaction.
