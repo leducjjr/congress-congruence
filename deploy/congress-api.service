@@ -1,0 +1,23 @@
+# systemd service for the read-only API.
+# Install: sudo cp deploy/congress-api.service /etc/systemd/system/ && sudo systemctl enable --now congress-api
+#
+# Runs as john from the project folder, listening only on the server itself
+# (127.0.0.1:8000); nginx is the only thing that talks to it from outside.
+# The database login it uses (API_DATABASE_URL in .env) can only read.
+
+[Unit]
+Description=congress-congruence read-only API
+After=network.target postgresql.service
+
+[Service]
+User=john
+WorkingDirectory=/home/john/congress-congruence
+ExecStart=/home/john/congress-congruence/.venv/bin/uvicorn congress_congruence.api.app:app --host 127.0.0.1 --port 8000 --workers 2 --root-path /api --proxy-headers
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+
+[Install]
+WantedBy=multi-user.target

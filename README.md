@@ -10,7 +10,7 @@ See the systems inventory doc for the full design. This repo implements it in ph
 | 1 | Schema, member loader, House + Senate vote ingestion, validation | Built; live download not yet run |
 | 2 | Voteview historical backfill and reconciliation | Not started |
 | 3 | CES opinion data, item-to-vote linking, MRP, congruence scores | Not started |
-| 4 | API, dashboard, address-to-district lookup | Not started |
+| 4 | API, dashboard, address-to-district lookup | First member panel and API built |
 
 ## Layout
 
@@ -23,6 +23,10 @@ src/congress_congruence/      Python package
   ingest/vote_parsers.py      Parses House Clerk and Senate LIS vote XML
   ingest/votes.py             Fetches, validates and loads votes (both chambers)
   ingest/voteview.py          Loads votes from Voteview (Senate fallback, history)
+  api/app.py                  Read-only JSON API (FastAPI)
+web/                          The panel: cc-member-panel.js and a dev page (index.html)
+deploy/                       Server setup: API service, nginx site, step-by-step README
+scripts/                      Scheduled jobs and publishing helpers
 tests/                        Automated tests (pytest)
   fixtures/                   Real vote files used by the tests
 data/raw/                     Downloaded source files, kept as-is (not committed)
@@ -94,6 +98,34 @@ replaces the Voteview copy. Voteview has dates but no times of day.
 Arguments are congress and session (e.g. `119 1` = 119th Congress, 1st
 session, 2025). On a first `sync` this downloads the whole session one file at
 a time with a one-second pause between requests.
+
+## The member panel
+
+`web/cc-member-panel.js` is a self-contained web component. Any page can show a
+member's record with:
+
+```html
+<script src="https://dev.yourdomain.org/cc-member-panel.js" defer></script>
+<cc-member-panel member="C001098"></cc-member-panel>
+```
+
+It shows the member's seat and party, a strip of their recent votes (shapes,
+not party colours: filled = Yea, ring = Nay, square = Present, dash = did not
+vote), how often they missed votes, how often they voted with their party's
+majority, and a list of recent votes linking to Congress.gov and the official
+roll call. `web/index.html` is a dev page to pick a state and member.
+
+The API (`api/app.py`) serves `/v1/members`, `/v1/members/{id}`,
+`/v1/members/{id}/votes` and `/v1/health`. Its database connections are
+read-only, and in deployment it logs in with a role that only has SELECT.
+Run locally with `uvicorn congress_congruence.api.app:app --port 8000`.
+Server setup: `deploy/README.md`.
+
+**Definitions.** *Missed* = votes recorded as Not Voting ÷ all votes during the
+member's service in the current Congress. *With party majority* = votes where
+the member voted the same way (Yea or Nay) as most of their party; ties are left
+out, and independents count with the party they caucus with. Party is taken from
+the member's term, so a mid-term party switch isn't reflected yet.
 
 ## Scheduled jobs
 

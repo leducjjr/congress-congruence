@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Congress voting record</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700&display=swap">
+  <style>
+    :root {
+      --ink: #1d2733; --ink-soft: #55616e; --rule: #d7dde3;
+      --page: #e9eef1; --surface: #ffffff; --mark: #2f6f66;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root { --ink: #e6ebef; --ink-soft: #a3afba; --rule: #34404b; --page: #10161c; --surface: #182028; --mark: #7cc2b5; }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: var(--page); color: var(--ink);
+      font-family: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif; line-height: 1.5;
+    }
+    main { max-width: 34rem; margin: 0 auto; padding: 28px 16px 48px; }
+    h1 { font-size: 1.15rem; font-weight: 600; margin: 0 0 4px; }
+    .intro { color: var(--ink-soft); margin: 0 0 20px; font-size: 0.95rem; }
+    .pick { display: grid; grid-template-columns: 7rem minmax(0, 1fr); gap: 10px; margin: 0 0 20px; }
+    label { display: grid; gap: 4px; font-size: 0.85rem; color: var(--ink-soft); }
+    select {
+      font: inherit; font-size: 1rem; color: var(--ink); background: var(--surface);
+      border: 1px solid var(--rule); border-radius: 6px; padding: 8px 10px; width: 100%;
+    }
+    select:focus-visible { outline: 2px solid var(--mark); outline-offset: 1px; }
+    .status { color: var(--ink-soft); font-size: 0.9rem; min-height: 1.5em; margin: 0 0 12px; }
+    footer { color: var(--ink-soft); font-size: 0.8rem; margin-top: 24px; }
+  </style>
+  <script src="cc-member-panel.js" defer></script>
+</head>
+<body>
+<main>
+  <h1>Congress voting record</h1>
+  <p class="intro">Pick a state, then a member of the House or Senate, to see how they've voted.</p>
+
+  <div class="pick">
+    <label>State
+      <select id="state"><option value="">Choose</option></select>
+    </label>
+    <label>Member
+      <select id="member" disabled><option value="">Choose a state first</option></select>
+    </label>
+  </div>
+  <p class="status" id="status" role="status"></p>
+
+  <cc-member-panel id="panel" hidden></cc-member-panel>
+
+  <footer id="freshness"></footer>
+</main>
+
+<script>
+  const API = "/api";
+  const STATES = { AL:"Alabama",AK:"Alaska",AZ:"Arizona",AR:"Arkansas",CA:"California",CO:"Colorado",CT:"Connecticut",
+    DE:"Delaware",FL:"Florida",GA:"Georgia",HI:"Hawaii",ID:"Idaho",IL:"Illinois",IN:"Indiana",IA:"Iowa",KS:"Kansas",
+    KY:"Kentucky",LA:"Louisiana",ME:"Maine",MD:"Maryland",MA:"Massachusetts",MI:"Michigan",MN:"Minnesota",MS:"Mississippi",
+    MO:"Missouri",MT:"Montana",NE:"Nebraska",NV:"Nevada",NH:"New Hampshire",NJ:"New Jersey",NM:"New Mexico",NY:"New York",
+    NC:"North Carolina",ND:"North Dakota",OH:"Ohio",OK:"Oklahoma",OR:"Oregon",PA:"Pennsylvania",RI:"Rhode Island",
+    SC:"South Carolina",SD:"South Dakota",TN:"Tennessee",TX:"Texas",UT:"Utah",VT:"Vermont",VA:"Virginia",WA:"Washington",
+    WV:"West Virginia",WI:"Wisconsin",WY:"Wyoming",DC:"District of Columbia",PR:"Puerto Rico",GU:"Guam",
+    VI:"U.S. Virgin Islands",AS:"American Samoa",MP:"Northern Mariana Islands" };
+
+  const $ = id => document.getElementById(id);
+  const stateSel = $("state"), memberSel = $("member"), panel = $("panel"), status = $("status");
+
+  for (const [code, name] of Object.entries(STATES)) stateSel.add(new Option(name, code));
+
+  async function getJSON(path) {
+    const res = await fetch(API + path);
+    if (!res.ok) throw new Error(`the server answered ${res.status}`);
+    return res.json();
+  }
+
+  async function loadState(code, selectId) {
+    memberSel.replaceChildren(new Option(code ? "Loading…" : "Choose a state first", ""));
+    memberSel.disabled = true;
+    if (!code) return;
+    try {
+      const { members } = await getJSON(`/v1/members?state=${code}`);
+      memberSel.replaceChildren(new Option("Choose", ""));
+      for (const chamber of ["senate", "house"]) {
+        const group = document.createElement("optgroup");
+        group.label = chamber === "senate" ? "Senators" : "Representatives";
+        for (const m of members.filter(x => x.chamber === chamber)) {
+          const where = chamber === "house" ? `${m.seat}, ` : "";
+          group.append(new Option(`${m.name} (${where}${m.party})`, m.bioguide_id));
+        }
+        if (group.children.length) memberSel.append(group);
+      }
+      memberSel.disabled = false;
+      status.textContent = "";
+      if (selectId) { memberSel.value = selectId; showMember(selectId); }
+    } catch (e) {
+      memberSel.replaceChildren(new Option("Couldn't load members", ""));
+      status.textContent = `Couldn't load members for ${STATES[code]}: ${e.message}. Reload to try again.`;
+    }
+  }
+
+  function showMember(id) {
+    if (!id) { panel.hidden = true; history.replaceState(null, "", location.pathname); return; }
+    panel.setAttribute("member", id);
+    panel.hidden = false;
+    history.replaceState(null, "", `#${stateSel.value}/${id}`);
+  }
+
+  stateSel.addEventListener("change", () => { panel.hidden = true; loadState(stateSel.value); });
+  memberSel.addEventListener("change", () => showMember(memberSel.value));
+
+  // A link like #TX/C001098 opens straight to that member.
+  const [hashState, hashId] = location.hash.slice(1).split("/");
+  if (STATES[hashState]) { stateSel.value = hashState; loadState(hashState, hashId); }
+
+  getJSON("/v1/health").then(({ data }) => {
+    const parts = data.map(d => `${d.chamber === "house" ? "House" : "Senate"} votes through ${
+      new Date(d.latest_vote + "T12:00:00").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}`);
+    $("freshness").textContent = parts.length ? `Data: ${parts.join("; ")}.` : "";
+  }).catch(() => {});
+</script>
+</body>
+</html>
