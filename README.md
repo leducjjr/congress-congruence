@@ -95,6 +95,31 @@ Arguments are congress and session (e.g. `119 1` = 119th Congress, 1st
 session, 2025). On a first `sync` this downloads the whole session one file at
 a time with a one-second pause between requests.
 
+## Scheduled jobs
+
+`scripts/run_job.sh` runs one job and appends its output to `logs/<job>.log`.
+`scripts/crontab.txt` schedules them (server clock, UTC):
+
+| Job | When | What |
+| --- | --- | --- |
+| `members` | Daily 06:10 | Refresh the member list, so new members exist before their votes load |
+| `house` | Every 2 hours at :17 | Load any new House votes for the current session |
+| `senate-voteview` | Daily 06:40 | Reload the current Congress's Senate votes from Voteview |
+
+The jobs use `current` to work out the Congress and session from today's date,
+so nothing needs editing each January. Each job holds a lock, so a slow run is
+never started twice. Every run is also recorded in `core.ingest_run`.
+
+```bash
+# Install the schedule (keeps any existing crontab lines)
+(crontab -l 2>/dev/null; cat scripts/crontab.txt) | crontab -
+crontab -l
+
+# Recent results
+tail -20 logs/house.log
+psql congress_dev -c "select job, status, started_at, rows_written, message from core.ingest_run order by run_id desc limit 10;"
+```
+
 ## Run tests
 
 ```bash

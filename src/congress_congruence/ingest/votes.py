@@ -9,9 +9,12 @@ Usage:
     python -m congress_congruence.ingest.votes fetch house  119 1 362
     python -m congress_congruence.ingest.votes fetch senate 119 1 77
 
-    # Download every vote after the newest one already loaded (the scheduled job)
+    # Download every vote of the session not yet loaded (stops at the first one not posted)
     python -m congress_congruence.ingest.votes sync house  119 1
     python -m congress_congruence.ingest.votes sync senate 119 1
+
+    # Same, for whatever Congress and session are in effect today (for the scheduler)
+    python -m congress_congruence.ingest.votes sync house current
 
 Every file is saved unchanged under RAW_DATA_DIR before it is parsed.
 A vote is written only if it passes validation; a failure loads nothing for that vote.
@@ -45,6 +48,18 @@ class ValidationError(Exception):
 
 def first_year(congress: int) -> int:
     return 1787 + 2 * congress           # 119th Congress began in 2025
+
+
+def current_session(today=None) -> tuple[int, int]:
+    """(congress, session) in effect on a date. A new Congress begins Jan 3 of odd years,
+    so Jan 1-2 of an odd year still belong to the previous Congress's second session."""
+    from datetime import date as _date
+    today = today or _date.today()
+    year = today.year
+    if year % 2 == 1 and (today.month, today.day) < (1, 3):
+        year -= 1
+    congress = (year - 1787) // 2
+    return congress, year - first_year(congress) + 1
 
 
 def vote_url(chamber: str, congress: int, session: int, roll: int) -> str:
@@ -305,8 +320,8 @@ def main(argv: list[str]) -> int:
             n = record_run(conn, f"votes_{chamber}_fetch",
                            lambda: fetch_one(conn, chamber, congress, session_no, roll))
             print("Not found" if n is None else f"Loaded {n} member votes")
-        elif cmd == "sync" and len(rest) == 2:
-            congress, session_no = map(int, rest)
+        elif cmd == "sync" and (len(rest) == 2 or rest == ["current"]):
+            congress, session_no = current_session() if rest == ["current"] else map(int, rest)
             result = record_run(conn, f"votes_{chamber}", lambda: sync(conn, chamber, congress, session_no))
             print(result)
             return 1 if result["failed"] else 0

@@ -268,3 +268,13 @@ def test_sync_stops_cleanly_on_an_unrecognized_file(conn, tmp_path, monkeypatch)
     monkeypatch.setattr(votes, "download", lambda url, session: next(responses))
     result = votes.sync(conn, "house", 119, 1)          # no exception
     assert result == {"loaded": 1, "failed": 1, "next_roll": 2}
+
+
+@pytest.mark.parametrize("day, expected", [
+    ("2025-01-03", (119, 1)), ("2025-12-31", (119, 1)), ("2026-11-07", (119, 2)),
+    ("2027-01-02", (119, 2)),   # still the old Congress until Jan 3
+    ("2027-01-03", (120, 1)), ("2028-06-01", (120, 2)),
+])
+def test_current_session(day, expected):
+    from datetime import date
+    assert votes.current_session(date.fromisoformat(day)) == expected

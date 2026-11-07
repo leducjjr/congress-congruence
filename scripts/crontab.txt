@@ -1,0 +1,14 @@
+# congress-congruence scheduled jobs. Times are in the server's clock (UTC).
+# Install:  (crontab -l 2>/dev/null; cat scripts/crontab.txt) | crontab -
+# Check:    crontab -l
+#
+# minute hour day month weekday  command
+
+# Member list: daily, before the vote jobs, so new members are known first.
+10 6 * * *      $HOME/congress-congruence/scripts/run_job.sh members
+
+# House votes: every 2 hours. When nothing is new this is one request plus two short retries.
+17 */2 * * *    $HOME/congress-congruence/scripts/run_job.sh house
+
+# Senate votes from Voteview: daily. Three files, a few MB.
+40 6 * * *      $HOME/congress-congruence/scripts/run_job.sh senate-voteview

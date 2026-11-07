@@ -5,6 +5,7 @@ so it is used for the Senate (whose site blocks server downloads) and for histor
 
 Usage:
     python -m congress_congruence.ingest.voteview senate 119
+    python -m congress_congruence.ingest.voteview senate current        # the Congress in effect today
     python -m congress_congruence.ingest.voteview senate 119 --dir data/raw/voteview   # use files already downloaded
 
 Files (https://voteview.com/static/data/out/...):
@@ -28,7 +29,7 @@ from pathlib import Path
 
 from .. import config, db
 from .vote_parsers import MemberVote, ParsedRollCall, parse_bill_ref
-from .votes import ValidationError, http_session, load_roll_call, record_run
+from .votes import ValidationError, current_session, http_session, load_roll_call, record_run
 
 log = logging.getLogger(__name__)
 
@@ -231,7 +232,8 @@ def main(argv: list[str]) -> int:
     if len(args) != 2 or args[0] not in PREFIX:
         print(__doc__)
         return 2
-    chamber, congress = args[0], int(args[1])
+    chamber = args[0]
+    congress = current_session()[0] if args[1] == "current" else int(args[1])
     with db.connect() as conn:
         result = record_run(conn, f"voteview_{chamber}", lambda: run(conn, chamber, congress, local_dir))
     print(result)
