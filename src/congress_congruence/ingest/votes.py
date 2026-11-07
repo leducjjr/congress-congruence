@@ -162,21 +162,43 @@ def load_roll_call(conn, rc: ParsedRollCall, raw_sha: str | None = None,
 
 # ---------------------------------------------------------------- fetching
 
+MISSING_RETRIES = 2
+MISSING_RETRY_PAUSE_SECONDS = 5.0
+
+
+def looks_missing(body: bytes) -> bool:
+    """True when a server answered with a 'no such file' message instead of a 404.
+
+    House Clerk, for a vote not yet posted (seen Nov 2026):
+        <xml>Error sanitizing file "roll363.xml". Please try again.</xml>
+    Others answer with an HTML page."""
+    head = body.lstrip()[:500].lower()
+    if b"error sanitizing file" in head:
+        return True
+    return not head.startswith(b"<?xml") and b"<html" in head
+
+
 def download(url: str, session: requests.Session) -> bytes | None:
-    """Return the file's bytes, or None if that vote doesn't exist (yet)."""
-    resp = session.get(url, timeout=60)
-    if resp.status_code == 404:
-        return None
-    if resp.status_code == 403:
-        raise PermissionError(
-            f"{url} refused the request (403). The Senate's site blocks server addresses; "
-            "use the Voteview loader for Senate votes until access is granted.")
-    resp.raise_for_status()
-    body = resp.content
-    # Some servers answer a missing file with an HTML page instead of a 404.
-    if not body.lstrip().startswith(b"<?xml") and b"<html" in body[:500].lower():
-        return None
-    return body
+    """Return the file's bytes, or None if that vote doesn't exist (yet).
+
+    The Clerk's 'missing' message says 'please try again', so it's retried a
+    couple of times before being taken as the end of the list. If it was only a
+    hiccup, the next sync fills the gap, since sync always starts from vote 1."""
+    for attempt in range(MISSING_RETRIES + 1):
+        resp = session.get(url, timeout=60)
+        if resp.status_code == 404:
+            return None
+        if resp.status_code == 403:
+            raise PermissionError(
+                f"{url} refused the request (403). The Senate's site blocks server addresses; "
+                "use the Voteview loader for Senate votes until access is granted.")
+        resp.raise_for_status()
+        body = resp.content
+        if not looks_missing(body):
+            return body
+        if attempt < MISSING_RETRIES:
+            time.sleep(MISSING_RETRY_PAUSE_SECONDS)
+    return None
 
 
 def http_session() -> requests.Session:
@@ -219,6 +241,13 @@ def sync(conn, chamber: str, congress: int, session_no: int) -> dict[str, int]:
             log.error("%s", e)
             failed += 1
             n = -1
+        except ValueError as e:
+            # Not a vote file at all (an unfamiliar error page, say). Stop cleanly rather
+            # than guess; the raw file is saved for a look, and the next run resumes here.
+            log.error("%s %s-%s vote %d: unexpected file, stopping this run: %s",
+                      chamber, congress, session_no, roll, e)
+            failed += 1
+            break
         if n is None:
             break
         if n >= 0:

@@ -213,3 +213,47 @@ def test_sync_fills_gaps_from_vote_one_and_skips_votes_already_loaded(conn, tmp_
     with conn.cursor() as cur:
         cur.execute("select roll_number from core.roll_call order by 1")
         assert [r[0] for r in cur.fetchall()] == [1, 2, 362]
+
+
+class FakeResponse:
+    def __init__(self, body, status=200):
+        self.content, self.status_code = body, status
+
+    def raise_for_status(self):
+        if self.status_code >= 400:
+            raise RuntimeError(self.status_code)
+
+
+class FakeSession:
+    def __init__(self, *bodies):
+        self.bodies, self.calls = list(bodies), 0
+
+    def get(self, url, timeout):
+        self.calls += 1
+        return FakeResponse(self.bodies.pop(0))
+
+
+CLERK_MISSING = b'<xml>Error sanitizing file "roll363.xml". Please try again.</xml>'  # real reply, Nov 2026
+
+
+def test_clerk_missing_message_is_retried_then_means_no_such_vote(monkeypatch):
+    monkeypatch.setattr(votes, "MISSING_RETRY_PAUSE_SECONDS", 0)
+    s = FakeSession(CLERK_MISSING, CLERK_MISSING, CLERK_MISSING)
+    assert votes.download("https://clerk.house.gov/evs/2025/roll363.xml", s) is None
+    assert s.calls == 3
+
+
+def test_clerk_missing_message_that_clears_on_retry_returns_the_file(monkeypatch):
+    monkeypatch.setattr(votes, "MISSING_RETRY_PAUSE_SECONDS", 0)
+    s = FakeSession(CLERK_MISSING, HOUSE)
+    assert votes.download("https://clerk.house.gov/evs/2025/roll362.xml", s) == HOUSE
+
+
+def test_sync_stops_cleanly_on_an_unrecognized_file(conn, tmp_path, monkeypatch):
+    monkeypatch.setenv("RAW_DATA_DIR", str(tmp_path))
+    monkeypatch.setattr(votes, "REQUEST_PAUSE_SECONDS", 0)
+    responses = iter([HOUSE.replace(b"<rollcall-num>362</rollcall-num>", b"<rollcall-num>1</rollcall-num>"),
+                      b"<?xml version='1.0'?><something-else/>"])
+    monkeypatch.setattr(votes, "download", lambda url, session: next(responses))
+    result = votes.sync(conn, "house", 119, 1)          # no exception
+    assert result == {"loaded": 1, "failed": 1, "next_roll": 2}
