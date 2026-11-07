@@ -93,11 +93,16 @@ def lis_to_bioguide(conn) -> dict[str, str]:
         return dict(cur.fetchall())
 
 
-def save_raw(conn, chamber: str, congress: int, content: bytes, filename: str, url: str | None) -> str:
+def save_raw(conn, chamber: str, congress: int, session_no: int, content: bytes,
+             filename: str, url: str | None) -> str:
+    """Keep the file exactly as downloaded, under <source>/<congress>/<session>/.
+
+    Filed by session because House file names repeat each year (roll001.xml in 2025
+    and in 2026). A file that changed since it was last saved is replaced."""
     sha = hashlib.sha256(content).hexdigest()
-    path = config.raw_data_dir() / SOURCE[chamber] / str(congress) / filename
+    path = config.raw_data_dir() / SOURCE[chamber] / str(congress) / str(session_no) / filename
     path.parent.mkdir(parents=True, exist_ok=True)
-    if not path.exists():
+    if not path.exists() or path.read_bytes() != content:
         path.write_bytes(content)
     with conn.cursor() as cur:
         cur.execute(
@@ -213,7 +218,7 @@ def fetch_one(conn, chamber: str, congress: int, session_no: int, roll: int,
     content = download(url, http or http_session())
     if content is None:
         return None
-    sha = save_raw(conn, chamber, congress, content, url.rsplit("/", 1)[1], url)
+    sha = save_raw(conn, chamber, congress, session_no, content, url.rsplit("/", 1)[1], url)
     conn.commit()
     return load_roll_call(conn, parse(chamber, content), sha, url)
 
@@ -292,7 +297,7 @@ def main(argv: list[str]) -> int:
             path = Path(rest[0])
             content = path.read_bytes()
             rc = parse(chamber, content)
-            sha = save_raw(conn, chamber, rc.congress, content, path.name, None)
+            sha = save_raw(conn, chamber, rc.congress, rc.session, content, path.name, None)
             n = record_run(conn, f"votes_{chamber}_file", lambda: load_roll_call(conn, rc, sha))
             print(f"Loaded {rc.roll_call_id}: {n} member votes")
         elif cmd == "fetch" and len(rest) == 3:

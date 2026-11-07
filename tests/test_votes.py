@@ -167,11 +167,22 @@ def test_unknown_senate_id_loads_nothing(conn):
 
 def test_save_raw_keeps_file_and_records_it(conn, tmp_path, monkeypatch):
     monkeypatch.setenv("RAW_DATA_DIR", str(tmp_path))
-    sha = votes.save_raw(conn, "house", 119, HOUSE, "roll362.xml", "https://example/roll362.xml")
-    assert (tmp_path / "house_clerk" / "119" / "roll362.xml").read_bytes() == HOUSE
+    sha = votes.save_raw(conn, "house", 119, 1, HOUSE, "roll362.xml", "https://example/roll362.xml")
+    assert (tmp_path / "house_clerk" / "119" / "1" / "roll362.xml").read_bytes() == HOUSE
     with conn.cursor() as cur:
         cur.execute("select bytes from core.raw_file where sha256 = %s", (sha,))
         assert cur.fetchone()[0] == len(HOUSE)
+
+
+def test_save_raw_files_each_session_separately_and_replaces_changed_files(conn, tmp_path, monkeypatch):
+    """House file names repeat each year; 2025's roll001.xml must not stand in for 2026's."""
+    monkeypatch.setenv("RAW_DATA_DIR", str(tmp_path))
+    votes.save_raw(conn, "house", 119, 1, b"<a>2025</a>", "roll001.xml", None)
+    votes.save_raw(conn, "house", 119, 2, b"<a>2026</a>", "roll001.xml", None)
+    assert (tmp_path / "house_clerk" / "119" / "1" / "roll001.xml").read_bytes() == b"<a>2025</a>"
+    assert (tmp_path / "house_clerk" / "119" / "2" / "roll001.xml").read_bytes() == b"<a>2026</a>"
+    votes.save_raw(conn, "house", 119, 2, b"<a>2026 corrected</a>", "roll001.xml", None)
+    assert (tmp_path / "house_clerk" / "119" / "2" / "roll001.xml").read_bytes() == b"<a>2026 corrected</a>"
 
 
 def test_sync_loads_until_first_missing_vote_and_skips_bad_files(conn, tmp_path, monkeypatch):
