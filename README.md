@@ -7,7 +7,7 @@ See the systems inventory doc for the full design. This repo implements it in ph
 
 | Phase | Scope | Status |
 | --- | --- | --- |
-| 1 | Schema, member loader, House + Senate vote ingestion, validation | In progress |
+| 1 | Schema, member loader, House + Senate vote ingestion, validation | Built; live download not yet run |
 | 2 | Voteview historical backfill and reconciliation | Not started |
 | 3 | CES opinion data, item-to-vote linking, MRP, congruence scores | Not started |
 | 4 | API, dashboard, address-to-district lookup | Not started |
@@ -15,13 +15,16 @@ See the systems inventory doc for the full design. This repo implements it in ph
 ## Layout
 
 ```
-sql/                    Database schema, applied in filename order
-src/congress_congruence/         Python package
-  config.py             Settings read from environment / .env
-  db.py                 Database connection and schema migration
-  ingest/members.py     Loads members, terms and ID crosswalk
-tests/                  Automated tests (pytest)
-data/raw/               Downloaded source files, kept as-is (not committed)
+sql/                          Database schema, applied in filename order
+src/congress_congruence/      Python package
+  config.py                   Settings read from environment / .env
+  db.py                       Database connection and schema migration
+  ingest/members.py           Loads members, terms and ID crosswalk
+  ingest/vote_parsers.py      Parses House Clerk and Senate LIS vote XML
+  ingest/votes.py             Fetches, validates and loads votes (both chambers)
+tests/                        Automated tests (pytest)
+  fixtures/                   Real vote files used by the tests
+data/raw/                     Downloaded source files, kept as-is (not committed)
 ```
 
 ## Setup
@@ -49,6 +52,31 @@ python -m congress_congruence.ingest.members data/raw/congress-legislators
 ```
 
 Safe to re-run: every load replaces the member tables inside one transaction.
+Load members before votes, and refresh them when new members are sworn in.
+
+## Load votes
+
+```bash
+# Scheduled job: download every vote newer than the last one loaded
+python -m congress_congruence.ingest.votes sync house  119 1
+python -m congress_congruence.ingest.votes sync senate 119 1
+
+# One specific vote
+python -m congress_congruence.ingest.votes fetch house 119 1 362
+
+# A file you downloaded yourself
+python -m congress_congruence.ingest.votes load-file senate path/to/vote_119_1_00077.xml
+```
+
+Each vote is checked before it is written: member rows must add up to the
+chamber's published Yea/Nay/Present/Not Voting totals, no member may appear
+twice, and every member must already exist in the member table. A vote that
+fails is skipped and logged; `sync` keeps going and exits with code 1 so a
+scheduler can alert on it. Re-loading a vote replaces it.
+
+Arguments are congress and session (e.g. `119 1` = 119th Congress, 1st
+session, 2025). On a first `sync` this downloads the whole session one file at
+a time with a one-second pause between requests.
 
 ## Run tests
 
@@ -77,3 +105,8 @@ Tests that need a database use `TEST_DATABASE_URL` and are skipped if it isn't s
   Phase 2 backfill should build that link from Voteview's side.
 - The dataset showed 98 senators and 433 voting House members serving on the
   load date. Check whether that reflects real vacancies or lag in the dataset.
+- The two test fixtures were rebuilt from browser printouts of the official
+  files, so line breaks inside long text fields may differ from the originals.
+  The parsers collapse whitespace, so this doesn't affect results. The download
+  code (`fetch`, `sync`) was tested with a stand-in and still needs a first
+  real run.

@@ -1,0 +1,192 @@
+"""Tests for the House and Senate vote parsers and loader, using real vote files.
+
+Fixtures:
+  house_119_1_00362.xml   House roll 362, 18 Dec 2025, H.R. 498 on passage (215-201, 17 not voting)
+  senate_119_1_00077.xml  Senate vote 77, 21 Feb 2025, amendment to S.Con.Res. 7 (24-76)
+"""
+
+import copy
+import os
+from pathlib import Path
+
+import pytest
+
+from congress_congruence import db
+from congress_congruence.ingest import votes
+from congress_congruence.ingest.vote_parsers import (
+    normalize_position, parse, parse_bill_ref, parse_house, parse_senate)
+
+FIXTURES = Path(__file__).parent / "fixtures"
+HOUSE = (FIXTURES / "house_119_1_00362.xml").read_bytes()
+SENATE = (FIXTURES / "senate_119_1_00077.xml").read_bytes()
+
+
+# ---------------------------------------------------------------- parsing
+
+def test_house_metadata():
+    rc = parse_house(HOUSE)
+    assert rc.roll_call_id == "h-119-1-362"
+    assert (rc.chamber, rc.congress, rc.session, rc.roll_number) == ("house", 119, 1, 362)
+    assert str(rc.vote_date) == "2025-12-18" and str(rc.vote_time) == "14:59:00"
+    assert (rc.question, rc.result) == ("On Passage", "Passed")
+    assert (rc.bill_type, rc.bill_number) == ("hr", 498)
+    assert (rc.yea_total, rc.nay_total, rc.present_total, rc.not_voting_total) == (215, 201, 0, 17)
+
+
+def test_house_member_votes_use_bioguide_ids():
+    rc = parse_house(HOUSE)
+    assert len(rc.votes) == 433
+    first = rc.votes[0]
+    assert (first.member_id, first.id_type, first.position, first.party, first.state) == \
+        ("A000370", "bioguide", "nay", "D", "NC")
+
+
+def test_senate_metadata_and_amendment_maps_to_its_bill():
+    rc = parse_senate(SENATE)
+    assert rc.roll_call_id == "s-119-1-77"
+    assert str(rc.vote_date) == "2025-02-21" and str(rc.vote_time) == "00:54:00"
+    assert rc.amendment_number == "S.Amdt. 999"
+    assert (rc.bill_type, rc.bill_number) == ("sconres", 7)
+    assert (rc.yea_total, rc.nay_total) == (24, 76)
+    assert rc.present_total is None and rc.not_voting_total is None  # blank in the file
+
+
+def test_senate_member_votes_use_lis_ids():
+    rc = parse_senate(SENATE)
+    assert len(rc.votes) == 100
+    assert (rc.votes[0].member_id, rc.votes[0].id_type) == ("S428", "lis")
+
+
+@pytest.mark.parametrize("raw, expected", [
+    ("Yea", "yea"), ("Aye", "yea"), ("Guilty", "yea"),
+    ("Nay", "nay"), ("No", "nay"), ("Not Guilty", "nay"),
+    ("Present", "present"), ("Not Voting", "not_voting"), (" not  voting ", "not_voting"),
+    ("Jeffries", "other"),  # a vote for Speaker lists candidate names
+])
+def test_normalize_position(raw, expected):
+    assert normalize_position(raw) == expected
+
+
+@pytest.mark.parametrize("text, expected", [
+    ("H R 498", ("hr", 498)), ("H RES 12", ("hres", 12)), ("H J RES 7", ("hjres", 7)),
+    ("H CON RES 3", ("hconres", 3)), ("S 5", ("s", 5)), ("S.Con.Res. 7", ("sconres", 7)),
+    ("S.J.Res. 11", ("sjres", 11)), ("H.R. 1", ("hr", 1)), ("S.Res. 90", ("sres", 90)),
+    ("QUORUM", (None, None)), ("PN12-3", (None, None)), (None, (None, None)),
+])
+def test_parse_bill_ref(text, expected):
+    assert parse_bill_ref(text) == expected
+
+
+def test_vote_urls():
+    assert votes.vote_url("house", 119, 1, 362) == "https://clerk.house.gov/evs/2025/roll362.xml"
+    assert votes.vote_url("house", 119, 2, 5) == "https://clerk.house.gov/evs/2026/roll005.xml"
+    assert votes.vote_url("senate", 119, 1, 77) == (
+        "https://www.senate.gov/legislative/LIS/roll_call_votes/vote1191/vote_119_1_00077.xml")
+
+
+def test_parse_refuses_the_wrong_chamber():
+    with pytest.raises(ValueError):
+        parse("senate", HOUSE)
+
+
+# ---------------------------------------------------------------- validation
+
+def test_real_files_pass_validation():
+    votes.validate(parse_house(HOUSE))
+    votes.validate(parse_senate(SENATE))
+
+
+def test_validation_catches_total_mismatch():
+    rc = parse_house(HOUSE)
+    rc.yea_total = 216
+    with pytest.raises(votes.ValidationError, match="yea: file lists 215"):
+        votes.validate(rc)
+
+
+def test_validation_catches_duplicate_member():
+    rc = parse_senate(SENATE)
+    rc.votes.append(copy.copy(rc.votes[0]))
+    rc.nay_total += 1
+    with pytest.raises(votes.ValidationError, match="listed twice"):
+        votes.validate(rc)
+
+
+def test_xml_entities_are_not_expanded():
+    evil = b'<?xml version="1.0"?><!DOCTYPE x [<!ENTITY e SYSTEM "file:///etc/passwd">]><rollcall-vote>&e;</rollcall-vote>'
+    with pytest.raises(ValueError):  # refused as not a vote file; the entity is never read
+        parse_house(evil)
+
+
+# ---------------------------------------------------------------- database
+
+@pytest.fixture
+def conn():
+    url = os.environ.get("TEST_DATABASE_URL")
+    if not url:
+        pytest.skip("TEST_DATABASE_URL not set")
+    with db.connect(url) as c:
+        with c.cursor() as cur:
+            cur.execute("drop schema if exists core cascade")
+        c.commit()
+        db.migrate(c)
+        # Minimal member rows for everyone in the two fixtures.
+        with c.cursor() as cur:
+            for v in parse_house(HOUSE).votes:
+                cur.execute("insert into core.member (bioguide_id, first_name, last_name) values (%s, '', '')",
+                            (v.member_id,))
+            for i, v in enumerate(parse_senate(SENATE).votes):
+                bio = f"T{i:06d}"
+                cur.execute("insert into core.member (bioguide_id, first_name, last_name) values (%s, '', '') "
+                            "on conflict do nothing", (bio,))
+                cur.execute("insert into core.member_external_id values ('lis', %s, %s)", (v.member_id, bio))
+        c.commit()
+        yield c
+
+
+def test_load_both_chambers_and_reload_replaces(conn, tmp_path, monkeypatch):
+    monkeypatch.setenv("RAW_DATA_DIR", str(tmp_path))
+    assert votes.load_roll_call(conn, parse_house(HOUSE)) == 433
+    assert votes.load_roll_call(conn, parse_senate(SENATE)) == 100
+    assert votes.load_roll_call(conn, parse_senate(SENATE)) == 100  # re-run
+    with conn.cursor() as cur:
+        cur.execute("select chamber, count(*) from core.member_vote join core.roll_call using (roll_call_id) "
+                    "group by chamber order by chamber")
+        assert cur.fetchall() == [("house", 433), ("senate", 100)]
+
+
+def test_unknown_senate_id_loads_nothing(conn):
+    with conn.cursor() as cur:
+        cur.execute("delete from core.member_external_id where id_value = 'S428'")
+    conn.commit()
+    with pytest.raises(votes.ValidationError, match="S428"):
+        votes.load_roll_call(conn, parse_senate(SENATE))
+    with conn.cursor() as cur:
+        cur.execute("select count(*) from core.roll_call")
+        assert cur.fetchone()[0] == 0
+
+
+def test_save_raw_keeps_file_and_records_it(conn, tmp_path, monkeypatch):
+    monkeypatch.setenv("RAW_DATA_DIR", str(tmp_path))
+    sha = votes.save_raw(conn, "house", 119, HOUSE, "roll362.xml", "https://example/roll362.xml")
+    assert (tmp_path / "house_clerk" / "119" / "roll362.xml").read_bytes() == HOUSE
+    with conn.cursor() as cur:
+        cur.execute("select bytes from core.raw_file where sha256 = %s", (sha,))
+        assert cur.fetchone()[0] == len(HOUSE)
+
+
+def test_sync_loads_until_first_missing_vote_and_skips_bad_files(conn, tmp_path, monkeypatch):
+    monkeypatch.setenv("RAW_DATA_DIR", str(tmp_path))
+    monkeypatch.setattr(votes, "REQUEST_PAUSE_SECONDS", 0)
+    broken = HOUSE.replace(b"<yea-total>215</yea-total>", b"<yea-total>999</yea-total>")  # the overall total
+    assert broken != HOUSE
+    responses = iter([HOUSE, broken, None])   # roll 1 good, roll 2 fails validation, roll 3 not posted yet
+    requested = []
+
+    def fake_download(url, session):
+        requested.append(url)
+        return next(responses)
+
+    monkeypatch.setattr(votes, "download", fake_download)
+    result = votes.sync(conn, "house", 119, 1)
+    assert result == {"loaded": 1, "failed": 1, "next_roll": 3}
+    assert requested[0].endswith("/2025/roll001.xml") and len(requested) == 3
