@@ -61,6 +61,11 @@ items:
 
   CC25_340g:
     question: Cut $9.4 billion from previously approved federal spending (Rescissions Act)
+    note: >-
+      The House gave final approval by adopting a rule (H.Res. 590) that also accepted the
+      Senate's version, so that 216-213 vote on July 18, 2025 is the one compared.
     votes:
-      house:  {bill: [hr, 4], questions: *final}
+      # Self-executing rule: no separate concurrence vote exists. Found Nov 2026 by listing
+      # House votes of July 16-19, 2025 (vote h-119-1-203).
+      house:  {bill: [hres, 590], find: "(H.R. 4)", questions: [Agreeing to the Resolution]}
       senate: {bill: [hr, 4], questions: *final}

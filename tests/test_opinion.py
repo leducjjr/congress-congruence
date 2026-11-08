@@ -66,7 +66,11 @@ VOTES = [
     ("h-119-1-190", "house", "2025-07-03", "On Motion to Concur in the Senate Amendment", "hr", 1, "One Big Beautiful Bill Act"),
     ("h-119-1-189", "house", "2025-07-03", "On Ordering the Previous Question", "hr", 1, "procedural"),  # not final
     ("h-119-1-160", "house", "2025-06-12", "On Passage", "hr", 4, "Rescissions Act of 2025"),
-    ("h-119-1-200", "house", "2025-07-18", "On Motion to Concur in the Senate Amendment", "hr", 4, "Rescissions Act of 2025"),
+    # The real final House action: a self-executing rule that accepted the Senate's version.
+    ("h-119-1-203", "house", "2025-07-18", "On Agreeing to the Resolution", "hres", 590,
+     "Relating to consideration of the Senate amendment to the bill (H.R. 4) to rescind certain budget authority"),
+    ("h-119-1-202", "house", "2025-07-17", "On Ordering the Previous Question", "hres", 590,
+     "Relating to consideration of the Senate amendment to the bill (H.R. 4) to rescind certain budget authority"),
     ("s-119-1-7", "senate", "2025-01-20", "On Passage of the Bill", "s", 5, "Laken Riley Act"),
     ("s-119-1-20", "senate", "2025-01-23", "On the Cloture Motion", None, None, "Pete Hegseth, of Tennessee, to be Secretary of Defense"),
     ("s-119-1-25", "senate", "2025-01-24", "On the Nomination", None, None, "Pete Hegseth, of Tennessee, to be Secretary of Defense"),
@@ -134,7 +138,7 @@ def test_link_picks_the_final_decisive_vote(conn):
     assert links[("CC25_340a", "senate")] == "s-119-1-25"      # confirmation, not cloture
     assert links[("CC25_340b", "senate")] == "s-119-1-80"
     assert links[("CC25_340e", "senate")] == "s-119-1-60"      # only Senate vote was cloture
-    assert links[("CC25_340g", "house")] == "h-119-1-200"
+    assert links[("CC25_340g", "house")] == "h-119-1-203"      # the rule's adoption, not the procedural vote
     assert ("CC25_340d", "senate") not in links                # Senate never voted on the SAVE Act
     assert len(links) == 11
 
