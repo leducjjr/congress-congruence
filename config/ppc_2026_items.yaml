@@ -85,7 +85,9 @@ items:
   PPC26_STOCKS:
     question: Ban members of Congress from trading individual stocks
     pdf: [reform]
-    find: (members of Congress.{0,300}stock|stock.{0,300}members of Congress)
+    # The question is just "Members of Congress"; the paragraph before it asks about prohibiting
+    # officials from trading stocks in individual companies.
+    find: trading stocks.{0,600}Q\d+[a-z]?\.\s*Members of Congress
     match: related
     votes:
       house:

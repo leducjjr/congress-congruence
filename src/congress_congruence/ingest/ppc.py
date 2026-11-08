@@ -95,8 +95,13 @@ def area_of(label: str, home: str | None) -> tuple[str, int | None] | None:
     return None
 
 
+PAIR = re.compile(r"(?P<label>[A-Za-z0-9][^:]*?)\s*:\s*(?P<value>[^A-Za-z]*?)(?=\s{2,}[A-Za-z0-9][^:]*:|\s*$)")
+
+
 def header_values(text: str, heading: str) -> list[tuple[str, str]]:
-    """'label: value' lines under a heading such as 'Sample Sizes:' (up to the next blank line)."""
+    """'label: value' pairs under a heading such as 'Sample Sizes:' (up to the next blank line).
+    A line can hold several pairs ('Iowa CD1: 500     Iowa CD2: 500'), and one value can be
+    shared by a comma-separated list of labels ('Iowa CD1, Iowa CD2: +/-5.5-6.0%')."""
     m = re.search(rf"(?im)^\s*{heading}\s*:?\s*$", text)
     if not m:
         return []
@@ -106,15 +111,24 @@ def header_values(text: str, heading: str) -> list[tuple[str, str]]:
             if out:
                 break
             continue
-        if ":" not in line:
+        pairs = list(PAIR.finditer(line.strip()))
+        if not pairs:
             break
-        label, value = line.rsplit(":", 1)
-        out.append((label.strip(), value.strip()))
+        for p in pairs:
+            for label in p.group("label").split(","):
+                if label.strip():
+                    out.append((label.strip(), p.group("value").strip()))
     return out
 
 
+def ci_value(value: str) -> float | None:
+    """'+/-4.3%' -> 0.043. A range ('+/-5.5-6.0%') gives its larger end, so ranges are never too narrow."""
+    nums = [float(x) for x in re.findall(r"\d+(?:\.\d+)?", value)]
+    return round(max(nums) / 100, 4) if nums else None
+
+
 def home_state(text: str) -> str | None:
-    m = re.search(r"(?i)-\s*STATE OF ([A-Z ]+?)\s+(?:and|AND|-)", text[:600])
+    m = re.search(r"(?i)-\s*STATE OF ([A-Z ]+?)\s*(?:,|\band\b|-)", text[:600])
     if m:
         return STATE_NAMES.get(m.group(1).strip().title())
     for label, _ in header_values(text, "Sample Sizes"):
@@ -134,18 +148,19 @@ def parse(text: str) -> dict:
             sizes[a] = int(re.sub(r"[,\s]", "", value))
     for label, value in header_values(text, "Confidence Interval"):
         a = area_of(label, home)
-        m = re.search(r"(\d+(?:\.\d+)?)\s*%", value)
-        if a and m:
-            cis[a] = float(m.group(1)) / 100
+        ci = ci_value(value)
+        if a and ci:
+            cis[a] = ci
     questions = []
     method = re.search(r"(?m)^\s*Methodology\s*$", text)       # questions end where the methodology starts
     body = text[:method.start()] if method else text
     starts = [m.start() for m in QUESTION.finditer(body)] + [len(body)]
+    intro = ""           # text after the previous question's table: the lead-in to this question
     for i, start in enumerate(starts[:-1]):
         block = body[start:starts[i + 1]]
         num = QUESTION.match(block).group(1)
         lines = block.splitlines()
-        rows, wording, unread = [], [], []
+        rows, wording, after, unread = [], [], [], []
         for line in lines:
             r = ROW.match(line)
             if r:
@@ -160,16 +175,21 @@ def parse(text: str) -> dict:
                              "dk": int(r.group("dk")) if r.group("dk") else None})
             elif not rows:
                 wording.append(line.strip())
+            else:
+                after.append(line.strip())
         text_q = re.sub(r"\s+", " ", " ".join(wording)).strip()
         text_q = re.sub(r"\s*Favor\s+Oppose(\s+Ref/DK)?\s*$", "", text_q)
-        questions.append({"number": num, "text": text_q, "rows": rows, "unread_labels": unread})
+        # A short question ('Q10. Members of Congress') often relies on the paragraph before it.
+        questions.append({"number": num, "text": text_q, "intro": intro, "rows": rows, "unread_labels": unread})
+        intro = re.sub(r"\s+", " ", " ".join(after)).strip() if rows else ""
     return {"home": home, "sizes": sizes, "cis": cis, "questions": questions}
 
 
 def find_question(parsed: dict, pattern: str) -> dict | None:
     """The first question whose wording matches the pattern and that has a results table."""
     rx = re.compile(pattern, re.I | re.S)
-    return next((q for q in parsed["questions"] if q["rows"] and rx.search(q["text"])), None)
+    return next((q for q in parsed["questions"]
+                 if q["rows"] and rx.search(f"{q['intro']} {q['text']}".strip())), None)
 
 
 # ---------------------------------------------------------------- estimates
@@ -261,7 +281,7 @@ def fetch(year: int, http=None) -> dict:
             if not q:
                 problems.append(f"{url}: no question matching {item['find']!r} (for {var})")
                 continue
-            review.append(f"\n{var}  Q{q['number']}  {url}\n  {q['text'][:400]}")
+            review.append(f"\n{var}  Q{q['number']}  {url}\n  {(q['intro'] + ' ' + q['text']).strip()[:500]}")
             for label in q["unread_labels"]:
                 problems.append(f"{url} Q{q['number']}: row label not recognized as a place: {label!r}")
             for row in q["rows"]:

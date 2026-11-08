@@ -120,6 +120,64 @@ def test_reads_districts_and_flags_unknown_labels():
     assert q["unread_labels"] == ["Iowa's Senate seat"]                 # reported, never guessed
 
 
+# As in the real 2026 Iowa PDFs: several areas per header line, one shared interval given as a
+# range, and a short question that relies on the paragraph before it.
+IOWA_REAL = """
+                                              HEALTHCARE COSTS
+                                    - STATE OF IOWA, CD1, CD2, CD3, CD4, and NATIONAL -
+          Field Dates:
+          State of Iowa, Iowa CD1, Iowa CD2, Iowa CD3, Iowa CD4: May 27 – June 23, 2026
+          National: February 11-26, 2026
+
+          Sample Sizes:
+          State of Iowa:    2000           Iowa CD1: 500         Iowa CD2: 500         Iowa CD3: 500         Iowa CD4: 500
+          National: 2,509
+
+          Confidence Interval:
+          State of Iowa: +/-2.9%           Iowa CD1, Iowa CD2, Iowa CD3, Iowa CD4: +/-5.5-6.0%
+          National: +/- 2.9%
+
+Q9. Some other question.
+                                   Favor          Oppose        Ref/DK
+          National                  80%            20%           0%
+          Iowa (Statewide)          81%            19%           0%
+
+Proposals have been put forward to prohibit high-level officials in the federal government from trading stocks in
+individual companies. They would still be allowed to buy or sell shares of funds that include stocks in numerous
+companies. For each group of federal officials, please say whether you favor or oppose prohibiting them from trading
+stocks in individual companies.
+
+
+Q10. Members of Congress
+
+
+                                   Favor          Oppose        Ref/DK
+          National                  76%            24%           0%
+             Republicans            78%            22%           0%
+          Iowa (statewide)          78%            21%           1%
+             Democrats              82%            17%           1%
+          Iowa CD1                  75%            24%           1%
+          Iowa CD4                  85%            15%           0%
+
+Q11. The President, Vice President and Supreme Court Justices
+                                   Favor          Oppose        Ref/DK
+          National                  71%            29%           0%
+          Iowa (statewide)          70%            30%           0%
+"""
+
+
+def test_reads_the_real_district_layout():
+    p = ppc.parse(IOWA_REAL)
+    assert p["home"] == "IA"
+    assert p["sizes"] == {("IA", None): 2000, ("IA", 1): 500, ("IA", 2): 500, ("IA", 3): 500, ("IA", 4): 500}
+    assert p["cis"] == {("IA", None): 0.029, ("IA", 1): 0.06, ("IA", 2): 0.06, ("IA", 3): 0.06, ("IA", 4): 0.06}
+    find = ppc.load_config(2026)["items"]["PPC26_STOCKS"]["find"]
+    q = ppc.find_question(p, find)
+    assert q["number"] == "10" and q["intro"].startswith("Proposals have been put forward")
+    assert {r["area"]: r["favor"] for r in q["rows"] if r["area"]} == {("IA", None): 78, ("IA", 1): 75, ("IA", 4): 85}
+    assert ppc.find_question(p, "Supreme Court")["number"] == "11"     # no lead-in carried past a table
+
+
 def test_estimate_uses_published_interval_at_the_90_percent_level():
     a = ppc.estimate(56, 43, 0.045, 600, "TX", None)                   # Texas, Ukraine aid
     assert a.support == pytest.approx(56 / 99)
