@@ -6,6 +6,7 @@ Run locally:
 Endpoints (all GET):
     /v1/health                         is the database reachable; how fresh is the data
     /v1/surveys                        every survey loaded, with links (Sources page)
+    /v1/search?q=cruz                  members serving today, by name, state or seat (TX-7)
     /v1/members?state=TX&chamber=house members serving today
     /v1/members/{bioguide_id}          profile, attendance, votes with party majority
     /v1/members/{bioguide_id}/votes    most recent votes (limit=1..100, default 20)
@@ -21,6 +22,7 @@ database login itself only has SELECT permission (see deploy/README.md).
 
 import os
 import re
+import unicodedata
 from contextlib import asynccontextmanager
 from datetime import date
 
@@ -30,6 +32,7 @@ from psycopg.rows import dict_row
 from psycopg_pool import ConnectionPool
 
 from .. import config  # noqa: F401  (loads .env)
+from ..ingest.ppc import STATE_NAMES as ppc_states
 from ..ingest.votes import current_session
 from . import queries as q
 
@@ -118,6 +121,57 @@ def surveys(response: Response):
     keys = ("survey", "title", "fielded", "respondents", "dataset_url", "guide_url", "about_url",
             "organization", "description", "items")
     return {"surveys": [{k: r[k] for k in keys} for r in fetch(q.SURVEY_LIST)]}
+
+
+def fold(text: str) -> str:
+    """Lowercase without accents, so 'velazquez' finds 'Velázquez'."""
+    return "".join(c for c in unicodedata.normalize("NFKD", text.lower()) if not unicodedata.combining(c))
+
+
+STATE_NAMES = {fold(name): code for name, code in {
+    **ppc_states, "District of Columbia": "DC", "Washington DC": "DC", "Puerto Rico": "PR", "Guam": "GU",
+    "Virgin Islands": "VI", "U.S. Virgin Islands": "VI", "American Samoa": "AS",
+    "Northern Mariana Islands": "MP"}.items()}
+SEAT_RE = re.compile(r"^([a-z]{2})\s*-?\s*(\d{1,2}|al|at-large)$")
+
+
+def search_members(query: str, rows: list[dict], limit: int = 12) -> list[dict]:
+    """Members serving today matching a name, a state, or a seat. Examples:
+    'cruz', 'ted c', 'velazquez', 'Texas', 'TX', 'TX-7', 'tx 7', 'ak-al'. A trailing * is ignored."""
+    q = fold(query).replace("*", " ").strip()
+    q = re.sub(r"\s+", " ", q)
+    if not q:
+        return []
+    seat = SEAT_RE.match(q)
+    if seat and seat.group(1).upper() in STATES:
+        st, d = seat.group(1).upper(), seat.group(2)
+        district = 0 if d in ("al", "at-large") else int(d)
+        return [r for r in rows if r["chamber"] == "house" and r["state"] == st
+                and (r["district"] or 0) == district][:limit]
+    state = STATE_NAMES.get(q) or (q.upper() if len(q) == 2 and q.upper() in STATES else None)
+    if state:
+        mine = [r for r in rows if r["state"] == state]
+        return sorted(mine, key=lambda r: (r["chamber"] != "senate", r["district"] or 0, r["last_name"] or ""))[:limit]
+
+    tokens = q.split(" ")
+    scored = []
+    for r in rows:
+        words = re.split(r"[\s.,'-]+", fold(r["name"]))
+        where = {r["state"].lower(), *[w for n, c in STATE_NAMES.items() if c == r["state"] for w in n.split()]}
+        if not all(any(w.startswith(t) for w in words) or t in where for t in tokens):
+            continue
+        last = fold(r["last_name"] or "")
+        score = (0 if last.startswith(tokens[0]) else 1, r["chamber"] != "senate", r["state"], r["district"] or 0)
+        scored.append((score, r))
+    return [r for _, r in sorted(scored, key=lambda x: x[0])][:limit]
+
+
+@app.get("/v1/search")
+def search(response: Response, text: str = Query(..., alias="q", min_length=2, max_length=60)):
+    """Find members serving today by name, state or seat (more kinds of results to come)."""
+    rows = fetch(q.CURRENT_MEMBERS, {"on": date.today(), "state": None, "chamber": None})
+    response.headers["Cache-Control"] = CACHE
+    return {"query": text, "members": [member_summary(r) for r in search_members(text, rows)]}
 
 
 @app.get("/v1/members")

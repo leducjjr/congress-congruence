@@ -140,3 +140,31 @@ def test_connections_are_read_only(client):
     with client.api.pool.connection() as conn:
         with pytest.raises(psycopg.errors.ReadOnlySqlTransaction):
             conn.execute("delete from core.member_vote")
+
+
+def test_member_search_by_name_state_and_seat():
+    from congress_congruence.api.app import search_members
+    rows = [
+        {"name": "Nydia M. Velázquez", "last_name": "Velázquez", "chamber": "house", "state": "NY", "district": 7},
+        {"name": "Ted Cruz", "last_name": "Cruz", "chamber": "senate", "state": "TX", "district": None},
+        {"name": "John Cornyn", "last_name": "Cornyn", "chamber": "senate", "state": "TX", "district": None},
+        {"name": "Jake Ellzey", "last_name": "Ellzey", "chamber": "house", "state": "TX", "district": 6},
+        {"name": "Nicholas Begich", "last_name": "Begich", "chamber": "house", "state": "AK", "district": 0},
+    ]
+    names = lambda q: [r["name"] for r in search_members(q, rows)]
+    assert names("cruz") == ["Ted Cruz"]
+    assert names("velazquez") == ["Nydia M. Velázquez"]                 # accents don't matter
+    assert names("ted c") == ["Ted Cruz"]
+    assert names("corn*") == ["John Cornyn"]
+    assert names("Texas") == ["John Cornyn", "Ted Cruz", "Jake Ellzey"]   # senators first, by last name
+    assert names("tx") == names("Texas")
+    assert names("TX-6") == ["Jake Ellzey"] and names("tx 6") == ["Jake Ellzey"]
+    assert names("AK-AL") == ["Nicholas Begich"]
+    assert names("john texas") == ["John Cornyn"]                     # a state word narrows a name
+    assert names("zzz") == []
+
+
+def test_search_endpoint(client):
+    r = client.get("/v1/search", params={"q": "zz"})
+    assert r.status_code == 200 and r.json()["members"] == []
+    assert client.get("/v1/search", params={"q": "z"}).status_code == 422

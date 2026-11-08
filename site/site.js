@@ -35,6 +35,60 @@
     for (const el of document.querySelectorAll("#site-coverage, [data-coverage]")) el.textContent = text;
   }).catch(() => {});
 
+  // Header search: suggestions as you type; Enter or a click opens the member's page.
+  // Keyboard: Up/Down move through suggestions, Enter opens, Escape closes.
+  const input = $("site-q"), list = $("site-q-list");
+  const memberHref = m => `index.html#${m.state}/${m.bioguide_id}`;
+  const describe = m => m.chamber === "senate" ? `Senator, ${m.state} · ${m.party}`
+                                               : `Representative, ${m.seat} · ${m.party}`;
+  if (input && list) {
+    let results = [], active = -1, timer = null, lastQuery = "";
+    const close = () => { list.hidden = true; input.setAttribute("aria-expanded", "false");
+                          input.removeAttribute("aria-activedescendant"); active = -1; };
+    const highlight = i => {
+      active = i;
+      [...list.children].forEach((li, k) => li.setAttribute("aria-selected", String(k === i)));
+      if (i >= 0 && list.children[i]) {
+        input.setAttribute("aria-activedescendant", list.children[i].id);
+        list.children[i].scrollIntoView({ block: "nearest" });
+      }
+    };
+    const show = (members, query) => {
+      results = members;
+      list.replaceChildren(...(members.length ? members.map((m, i) => {
+        const li = document.createElement("li");
+        li.id = `site-q-opt-${i}`; li.setAttribute("role", "option"); li.setAttribute("aria-selected", "false");
+        li.append(m.name); const small = document.createElement("small"); small.textContent = describe(m); li.append(small);
+        li.addEventListener("mousedown", e => { e.preventDefault(); location.href = memberHref(m); });
+        return li;
+      }) : [Object.assign(document.createElement("li"), { className: "empty",
+              textContent: `No member of Congress matches “${query}”. Try a last name, a state, or a seat like TX-7.` })]));
+      list.hidden = false; input.setAttribute("aria-expanded", "true"); active = -1;
+    };
+    input.addEventListener("input", () => {
+      clearTimeout(timer);
+      const query = input.value.trim();
+      if (query.length < 2) { close(); return; }
+      timer = setTimeout(() => {
+        lastQuery = query;
+        getJSON(`/v1/search?q=${encodeURIComponent(query)}`)
+          .then(({ members }) => { if (query === lastQuery && input.value.trim() === query) show(members, query); })
+          .catch(close);
+      }, 180);
+    });
+    input.addEventListener("keydown", e => {
+      if (list.hidden) return;
+      if (e.key === "ArrowDown") { e.preventDefault(); highlight(Math.min(active + 1, results.length - 1)); }
+      else if (e.key === "ArrowUp") { e.preventDefault(); highlight(Math.max(active - 1, 0)); }
+      else if (e.key === "Escape") { close(); }
+      else if (e.key === "Enter") {
+        const pick = active >= 0 ? results[active] : (results.length === 1 ? results[0] : null);
+        if (pick) { e.preventDefault(); location.href = memberHref(pick); }   // else the form goes to the results list
+      }
+    });
+    input.addEventListener("blur", () => setTimeout(close, 100));
+  }
+
   // Sources page: one row per survey loaded, under its organization's section.
   const lists = document.querySelectorAll("[data-surveys]");
   if (lists.length) {

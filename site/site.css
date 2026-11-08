@@ -34,6 +34,21 @@ a:hover { color: var(--mark); }
   .site-header nav a { padding: 4px 10px; font-size: 0.9rem; }
 }
 
+/* Header search: suggestions appear under the box as you type */
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.site-search { position: relative; margin-left: auto; flex: 0 1 20rem; min-width: 12rem; }
+.site-search input { width: 100%; font: inherit; font-size: 0.95rem; color: var(--ink); background: var(--page);
+  border: 1px solid var(--rule); border-radius: 999px; padding: 7px 14px; }
+.site-search input:focus { outline: 2px solid var(--mark); outline-offset: 1px; background: var(--surface); }
+.site-search ul { position: absolute; z-index: 20; left: 0; right: 0; top: calc(100% + 4px); margin: 0; padding: 4px;
+  list-style: none; background: var(--surface); border: 1px solid var(--rule); border-radius: 10px;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.12); max-height: 22rem; overflow-y: auto; }
+.site-search li { padding: 8px 10px; border-radius: 6px; cursor: pointer; line-height: 1.3; }
+.site-search li small { display: block; color: var(--ink-soft); font-size: 0.82rem; }
+.site-search li[aria-selected="true"], .site-search li:hover { background: var(--page); }
+.site-search li.empty { cursor: default; color: var(--ink-soft); }
+@media (max-width: 560px) { .site-search { flex-basis: 100%; margin-left: 0; } }
+
 /* Main */
 main { padding-top: 28px; padding-bottom: 48px; }
 main:focus { outline: none; }

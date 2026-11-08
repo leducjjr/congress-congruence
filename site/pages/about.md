@@ -33,5 +33,4 @@ political party or campaign, or any of the survey organizations whose work it us
 
 ## Contact and corrections {#contact}
 
-If you find an error, we want to fix it. Contact details will be posted here before the site's public
-launch.
+If you find an error, we want to fix it. See the [Contact](contact.html) page.

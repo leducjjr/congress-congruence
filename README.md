@@ -126,7 +126,7 @@ pages (Sources, Methods, Glossary, About, Privacy) are Markdown files in `site/p
 edit the text, then run `scripts/publish_web.sh`. A new page needs a short header (`title`,
 `description`); add it to `NAV` in `scripts/build_site.py` to put it in the header menu.
 
-The API (`api/app.py`) serves `/v1/members`, `/v1/members/{id}`,
+The API (`api/app.py`) serves `/v1/search` (members by name, state or seat), `/v1/surveys`, `/v1/members`, `/v1/members/{id}`,
 `/v1/members/{id}/votes` and `/v1/health`. Its database connections are
 read-only, and in deployment it logs in with a role that only has SELECT.
 Run locally with `uvicorn congress_congruence.api.app:app --port 8000`.
