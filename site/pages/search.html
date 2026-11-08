@@ -16,6 +16,7 @@ head: |
     .filters select { font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--rule);
       border-radius: 6px; padding: 4px 6px; }
     .search-page .sub-head { font-size: 0.95rem; color: var(--ink-soft); margin: 18px 0 4px; }
+    .search-page .sub-head small { font-weight: 400; }
   </style>
 main_class: search-page
 ---
@@ -33,7 +34,7 @@ main_class: search-page
   <label>Votes in <select id="chamber" name="chamber" form="search-form">
     <option value="">both chambers</option><option value="house">the House</option><option value="senate">the Senate</option>
   </select></label>
-  <label>Sort votes <select id="sort" name="sort" form="search-form">
+  <label>Sort <select id="sort" name="sort" form="search-form">
     <option value="match">best match</option><option value="newest">newest first</option><option value="oldest">oldest first</option>
   </select></label>
   <label><input type="checkbox" id="surveyed-only" name="surveyed" value="1" form="search-form"> Only votes a survey asked about</label>
@@ -73,14 +74,19 @@ addEventListener("DOMContentLoaded", () => {
 
   function membersGroup(members) {
     if (!members?.length) return null;
+    // Former members arrive most recently in office first; "oldest first" turns that around.
+    // (Current members keep their seat order: senators, then districts.)
+    const oldest = $("sort").value === "oldest";
     const current = members.filter(m => !m.former), former = members.filter(m => m.former);
+    if (oldest) former.reverse();
     const list = ms => el("ul", { class: "plain" }, ms.map(m => el("li", { class: "result" },
         el("a", { href: `index.html#${m.state}/${m.bioguide_id}` }, m.name), " ",
         el("span", { class: "meta" }, `${m.chamber === "senate" ? `${m.former ? "Former senator" : "Senator"}, ${m.state}` : `${m.former ? "Former representative" : "Representative"}, ${m.seat}`} · ${m.party}` +
           (m.former && m.left_office ? ` · until ${date(m.left_office)}` : "")))));
     return el("section", { class: "group" }, el("h2", {}, "Members"),
       current.length ? list(current) : null,
-      former.length ? [el("h3", { class: "sub-head" }, "Former members"), list(former)] : null);
+      former.length ? [el("h3", { class: "sub-head" }, "Former members",
+        el("small", {}, oldest ? " · earliest to leave first" : " · most recently in office first")), list(former)] : null);
   }
 
   function questionsGroup(questions, total) {
