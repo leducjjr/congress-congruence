@@ -86,6 +86,8 @@ def area_of(label: str, home: str | None) -> tuple[str, int | None] | None:
         st = next((c for n, c in STATE_NAMES.items() if n.lower() in s.lower()), None) or home
         return (st, int(m.group(1))) if st else None
     name = re.sub(r"(?i)^state of |\(?statewide\)?|\bstate\b", "", s).strip(" ()-")
+    if not name and re.search(r"(?i)statewide", s):
+        return (home, None) if home else None       # '(Statewide)' alone: the state name wrapped onto the line above
     if name in STATE_NAMES:
         return STATE_NAMES[name], None
     if name.upper() in CODES:

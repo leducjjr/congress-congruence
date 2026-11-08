@@ -93,6 +93,8 @@ def test_area_labels():
     assert ppc.area_of("District 2", "IA") == ("IA", 2)
     assert ppc.area_of("3rd District", "IA") == ("IA", 3)
     assert ppc.area_of("AK At-Large", None) == ("AK", 0)
+    assert ppc.area_of("(Statewide)", "GA") == ("GA", None)          # state name wrapped to the line above
+    assert ppc.area_of("Iowa CD2", None) == ("IA", 2)
     assert ppc.area_of("National", "TX") is None
     assert ppc.area_of("District 2", None) is None            # no state to put it in
 
