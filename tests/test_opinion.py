@@ -217,7 +217,7 @@ def test_chamber_notes_only_show_on_that_chambers_panels(client):
     senate = {i["item"]: i["note"] for i in client.get("/v1/members/S000001/opinion").json()["items"]}
     assert house["CC25_340e"] is None and "cloture" in senate["CC25_340e"]       # Senate-only note
     assert "H.Res. 590" in house["CC25_340g"] and senate["CC25_340g"] is None     # House-only note
-    assert "full wording" in house["CC25_340f"] and "full wording" in senate["CC25_340f"]  # item-level note
+    assert "exact question" in house["CC25_340f"] and "exact question" in senate["CC25_340f"]  # item-level note
 
 
 def test_api_names_the_survey_with_links(client):
