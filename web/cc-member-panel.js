@@ -78,9 +78,15 @@
     .dot { all: unset; flex: 0 0 auto; display: inline-flex; cursor: pointer; padding: 2px 0; border-radius: 3px; }
     .dot:hover svg { transform: scale(1.35); }
     @media (prefers-reduced-motion: no-preference) { .dot svg { transition: transform 0.1s; } }
-    ol.votes li.found { background: var(--mark-soft); border-radius: 6px; }
+    ol.votes li.found, .op-list li.found { background: var(--mark-soft); border-radius: 6px; }
+    .intro { margin: -4px 0 10px; font-size: 0.85rem; color: var(--ink-soft); max-width: 70ch; }
+    .op-tag {
+      grid-column: 2; justify-self: start; margin-top: 4px; font: inherit; font-size: 0.8rem; color: var(--ink);
+      background: var(--surface-sunk); border: 1px solid var(--rule); border-radius: 999px; padding: 1px 10px; cursor: pointer;
+    }
+    .op-tag:hover { border-color: var(--mark); }
     @media (prefers-reduced-motion: no-preference) {
-      ol.votes li.found { animation: found 2.4s ease-out forwards; }
+      ol.votes li.found, .op-list li.found { animation: found 2.4s ease-out forwards; }
       @keyframes found { 0%, 60% { background: var(--mark-soft); } 100% { background: transparent; } }
     }
     .legend {
@@ -317,6 +323,11 @@
 
       if (votes.length) {
         parts.push(h("h3", {}, "Recent votes"));
+        parts.push(h("p", { class: "intro" },
+          "Every recorded floor vote, newest first: what the member did, and the result. ",
+          this.opinion?.items?.length
+            ? "Votes marked \u201cSurveyed\u201d also appear in the comparison above; on the rest, constituents weren\u2019t asked."
+            : "Constituents\u2019 views aren\u2019t available for these votes."));
         parts.push(h("ol", { class: "votes" }, votes.slice(0, this.showing).map(v => this.voteRow(v))));
         if (this.showing < votes.length) {
           const btn = h("button", { class: "more", type: "button" }, "Show more votes");
@@ -340,7 +351,11 @@
         this.showing = Math.min(this.votes.length, Math.ceil((index + 1) / this.listSize) * this.listSize);
         this.render();
       }
-      const row = this.root.querySelector(`li[data-roll="${CSS.escape(rollCallId)}"]`);
+      this.flash(this.root.querySelector(`li[data-roll="${CSS.escape(rollCallId)}"]`));
+    }
+
+    // Scroll a row into view and highlight it briefly.
+    flash(row) {
       if (!row) return;
       const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
       row.scrollIntoView({ behavior: calm ? "auto" : "smooth", block: "center" });
@@ -365,34 +380,54 @@
           h("span", { class: "their" }, `Voted ${POSITION_TEXT[v.position] === "Did not vote" ? "— did not vote" : POSITION_TEXT[v.position] || v.position_detail}`),
           v.position_detail && !["Yea", "Nay", "Present", "Not Voting"].includes(v.position_detail) ? ` (${v.position_detail})` : "",
           `. ${v.question ? v.question + ", " : ""}${(v.result || "").toLowerCase()}${tally}. `,
-          h("a", { href: v.official_url, target: "_blank", rel: "noopener" }, fmtDate(v.date))));
+          h("a", { href: v.official_url, target: "_blank", rel: "noopener" }, fmtDate(v.date))),
+        this.surveyedTag(v));
     }
 
-    opinionSection() {
-      const o = this.opinion;
-      if (!o || !o.items || !o.items.length) return null;
+    // "Surveyed: TX-6 62% support, with the district's majority" - jumps to the comparison.
+    surveyedTag(v) {
+      const item = (this.opinion?.items || []).find(i => i.vote.roll_call_id === v.roll_call_id);
+      if (!item) return null;
+      const { where, verdict } = this.area();
+      const tail = item.agreement === "too_close" ? ", too close to call"
+        : verdict[item.agreement] ? `, ${verdict[item.agreement]}` : "";
+      const tag = h("button", { type: "button", class: "op-tag" },
+        `Surveyed: ${where} ${Math.round(item.constituents.support_pct)}% support${tail}`);
+      tag.addEventListener("click", () => this.flash(this.root.querySelector(`li[data-op="${CSS.escape(v.roll_call_id)}"]`)));
+      return tag;
+    }
+
+    area() {
       const m = this.member;
       // "TX" or "TX-6", with a non-breaking hyphen so it never splits across lines
-      const where = (m.chamber === "senate" ? m.state : o.area).replace("-", "\u2011");
+      const where = (m.chamber === "senate" ? m.state : (this.opinion?.area || m.seat)).replace("-", "\u2011");
       const whose = m.chamber === "senate" ? "state's" : "district's";
-      const s = o.summary;
-      const lead = s.clear_majority
-        ? h("p", { class: "op-lead" }, "Voted with ", h("strong", {}, `${s.with_majority} of ${s.clear_majority}`),
-            ` surveyed votes where ${where}'s estimated majority was clear.`)
-        : h("p", { class: "op-lead" }, `On these votes, ${where}'s estimated opinion was too close to call.`);
-
       const verdict = {
         with: `with the ${whose} majority`,
         against: `against the ${whose} majority`,
         too_close: `${where} too close to call`,
         did_not_vote: "",
       };
+      return { where, whose, verdict };
+    }
+
+    opinionSection() {
+      const o = this.opinion;
+      if (!o || !o.items || !o.items.length) return null;
+      const m = this.member;
+      const { where, verdict } = this.area();
+      const s = o.summary;
+      const lead = s.clear_majority
+        ? h("p", { class: "op-lead" }, "Voted with ", h("strong", {}, `${s.with_majority} of ${s.clear_majority}`),
+            ` surveyed votes where ${where}'s estimated majority was clear.`)
+        : h("p", { class: "op-lead" }, `On these votes, ${where}'s estimated opinion was too close to call.`);
+
       const rows = o.items.map(i => {
         const c = i.constituents;
         const [lo, hi] = c.range_pct;
         const voted = i.position === "yea" || i.position === "nay" ? `Voted ${POSITION_TEXT[i.position]}` : "Did not vote";
         const tail = verdict[i.agreement] ? `, ${verdict[i.agreement]}` : "";
-        return h("li", {},
+        return h("li", { "data-op": i.vote.roll_call_id },
           h("p", { class: "op-q" }, i.question),
           this.rangeBar(c.support_pct, lo, hi, `${where}: about ${Math.round(c.support_pct)}% support, likely between ${Math.round(lo)}% and ${Math.round(hi)}%`),
           h("p", { class: "op-est" },
@@ -409,6 +444,10 @@
         : "";
       return h("section", { class: "opinion" },
         h("h3", {}, "Compared with constituents"),
+        h("p", { class: "intro" },
+          `Did this member vote the way most people in ${where} wanted? A national survey asked people `,
+          "about a few major bills; this section compares the member's vote on each with what people where they ",
+          "live said. Only bills the survey asked about can be compared."),
         lead,
         h("div", { class: "op-scale", "aria-hidden": "true" },
           h("span", {}, "All oppose"), h("span", {}, "Even split"), h("span", {}, "All support")),
