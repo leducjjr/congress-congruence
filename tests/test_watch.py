@@ -195,3 +195,13 @@ def test_run_separates_review_from_updates(project, conn, monkeypatch):
     assert result == {"needs_review": 1, "updated": 1, "errors": ["C: boom"]}
     log = (project / "logs" / "review_needed.txt").read_text()
     assert "CES 2027 needs review" in log and "Loaded ACS 2025" in log
+
+
+def test_older_years_item_wording_is_recognized():
+    columns = ["CC316a", "CC316b", "CC310", "V101"]
+    labels = {"CC316a": "Roll Call Votes -- Stem Cell Research", "CC316b": "Roll call vote -- Iraq withdrawal",
+              "CC310": "Do you approve of the way the President is handling his job", "V101": "weight"}
+    values = {"CC316a": {1: "For", 2: "Against"}, "CC316b": {1.0: "Support", 2.0: "Oppose"},
+              "CC310": {1: "Strongly approve", 2: "Somewhat approve"}}
+    assert watch.congress_items(columns, labels, values) == [
+        ("CC316a", "Stem Cell Research"), ("CC316b", "Iraq withdrawal")]

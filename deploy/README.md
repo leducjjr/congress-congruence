@@ -212,6 +212,22 @@ sudo systemctl restart congress-api && scripts/publish_web.sh   # once, for the 
 
 Stopping it (or a reboot) is harmless: run the same command again and it carries on.
 
+## Adding earlier CES years
+
+Once the votes of the matching Congresses are loaded (see above), prepare each past CES year for
+review. This downloads each year's data file (100–800 MB), writes `logs/ces_<year>_inspect.txt`,
+and drafts `config/drafts/ces_<year>_items.yaml` with the closest-matching votes as comments:
+
+```bash
+git pull
+nohup python -m congress_congruence.ingest.watch --draft $(seq 2007 2023) > logs/ces_drafts.log 2>&1 &
+tail -f logs/ces_drafts.log
+tar czf ~/ces_drafts.tgz config/drafts logs/ces_*_inspect.txt     # one file to review
+```
+
+A person (or Claude) checks each draft, saves it as `config/ces_<year>_items.yaml`, and then
+`python -m congress_congruence.ingest.ces link <year>` / `load <year>`.
+
 ## Loading state ballot-measure results
 
 The results are typed into `config/ballot_<year>_items.yaml` (certified counts, with a link

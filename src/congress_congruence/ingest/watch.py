@@ -2,6 +2,7 @@
 
     python -m congress_congruence.ingest.watch          # check every source (the monthly job)
     python -m congress_congruence.ingest.watch --list   # show what has been seen
+    python -m congress_congruence.ingest.watch --draft 2008 2010   # prepare past years for review
 
 Nothing here loads data into the panel. When a source publishes something new, the
 watcher records it, does the preparation that needs no judgment, and asks for review:
@@ -147,13 +148,21 @@ def prepare_new_year(conn, year: int, rel: dict) -> str:
             f"Draft item list for review: {out}")
 
 
+FOR_AGAINST = {("support", "oppose"), ("for", "against"), ("favor", "oppose"), ("yes", "no")}
+ABOUT_CONGRESS = re.compile(r"congress|roll ?call|\bvote|\bbill\b|\bact\b|legislation|senate|house", re.I)
+
+
 def congress_items(columns, labels, values) -> list[tuple[str, str]]:
-    """(variable, question) for support/oppose questions about actions of Congress."""
+    """(variable, question) for support/oppose questions about actions of Congress. Older years word
+    the answers differently ("For"/"Against") and label items "Roll call vote -- ..." rather than
+    naming Congress, so both are accepted."""
     out = []
     for c in columns:
         label = labels.get(c) or ""
         answers = {str(k).split(".")[0]: str(v).strip().lower() for k, v in (values.get(c) or {}).items()}
-        if answers.get("1") == "support" and answers.get("2") == "oppose" and re.search(r"congress", label, re.I):
+        pair = (answers.get("1", "").split()[0] if answers.get("1") else "",
+                answers.get("2", "").split()[0] if answers.get("2") else "")
+        if pair in FOR_AGAINST and ABOUT_CONGRESS.search(label):
             question = label.split("--", 1)[-1].strip()
             out.append((c, question))
     return out
@@ -186,8 +195,12 @@ def candidate_votes(conn, congress: int, question: str, limit: int = 4) -> list[
 
 def draft_items(conn, year: int, rel: dict, columns, labels, values, nrows) -> str:
     congress = ces.survey_congress(year)
+    # Districts as drawn for the Congress whose votes are compared (a redistricting year's file can
+    # carry both the old and the new lines).
     district_col = next((c for c in (f"cdid{congress}", f"cdid{congress + 1}") if c in columns), "CHECK")
     weight = [w for w in ("commonweight", "commonpostweight") if w in columns]
+    other_weights = [c for c in columns if re.search(r"weight", c, re.I) and c not in weight]
+    geography = [c for c in columns if re.search(r"^cd|cdid|district|inputstate|^state", c, re.I)]
     lines = [
         f"# DRAFT written by the survey watcher on {date.today()}: needs review before use.",
         f"# {rel['title']} ({rel['id']}), version {rel['version']}, {nrows:,} respondents.",
@@ -197,11 +210,14 @@ def draft_items(conn, year: int, rel: dict, columns, labels, values, nrows) -> s
         "# Check which wave asked these questions (pre- or post-election) and set the weight to match.",
         f"# Then save as config/ces_{year}_items.yaml and run `ces link {year}`.",
         "",
+        f"# Weight columns in the file: {', '.join(weight + other_weights) or 'none found'}",
+        f"# Geography columns in the file: {', '.join(geography[:20]) or 'none found'}",
+        "",
         f"survey: CES {year}",
         f"dataset_id: {rel['id']}",
         f"weight_preference: {json.dumps(weight)}",
         f"district_column: {district_col}",
-        "state_column: inputstate",
+        f"state_column: {'inputstate' if 'inputstate' in columns else 'CHECK'}",
         "",
         "source:",
         f"  title: Cooperative Election Study {year}",
@@ -300,8 +316,31 @@ def run(conn) -> dict:
     return {"needs_review": len(review), "updated": len(info), "errors": errors}
 
 
+def draft_years(years: list[int]) -> int:
+    """Prepare past CES years for review, as for a new release: download, inspection report and a
+    draft item file each. For adding years that were published before the watcher started."""
+    releases = ces_releases()
+    state = load_state()
+    failed = 0
+    with db.connect() as conn:
+        for year in years:
+            rel = releases.get(year)
+            if not rel:
+                print(f"CES {year}: not found in the Dataverse collection.")
+                failed += 1
+                continue
+            state.setdefault(str(year), {**rel, "first_seen": date.today().isoformat()})
+            save_state(state)                    # so ces.dataset_id() can find it
+            message = prepare_new_year(conn, year, rel)
+            failed += "failed" in message
+            print(f"CES {year}: {message}")
+    return 1 if failed else 0
+
+
 def main(argv: list[str]) -> int:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
+    if argv[1:2] == ["--draft"] and argv[2:] and all(a.isdigit() for a in argv[2:]):
+        return draft_years([int(a) for a in argv[2:]])
     if argv[1:] == ["--list"]:
         for year, rel in sorted(load_state().items()):
             print(f"CES {year}: {rel['id']}  version {rel['version']}  first seen {rel.get('first_seen')}")
