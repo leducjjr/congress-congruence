@@ -89,6 +89,7 @@
     h3[tabindex]:focus { outline: none; }
     h3[tabindex]:focus-visible { outline: 2px solid var(--mark); outline-offset: 4px; }
     h3 { scroll-margin-top: 12px; }
+    .intro + .intro { margin-top: 0; }
     .intro { margin: -4px 0 10px; font-size: 0.85rem; color: var(--ink-soft); max-width: 70ch; }
     .op-tag {
       grid-column: 2; justify-self: start; margin-top: 4px; font: inherit; font-size: 0.8rem; color: var(--ink);
@@ -152,8 +153,7 @@
     .op-vote { margin: 2px 0 0; font-size: 0.9rem; display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
     .op-vote svg { align-self: center; }
     .op-vote a { color: var(--ink-soft); white-space: nowrap; font-size: 0.85rem; }
-    .op-note, .op-about { margin: 4px 0 0; font-size: 0.8rem; color: var(--ink-soft); }
-    .op-about { margin-top: 10px; }
+    .op-note { margin: 4px 0 0; font-size: 0.8rem; color: var(--ink-soft); }
     .op-source { margin: 12px 0 0; font-size: 0.8rem; color: var(--ink-soft); }
     .op-source strong { color: var(--ink); font-weight: 600; }
     .op-source a, .op-note a { color: var(--ink-soft); }
@@ -497,16 +497,18 @@
           `Did this member vote the way most people in ${where} wanted? A national survey asked people `,
           "about a few major bills; this section compares the member's vote on each with what people where they ",
           "live said. Only bills the survey asked about can be compared."),
+        h("p", { class: "intro" },
+          "How to read the bars: the dark mark is the estimated share who support the bill, and the shaded band is ",
+          "where support likely falls. The tick in the middle is an even split; if the band crosses it, the area is ",
+          "too close to call. ",
+          m.chamber === "senate"
+            ? "Senators are compared with their whole state."
+            : "House districts have few respondents each, so estimates lean on statewide answers and many are too close to call."),
         lead,
         h("div", { class: "op-scale", "aria-hidden": "true" },
           h("span", {}, "All oppose"), h("span", {}, "Even split"), h("span", {}, "All support")),
         h("ol", { class: "op-list" }, rows),
-        sourceLine,
-        h("p", { class: "op-about" },
-          m.chamber === "senate"
-            ? "Senators are compared with their whole state. "
-            : "House districts have few respondents each, so estimates lean on statewide answers and many are too close to call. ",
-          "The shaded range is where support likely falls; a range crossing 50% is too close to call."));
+        sourceLine);
     }
 
     rangeBar(est, lo, hi, label) {
