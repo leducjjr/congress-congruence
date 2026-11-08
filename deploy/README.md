@@ -101,3 +101,51 @@ sudo systemctl status congress-api        # is the API running?
 sudo journalctl -u congress-api -n 50     # its recent log
 sudo tail -20 /var/log/nginx/error.log    # web server errors
 ```
+
+## Backups
+
+`scripts/run_job.sh backup` (scheduled daily at 05:40 UTC) writes
+`~/backups/congress-YYYY-MM-DD.dump`, checks it's readable, and keeps 14 days.
+
+Test a restore now and then, into a scratch database:
+
+```bash
+createdb congress_restore_test
+pg_restore --no-owner -d congress_restore_test ~/backups/congress-YYYY-MM-DD.dump
+psql congress_restore_test -c "select count(*) from core.roll_call;"
+dropdb congress_restore_test
+```
+
+These copies are on the same server. To keep one somewhere else, copy it to
+your PC from PowerShell every week or two:
+
+```powershell
+scp john@162.214.171.209:backups/congress-YYYY-MM-DD.dump $HOME\Documents\
+```
+
+## Alerts (healthchecks.io)
+
+Each scheduled job can report to healthchecks.io, which emails you when a job
+fails or doesn't report on time (which also catches the server being down).
+
+1. Sign up at https://healthchecks.io (free plan).
+2. Create one check per job, with these schedules (cron, UTC) and a grace time:
+
+   | Check name | Schedule | Grace |
+   | --- | --- | --- |
+   | backup | `40 5 * * *` | 1 hour |
+   | members | `10 6 * * *` | 1 hour |
+   | house | `17 */2 * * *` | 1 hour |
+   | senate-voteview | `40 6 * * *` | 1 hour |
+
+3. Add each check's ping URL to `.env`:
+
+   ```
+   HEALTHCHECK_BACKUP=https://hc-ping.com/your-uuid-1
+   HEALTHCHECK_MEMBERS=https://hc-ping.com/your-uuid-2
+   HEALTHCHECK_HOUSE=https://hc-ping.com/your-uuid-3
+   HEALTHCHECK_SENATE_VOTEVIEW=https://hc-ping.com/your-uuid-4
+   ```
+
+Jobs report "started" and then "succeeded" or "failed" with their exit code.
+No `.env` line means no reporting for that job; nothing else changes.

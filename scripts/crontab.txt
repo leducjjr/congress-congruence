@@ -1,8 +1,11 @@
 # congress-congruence scheduled jobs. Times are in the server's clock (UTC).
-# Install:  (crontab -l 2>/dev/null; cat scripts/crontab.txt) | crontab -
+# Install or update (replaces your crontab with this file):  crontab scripts/crontab.txt
 # Check:    crontab -l
 #
 # minute hour day month weekday  command
+
+# Database backup: daily, before the other jobs change anything.
+40 5 * * *      $HOME/congress-congruence/scripts/run_job.sh backup
 
 # Member list: daily, before the vote jobs, so new members are known first.
 10 6 * * *      $HOME/congress-congruence/scripts/run_job.sh members

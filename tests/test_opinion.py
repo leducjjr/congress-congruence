@@ -232,3 +232,39 @@ def test_api_names_the_survey_with_links(client):
 def test_api_reports_respondents_per_area(client):
     items = client.get("/v1/members/H000001/opinion").json()["items"]
     assert all(i["constituents"]["respondents"] == 300 for i in items)   # TX-1 in the made-up survey
+
+
+def test_older_votes_use_the_seat_held_at_the_time(conn, survey_file, monkeypatch):
+    """H000001 represented TX-2 in the 118th Congress and TX-1 now. A 2024 survey item on a
+    118th Congress vote must be compared with TX-2, and both surveys must be named as sources."""
+    from congress_congruence.ingest import ces
+    ces.load(conn, 2025, survey_file)
+    with conn.cursor() as cur:
+        cur.execute("""insert into core.term (bioguide_id, chamber, state, district, party, start_date, end_date)
+                       values ('H000001', 'house', 'TX', 2, 'Republican', '2023-01-03', '2025-01-03')""")
+        cur.execute("""insert into core.roll_call (roll_call_id, chamber, congress, session, roll_number, vote_date,
+                       question, result, source) values ('h-118-2-50', 'house', 118, 2, 50, '2024-03-01',
+                       'On Passage', 'Passed', 'test')""")
+        cur.execute("insert into core.member_vote values ('h-118-2-50', 'H000001', 'yea', 'Yea', null, null)")
+        cur.execute("""insert into core.survey values ('CES 2024', 'Cooperative Election Study 2024', 'Fall 2024',
+                       60000, 'https://example/data', 'https://example/guide24.pdf', 'https://example/about')""")
+        cur.execute("insert into core.survey_item (survey, variable, question) values ('CES 2024', 'CC24_300', 'A 2024 item')")
+        cur.execute("insert into core.survey_item_vote (survey, variable, chamber, roll_call_id) "
+                    "values ('CES 2024', 'CC24_300', 'house', 'h-118-2-50')")
+        for d, support in ((1, 0.2), (2, 0.8)):      # only TX-2 supports: comparing with TX-1 would say "against"
+            cur.execute("""insert into core.opinion_estimate (survey, variable, state, district, respondents,
+                           effective_n, raw_support, support, support_low, support_high, majority, method)
+                           values ('CES 2024', 'CC24_300', 'TX', %s, 100, 90, %s, %s, %s, %s, %s, 'test')""",
+                        (d, support, support, support - 0.1, support + 0.1, "support" if support > 0.5 else "oppose"))
+    conn.commit()
+
+    monkeypatch.setenv("API_DATABASE_URL", os.environ["TEST_DATABASE_URL"])
+    from fastapi.testclient import TestClient
+    from congress_congruence.api import app as api_module
+    with TestClient(api_module.app) as tc:
+        body = tc.get("/v1/members/H000001/opinion").json()
+    old = next(i for i in body["items"] if i["item"] == "CC24_300")
+    assert old["constituents"]["area_label"] == "TX-2" and old["agreement"] == "with"
+    new = next(i for i in body["items"] if i["item"] == "CC25_340c")
+    assert new["constituents"]["area_label"] == "TX-1"
+    assert {s["name"] for s in body["surveys"]} == {"CES 2024", "CES 2025"}

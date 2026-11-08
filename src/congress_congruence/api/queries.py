@@ -118,24 +118,31 @@ select distinct on (job) job, status, finished_at
  order by job, run_id desc
 """
 
-# Each surveyed item the member's chamber voted on, the member's vote, and the
-# estimated opinion where they represent: their state (senators) or district.
+# Every surveyed vote the member cast, with the estimated opinion where they
+# represented constituents ON THE DAY OF THAT VOTE (their state as a senator, their
+# district as a representative). Using the seat at vote time matters across Congresses:
+# districts are redrawn and members move between chambers.
 OPINION = """
 select si.survey, si.variable, si.question, coalesce(siv.reader_note, si.note) as note,
        r.roll_call_id, r.chamber, r.congress, r.session, r.roll_number, r.vote_date,
        r.question as vote_question, r.result, r.yea_total, r.nay_total,
        mv.position,
+       t.state, t.district as seat_district,
        oe.support, oe.support_low, oe.support_high, oe.majority, oe.respondents, oe.district
-  from core.survey_item si
-  join core.survey_item_vote siv on siv.survey = si.survey and siv.variable = si.variable
-                                and siv.chamber = %(chamber)s
-  join core.roll_call r on r.roll_call_id = siv.roll_call_id
-  left join core.member_vote mv on mv.roll_call_id = r.roll_call_id and mv.bioguide_id = %(id)s
+  from core.member_vote mv
+  join core.survey_item_vote siv on siv.roll_call_id = mv.roll_call_id
+  join core.survey_item si on si.survey = siv.survey and si.variable = siv.variable
+  join core.roll_call r on r.roll_call_id = mv.roll_call_id
+  join lateral (
+        select state, district from core.term t
+         where t.bioguide_id = mv.bioguide_id and t.chamber = r.chamber
+           and r.vote_date between t.start_date and t.end_date
+         order by t.start_date desc limit 1) t on true
   join core.opinion_estimate oe on oe.survey = si.survey and oe.variable = si.variable
-                               and oe.state = %(state)s
-                               and ((%(chamber)s = 'senate' and oe.district is null)
-                                 or (%(chamber)s = 'house' and oe.district = %(district)s))
- where mv.position is not null
+                               and oe.state = t.state
+                               and ((r.chamber = 'senate' and oe.district is null)
+                                 or (r.chamber = 'house' and oe.district = t.district))
+ where mv.bioguide_id = %(id)s
  order by r.vote_date, si.variable
 """
 

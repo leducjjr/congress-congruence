@@ -190,8 +190,7 @@ def agreement(position: str, majority: str) -> str:
 @app.get("/v1/members/{bioguide_id}/opinion")
 def member_opinion(bioguide_id: str, response: Response):
     row = get_member_row(bioguide_id)
-    rows = fetch(q.OPINION, {"id": bioguide_id, "chamber": row["chamber"], "state": row["state"],
-                             "district": row["district"] if row["chamber"] == "house" else None})
+    rows = fetch(q.OPINION, {"id": bioguide_id})
     surveys = {r["survey"]: r for r in fetch(q.SURVEYS)}
     items = [{
         "survey": r["survey"],
@@ -206,7 +205,8 @@ def member_opinion(bioguide_id: str, response: Response):
         },
         "position": r["position"],
         "constituents": {
-            "area": "state" if row["chamber"] == "senate" else "district",
+            "area": "state" if r["chamber"] == "senate" else "district",
+            "area_label": q.seat_label(r["state"], r["seat_district"], r["chamber"]),   # seat at vote time
             "support_pct": round(100 * r["support"], 1),
             "range_pct": [round(100 * r["support_low"], 1), round(100 * r["support_high"], 1)],
             "majority": r["majority"],

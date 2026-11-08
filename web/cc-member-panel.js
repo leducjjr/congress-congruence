@@ -421,82 +421,88 @@
     surveyedTag(v) {
       const item = (this.opinion?.items || []).find(i => i.vote.roll_call_id === v.roll_call_id);
       if (!item) return null;
-      const { where, verdict } = this.area();
-      const tail = item.agreement === "too_close" ? ", too close to call"
-        : verdict[item.agreement] ? `, ${verdict[item.agreement]}` : "";
+      const where = item.constituents.area_label.replace("-", "\u2011");
+      const whose = item.constituents.area === "state" ? "state's" : "district's";
+      const tail = { with: `, with the ${whose} majority`, against: `, against the ${whose} majority`,
+                     too_close: ", too close to call" }[item.agreement] || "";
       const tag = h("button", { type: "button", class: "op-tag" },
         `Surveyed: ${where} ${Math.round(item.constituents.support_pct)}% support${tail}`);
       tag.addEventListener("click", () => this.flash(this.root.querySelector(`li[data-op="${CSS.escape(v.roll_call_id)}"]`)));
       return tag;
     }
 
-    area() {
-      const m = this.member;
-      // "TX" or "TX-6", with a non-breaking hyphen so it never splits across lines
-      const where = (m.chamber === "senate" ? m.state : (this.opinion?.area || m.seat)).replace("-", "\u2011");
-      const whose = m.chamber === "senate" ? "state's" : "district's";
-      const verdict = {
-        with: `with the ${whose} majority`,
-        against: `against the ${whose} majority`,
-        too_close: `${where} too close to call`,
-        did_not_vote: "",
-      };
-      return { where, whose, verdict };
-    }
-
     opinionSection() {
       const o = this.opinion;
       if (!o || !o.items || !o.items.length) return null;
       const m = this.member;
-      const { where, verdict } = this.area();
+      const nb = text => text.replace("-", "‑");           // keep "TX-6" on one line
+      // Each comparison uses the seat the member held when the vote happened, so a
+      // redrawn district or a move between chambers shows correctly.
+      const areaOf = i => nb(i.constituents.area_label);
+      const areas = [...new Set(o.items.map(areaOf))];
+      const where = areas.length === 1 ? areas[0] : null;
+      const whose = i => i.constituents.area === "state" ? "state's" : "district's";
+      const verdictFor = i => ({
+        with: `with the ${whose(i)} majority`,
+        against: `against the ${whose(i)} majority`,
+        too_close: `${areaOf(i)} too close to call`,
+        did_not_vote: "",
+      })[i.agreement];
+
       const s = o.summary;
+      const theirs = where ? `${where}'s` : "their constituents'";
       const lead = s.clear_majority
         ? h("p", { class: "op-lead" }, "Voted with ", h("strong", {}, `${s.with_majority} of ${s.clear_majority}`),
-            ` surveyed votes where ${where}'s estimated majority was clear.`)
-        : h("p", { class: "op-lead" }, `On these votes, ${where}'s estimated opinion was too close to call.`);
+            ` surveyed votes where ${theirs} estimated majority was clear.`)
+        : h("p", { class: "op-lead" }, `On these votes, ${theirs} estimated opinion was too close to call.`);
 
-      const survey = (o.surveys || [])[0];
-      const guide = survey?.guide_url;
+      const surveys = new Map((o.surveys || []).map(sv => [sv.name, sv]));
+      const several = surveys.size > 1;
       const rows = o.items.map(i => {
         const c = i.constituents;
         const [lo, hi] = c.range_pct;
+        const here = areaOf(i);
+        const sv = surveys.get(i.survey);
         const voted = i.position === "yea" || i.position === "nay" ? `Voted ${POSITION_TEXT[i.position]}` : "Did not vote";
-        const tail = verdict[i.agreement] ? `, ${verdict[i.agreement]}` : "";
+        const verdict = verdictFor(i);
         return h("li", { "data-op": i.vote.roll_call_id },
           h("p", { class: "op-q" }, i.question),
-          this.rangeBar(c.support_pct, lo, hi, `${where}: about ${Math.round(c.support_pct)}% support, likely between ${Math.round(lo)}% and ${Math.round(hi)}%`),
+          this.rangeBar(c.support_pct, lo, hi, `${here}: about ${Math.round(c.support_pct)}% support, likely between ${Math.round(lo)}% and ${Math.round(hi)}%`),
           h("p", { class: "op-est" },
-            `${where}: ${Math.round(c.support_pct)}% support (likely ${Math.round(lo)}–${Math.round(hi)}%), `,
-            `from ${c.respondents.toLocaleString()} ${c.respondents === 1 ? "person" : "people"} surveyed in ${where}`,
-            c.respondents < 20 && m.chamber === "house" ? ", so this leans mostly on statewide answers" : "",
+            `${here}: ${Math.round(c.support_pct)}% support (likely ${Math.round(lo)}–${Math.round(hi)}%), `,
+            `from ${c.respondents.toLocaleString()} ${c.respondents === 1 ? "person" : "people"} surveyed in ${here}`,
+            c.respondents < 20 && c.area === "district" ? ", so this leans mostly on statewide answers" : "",
+            several && sv ? ` (${sv.title})` : "",
             "."),
           h("p", { class: "op-vote" }, mark(i.position, 11),
-            h("span", {}, h("strong", {}, voted), tail, ". "),
+            h("span", {}, h("strong", {}, voted), verdict ? `, ${verdict}` : "", ". "),
             h("a", { href: i.vote.official_url, target: "_blank", rel: "noopener" }, fmtDate(i.vote.date))),
           i.note ? h("p", { class: "op-note" }, i.note) : null,
-          guide ? h("p", { class: "op-note" },
-            h("a", { href: guide, target: "_blank", rel: "noopener",
-                     title: `Opens the survey guide; search it for ${i.item}` },
+          sv?.guide_url ? h("p", { class: "op-note" },
+            h("a", { href: sv.guide_url, target: "_blank", rel: "noopener",
+                     title: `Opens the ${sv.title} guide; search it for ${i.item}` },
               "See the exact question"), ` (in the survey guide, search for ${i.item})`) : null);
       });
 
       const link = (href, text) => href ? h("a", { href, target: "_blank", rel: "noopener" }, text) : null;
-      const sourceLine = survey ? h("p", { class: "op-source" },
-        h("strong", {}, "Source: "),
-        `${survey.title}`,
-        survey.fielded || survey.respondents
-          ? ` (${[survey.fielded && `interviewed ${survey.fielded}`,
-                 survey.respondents && `${survey.respondents.toLocaleString()} adults nationwide`].filter(Boolean).join(", ")})`
+      const sourceLines = [...surveys.values()].map((sv, k) => h("p", { class: "op-source" },
+        k === 0 ? h("strong", {}, several ? "Sources: " : "Source: ") : null,
+        `${sv.title}`,
+        sv.fielded || sv.respondents
+          ? ` (${[sv.fielded && `interviewed ${sv.fielded}`,
+                 sv.respondents && `${sv.respondents.toLocaleString()} adults nationwide`].filter(Boolean).join(", ")})`
           : "",
         ", a large academic survey of U.S. adults. ",
-        [link(survey.about_url, "About the survey"), link(survey.guide_url, "Questions asked (PDF)"),
-         link(survey.dataset_url, "Survey data")].filter(Boolean).flatMap((a, k) => k ? [" | ", a] : [a])) : null;
+        [link(sv.about_url, "About the survey"), link(sv.guide_url, "Questions asked (PDF)"),
+         link(sv.dataset_url, "Survey data")].filter(Boolean).flatMap((a, j) => j ? [" | ", a] : [a])));
+
       return h("section", { class: "opinion" },
         h("h3", { id: "compared", tabindex: "-1" }, "Compared with constituents"),
         h("p", { class: "intro" },
-          `Did this member vote the way most people in ${where} wanted? A national survey asked people `,
-          "about a few major bills; this section compares the member's vote on each with what people where they ",
-          "live said. Only bills the survey asked about can be compared."),
+          `Did this member vote the way most people ${where ? `in ${where}` : "they represented"} wanted? `,
+          `${several ? "National surveys" : "A national survey"} asked people about a few major bills; this section `,
+          "compares the member's vote on each with what people where they live said. ",
+          "Only bills a survey asked about can be compared."),
         h("p", { class: "intro" },
           "How to read the bars: the dark mark is the estimated share who support the bill, and the shaded band is ",
           "where support likely falls. The tick in the middle is an even split; if the band crosses it, the area is ",
@@ -508,7 +514,7 @@
         h("div", { class: "op-scale", "aria-hidden": "true" },
           h("span", {}, "All oppose"), h("span", {}, "Even split"), h("span", {}, "All support")),
         h("ol", { class: "op-list" }, rows),
-        sourceLine);
+        ...sourceLines);
     }
 
     rangeBar(est, lo, hi, label) {
