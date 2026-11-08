@@ -18,7 +18,8 @@
       margin: 0; background: var(--page); color: var(--ink);
       font-family: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif; line-height: 1.5;
     }
-    main { max-width: 34rem; margin: 0 auto; padding: 28px 16px 48px; }
+    main { padding: 28px clamp(16px, 3vw, 40px) 48px; }
+    .pick { max-width: 40rem; }
     h1 { font-size: 1.15rem; font-weight: 600; margin: 0 0 4px; }
     .intro { color: var(--ink-soft); margin: 0 0 20px; font-size: 0.95rem; }
     .pick { display: grid; grid-template-columns: 7rem minmax(0, 1fr); gap: 10px; margin: 0 0 20px; }

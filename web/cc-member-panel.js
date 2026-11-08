@@ -25,7 +25,7 @@
     document.head.appendChild(link);
   }
 
-  const STRIP_SIZE = 40; // marks in the vote strip
+  const STRIP_SIZE = 100; // votes fetched for the strip; narrow screens show the newest that fit
 
   const css = `
     :host {
@@ -36,8 +36,7 @@
       --surface-sunk: #f2f5f7;
       --mark: #2f6f66;          /* verdigris, the panel's one accent */
       --mark-soft: #cfe3de;
-      display: block;
-      max-width: 34rem;
+      display: block;          /* fills the width the host page gives it */
       font-family: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
       font-size: 15px;
       line-height: 1.5;
