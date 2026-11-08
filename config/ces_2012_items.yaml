@@ -1,0 +1,103 @@
+# CES 2012 questions about bills, matched to votes of the 112th Congress (2011-2012) and, for
+# two items, the 111th. Answer codes: 1 = Support, 2 = Oppose. Rules work as in
+# ces_2025_items.yaml; `ces link 2012` prints what each rule matched, for review.
+#
+# Districts: cdid is the 112th Congress lines (2002 redistricting), which the 111th also used,
+# so House votes of the 111th can be compared too (district_lines_also).
+# The 300-series questions were asked before the election: pre-election weight.
+# Several of these were decided by amendment votes (no bill number of their own), so their
+# rules name the date and the tally; a wrong guess finds nothing rather than the wrong vote.
+
+survey: CES 2012
+weight_preference: [weight_vv]
+district_column: cdid
+district_congress: 112
+district_lines_also: [111]
+state_column: inputstate
+
+source:
+  title: Cooperative Election Study 2012
+  fielded: fall 2012, before the election
+  dataset_url: https://doi.org/10.7910/DVN/HQEVPK
+  about_url: https://cces.gov.harvard.edu/
+
+final_questions: &final
+  - On Passage
+  - Passage of the Bill
+  - Suspend the Rules and Pass
+  - Concur
+  - Conference Report
+  - Agreeing to the Resolution
+  - Joint Resolution
+  - Concurrent Resolution
+
+items:
+  CC332A:
+    question: Ryan budget plan (House budget resolution for 2013)
+    votes:
+      house: {bill: [hconres, 112], questions: *final}
+      senate:
+        bill: [hconres, 112]
+        questions: [Motion to Proceed]
+        note: The Senate voted only on whether to take up the House budget, which failed.
+
+  CC332B:
+    question: Simpson-Bowles budget plan
+    votes:
+      house:
+        date: 2012-03-28
+        expect: "38-382"
+        note: Offered in the House as a substitute amendment to the 2013 budget resolution; it failed.
+
+  CC332C:
+    question: Middle Class Tax Cut Act (extend the Bush-era income tax cuts for incomes under $250,000)
+    votes:
+      senate: {bill: [s, 3412], questions: *final}
+
+  CC332D:
+    question: Tax Hike Prevention Act (extend the Bush-era income tax cuts for all incomes)
+    votes:
+      house:
+        bill: [hr, 8]
+        questions: [On Passage]
+        note: The House's August 2012 passage of the one-year extension for all incomes.
+
+  CC332E:
+    question: Let employers and insurers refuse to cover birth control for religious or moral reasons (Blunt amendment)
+    votes:
+      senate:
+        date: 2012-03-01
+        expect: "51-48"
+        support_side: nay
+        note: The vote was to set the amendment aside (table it); a Nay vote supported the exemption.
+
+  CC332F:
+    question: U.S.-Korea Free Trade Agreement
+    votes:
+      house:  {bill: [hr, 3080], questions: *final}
+      senate: {bill: [hr, 3080], questions: *final}
+
+  CC332G:
+    question: Repeal the Affordable Care Act
+    votes:
+      house: {bill: [hr, 6079], questions: *final}
+
+  CC332H:
+    question: Approve the Keystone XL pipeline
+    votes:
+      senate:
+        date: 2012-03-08
+        expect: "56-42"
+        note: An amendment to a highway bill to approve the pipeline; it needed 60 votes and failed.
+
+  CC332I:
+    question: Affordable Care Act of 2010
+    votes:
+      house:  {congress: 111, bill: [hr, 3590], questions: [Concur]}
+      senate: {congress: 111, bill: [hr, 3590], questions: [Passage]}
+
+  CC332J:
+    question: End "Don't Ask, Don't Tell" (let gay people serve openly in the military)
+    votes:
+      house:  {congress: 111, bill: [hr, 2965], questions: [Concur]}
+      senate: {congress: 111, bill: [hr, 2965], questions: [Concur]}

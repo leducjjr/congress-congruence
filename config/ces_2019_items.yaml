@@ -1,0 +1,53 @@
+# CES 2019 questions about bills, matched to votes of the 116th Congress (2019-2020) and, for the
+# Kavanaugh question, the 115th (Senate only; the House doesn't vote on nominations).
+# Answer codes: 1 = Support, 2 = Oppose. `ces link 2019` prints what each rule matched.
+#
+# Left out on purpose:
+#   CC19_327d, CC19_327e (repeal the ACA / restore its mandate): no floor vote in the 116th Congress.
+
+survey: CES 2019
+weight_preference: [commonweight]
+district_column: cdid116
+state_column: inputstate
+
+source:
+  title: Cooperative Election Study 2019
+  fielded: fall 2019
+  dataset_url: https://doi.org/10.7910/DVN/WOT7O8
+  about_url: https://cces.gov.harvard.edu/
+
+final_questions: &final
+  - On Passage
+  - Passage of the Bill
+  - Suspend the Rules and Pass
+  - Concur
+  - Conference Report
+  - Agreeing to the Resolution
+  - Joint Resolution
+  - Concurrent Resolution
+
+items:
+  CC19_328a:
+    question: Prohibit discrimination based on sexual orientation and gender identity (Equality Act)
+    votes:
+      house: {bill: [hr, 5], questions: *final}
+
+  CC19_328b:
+    question: Raise the minimum wage to $15 an hour (Raise the Wage Act)
+    votes:
+      house: {bill: [hr, 582], questions: *final}
+
+  CC19_328c:
+    question: Confirm Brett Kavanaugh to the Supreme Court
+    votes:
+      senate: {congress: 115, find: Kavanaugh, questions: [Nomination]}
+
+  CC19_328d:
+    question: Require equal pay for women and men doing similar jobs (Paycheck Fairness Act)
+    votes:
+      house: {bill: [hr, 7], questions: *final}
+
+  CC19_328e:
+    question: Give permanent resident status to immigrants brought to the U.S. as children (American Dream and Promise Act)
+    votes:
+      house: {bill: [hr, 6], questions: *final}

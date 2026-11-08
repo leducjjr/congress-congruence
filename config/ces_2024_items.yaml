@@ -6,8 +6,6 @@
 # Left out on purpose:
 #   CC24_340b (protect access to abortion services): no 118th Congress floor vote found
 #             that matches this wording. Add it if one is identified.
-#   CC24_340c (recognize same-sex and interracial marriages): the Respect for Marriage
-#             Act passed in 2022, in the 117th Congress, which isn't loaded.
 #   CC24_326c, CC24_328d: general policy questions, not tied to a vote in this Congress.
 
 survey: CES 2024
@@ -39,6 +37,13 @@ items:
         bill: [s, 4381]
         questions: [Cloture]
         note: The Senate's only floor vote was on cloture (whether to proceed), which failed.
+
+  CC24_340c:
+    question: Recognize same-sex and interracial marriages (Respect for Marriage Act)
+    votes:
+      # Passed in 2022 (117th Congress). Senators only: respondents' districts are the 118th
+      # Congress lines, which don't fit 117th Congress House seats.
+      senate: {congress: 117, bill: [hr, 8404], questions: [Passage]}
 
   CC24_340d:
     question: Ban TikTok unless China sells it to a U.S. company

@@ -332,14 +332,25 @@ def link(conn, year: int, cfg: dict) -> list[tuple]:
     and prints a review list.
 
     Per item: match: same (default) or related (a close but different bill: shown, never scored).
-    Per chamber rule: support_side: yea (default) or nay (e.g. an amendment to block the proposal)."""
+    Per chamber rule: support_side: yea (default) or nay (e.g. an amendment to block the proposal);
+    congress: an earlier Congress than the survey's (surveys sometimes ask about bills passed years
+    before). Such a rule is allowed for the House only when the survey's district column is for that
+    Congress's lines; otherwise respondents' districts and the members' seats wouldn't be the same areas."""
     congress = cfg.get("congress") or survey_congress(year)
+    lines = district_congress(cfg, congress)
+    # Congresses with the same district lines as the survey's column (e.g. the 111th and 112th
+    # both used the 2002 lines), listed in the item file after checking for mid-decade redraws.
+    same_lines = {lines, *map(int, cfg.get("district_lines_also") or [])}
     out = []
     print(f"Linking {cfg['survey']} items to votes of the {congress}th Congress")
     for var, item in cfg["items"].items():
         print(f"\n{var}: {item['question']}")
         for chamber, rule in item.get("votes", {}).items():
-            vote, n = match_vote(conn, chamber, congress, rule)
+            vote_congress = int(rule.get("congress", congress))
+            if chamber == "house" and vote_congress not in same_lines:
+                raise ValueError(f"{var}: a House vote of the {vote_congress}th Congress can't be compared with "
+                                 f"districts as drawn for the {lines}th ({cfg.get('district_column')}); use the Senate only")
+            vote, n = match_vote(conn, chamber, vote_congress, rule)
             if not vote:
                 print(f"  {chamber:6} NO MATCH for {rule}")
                 continue
@@ -351,11 +362,22 @@ def link(conn, year: int, cfg: dict) -> list[tuple]:
                 raise ValueError(f"{var}: support_side must be yea/nay and match same/related")
             if side == "nay" or kind == "related":
                 print(f"         support side: {side.title()}   match: {kind}")
+            if vote_congress != congress:
+                print(f"         from the {vote_congress}th Congress")
             criteria = {k: v for k, v in rule.items() if k not in ("note", "support_side")}
             out.append((cfg["survey"], var, chamber, vote["roll_call_id"],
                         f"latest of {n} votes matching {json.dumps(criteria, default=str)}", rule.get("note"),
                         side, kind))
     return out
+
+
+def district_congress(cfg: dict, default: int) -> int:
+    """The Congress whose district lines the survey's district column uses: district_congress if
+    set, else the number in a column named like cdid117, else the survey's own Congress."""
+    if cfg.get("district_congress"):
+        return int(cfg["district_congress"])
+    m = re.search(r"cdid(\d+)", str(cfg.get("district_column") or ""))
+    return int(m.group(1)) if m else default
 
 
 def save_items(cur, survey: str, src: dict, respondents: int | None,

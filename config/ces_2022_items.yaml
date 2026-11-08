@@ -1,0 +1,79 @@
+# CES 2022 questions about bills, matched to votes of the 117th Congress (2021-2022).
+# Answer codes: 1 = Support (or Favor), 2 = Oppose. `ces link 2022` prints what each rule matched.
+#
+# Districts: cdid117 (the file also has cdid118, the lines drawn after the 2020 census, which
+# don't fit 117th Congress votes).
+#
+# Left out on purpose:
+#   CC22_350f (stop large online platforms favoring their own products): no floor vote.
+#   CC22_327c, CC22_333c: general questions, not tied to a vote.
+
+survey: CES 2022
+weight_preference: [commonweight]
+district_column: cdid117
+state_column: inputstate
+
+source:
+  title: Cooperative Election Study 2022
+  fielded: fall 2022, before the election
+  dataset_url: https://doi.org/10.7910/DVN/PR4L8P
+  about_url: https://cces.gov.harvard.edu/
+
+final_questions: &final
+  - On Passage
+  - Passage of the Bill
+  - Suspend the Rules and Pass
+  - Concur
+  - Conference Report
+  - Agreeing to the Resolution
+  - Joint Resolution
+  - Concurrent Resolution
+
+items:
+  CC22_350a:
+    question: Authorize up to $1.9 trillion in COVID relief (American Rescue Plan)
+    votes:
+      house:  {bill: [hr, 1319], questions: *final}
+      senate: {bill: [hr, 1319], questions: *final}
+
+  CC22_350b:
+    question: Spend $150 billion a year for 8 years on roads, bridges, transit, water systems and broadband (Infrastructure Investment and Jobs Act)
+    votes:
+      house:  {bill: [hr, 3684], questions: *final}
+      senate: {bill: [hr, 3684], questions: *final}
+
+  CC22_350c:
+    question: Spend $2.2 trillion over ten years on prekindergarten, child care, college aid, housing and elder care (Build Back Better Act)
+    votes:
+      house:
+        bill: [hr, 5376]
+        questions: [On Passage]
+        note: >-
+          The House's November 2021 vote on Build Back Better. The Senate later replaced the bill's
+          text with the Inflation Reduction Act, so senators' votes on it aren't compared here.
+
+  CC22_350d:
+    question: Prohibit government restrictions on access to abortion services (Women's Health Protection Act)
+    votes:
+      house: {bill: [hr, 3755], questions: *final}
+      senate:
+        bill: [s, 4132]
+        questions: [Cloture]
+        note: The Senate voted only on whether to take up the bill (May 2022); it fell short of 60.
+
+  CC22_350e:
+    question: $52 billion for U.S. semiconductor manufacturing and research (CHIPS and Science Act)
+    votes:
+      house:  {bill: [hr, 4346], questions: *final}
+      senate: {bill: [hr, 4346], questions: *final}
+
+  CC22_350g:
+    question: Appoint Ketanji Brown Jackson to the Supreme Court
+    votes:
+      senate: {find: Ketanji, questions: [Nomination]}
+
+  CC22_350h:
+    question: Clean-energy tax credits, lower ACA premiums and Medicare drug price negotiation (Inflation Reduction Act)
+    votes:
+      house:  {bill: [hr, 5376], questions: [Concur]}
+      senate: {bill: [hr, 5376], questions: [Passage]}

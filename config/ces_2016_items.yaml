@@ -1,0 +1,74 @@
+# CES 2016 questions about bills, matched to votes of the 114th Congress (2015-2016).
+# Answer codes: 1 = For, 2 = Against. `ces link 2016` prints what each rule matched.
+#
+# Districts: cdid113 is the 113th/114th Congress lines (the file also has cdid115, the lines
+# after Florida, Virginia and North Carolina redrew, which don't fit 114th Congress votes).
+#
+# Left out on purpose:
+#   CC16_351A (confirm Merrick Garland): the Senate never voted.
+#   CC16_351D (Trade Adjustment Assistance), CC16_351G (Iran Sanctions Act): several votes could be
+#             meant and none clearly matches; add one if identified.
+#   CC16_351K (minimum wage): no floor vote in the 114th Congress.
+
+survey: CES 2016
+weight_preference: [commonweight]
+district_column: cdid113
+district_congress: 114
+state_column: inputstate
+
+source:
+  title: Cooperative Election Study 2016
+  fielded: fall 2016, before the election
+  dataset_url: https://doi.org/10.7910/DVN/GDF6Z0
+  about_url: https://cces.gov.harvard.edu/
+
+final_questions: &final
+  - On Passage
+  - Passage of the Bill
+  - Suspend the Rules and Pass
+  - Concur
+  - Conference Report
+  - Agreeing to the Resolution
+  - Joint Resolution
+  - Concurrent Resolution
+
+items:
+  CC16_351B:
+    question: Trans-Pacific Partnership trade agreement
+    match: related
+    note: >-
+      Congress never voted on the agreement itself; this is the 2015 law giving the President
+      authority to negotiate it for an up-or-down vote ("fast track").
+    votes:
+      house:  {bill: [hr, 2146], questions: *final}
+      senate: {bill: [hr, 2146], questions: *final}
+
+  CC16_351C:
+    question: USA Freedom Act (end bulk collection of phone records)
+    votes:
+      house:  {bill: [hr, 2048], questions: *final}
+      senate: {bill: [hr, 2048], questions: *final}
+
+  CC16_351E:
+    question: Education reform (Every Student Succeeds Act, replacing No Child Left Behind)
+    votes:
+      house:  {bill: [s, 1177], questions: [Conference Report]}
+      senate: {bill: [s, 1177], questions: [Conference Report]}
+
+  CC16_351F:
+    question: Highway and transportation funding (FAST Act)
+    votes:
+      house:  {bill: [hr, 22], questions: [Conference Report]}
+      senate: {bill: [hr, 22], questions: [Conference Report]}
+
+  CC16_351H:
+    question: Medicare Access and CHIP Reauthorization Act (change how Medicare pays doctors)
+    votes:
+      house:  {bill: [hr, 2], questions: *final}
+      senate: {bill: [hr, 2], questions: *final}
+
+  CC16_351I:
+    question: Repeal the Affordable Care Act
+    votes:
+      house:  {bill: [hr, 3762], questions: *final}
+      senate: {bill: [hr, 3762], questions: *final}

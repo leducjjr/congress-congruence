@@ -1,0 +1,70 @@
+# CES 2015 questions about bills, matched to votes of the 114th Congress (2015-2016) and, for
+# one item, the 113th (same district lines). Answer codes: 1 = Support, 2 = Oppose.
+# `ces link 2015` prints what each rule matched.
+#
+# Districts: cdid is the 114th Congress lines, the same as the 113th's (Florida and Virginia
+# redrew theirs for 2017).
+#
+# Left out on purpose:
+#   CC15_327C (Iran Sanctions Act), CC15_327F1 (renew Patriot Act phone surveillance),
+#   CC15_327G (Trade Adjustment Assistance): several 2015 votes could be meant and none clearly
+#             matches the wording; add one if identified.
+#   CC15_327E (normalize relations with Cuba): no floor vote.
+#   CC15_330c, CC15_330d, CC15_323_4: general questions or 2012 House votes under older lines.
+
+survey: CES 2015
+weight_preference: [weight]
+district_column: cdid
+district_congress: 114
+district_lines_also: [113]
+state_column: inputstate
+
+source:
+  title: Cooperative Election Study 2015
+  fielded: fall 2015
+  dataset_url: https://doi.org/10.7910/DVN/SWMWX8
+  about_url: https://cces.gov.harvard.edu/
+
+final_questions: &final
+  - On Passage
+  - Passage of the Bill
+  - Suspend the Rules and Pass
+  - Concur
+  - Conference Report
+  - Agreeing to the Resolution
+  - Joint Resolution
+  - Concurrent Resolution
+
+items:
+  CC15_327A:
+    question: Repeal the Affordable Care Act
+    votes:
+      house: {bill: [hr, 596], questions: *final}
+
+  CC15_327B:
+    question: Approve the Keystone XL pipeline
+    votes:
+      house:  {bill: [s, 1], questions: *final}
+      senate: {bill: [s, 1], questions: [Passage]}
+
+  CC15_327D:
+    question: Trans-Pacific Partnership trade agreement
+    match: related
+    note: >-
+      Congress never voted on the agreement itself; this is the 2015 law giving the President
+      authority to negotiate it for an up-or-down vote ("fast track").
+    votes:
+      house:  {bill: [hr, 2146], questions: *final}
+      senate: {bill: [hr, 2146], questions: *final}
+
+  CC15_327F2:
+    question: USA Freedom Act (end bulk collection of phone records)
+    votes:
+      house:  {bill: [hr, 2048], questions: *final}
+      senate: {bill: [hr, 2048], questions: *final}
+
+  CC15_327H:
+    question: Renew the Violence Against Women Act
+    votes:
+      house:  {congress: 113, bill: [s, 47], questions: *final}
+      senate: {congress: 113, bill: [s, 47], questions: *final}

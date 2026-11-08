@@ -1,0 +1,81 @@
+# CES 2018 questions about bills, matched to votes of the 115th Congress (2017-2018).
+# Answer codes: 1 = Support (or For), 2 = Oppose (or Against). `ces link 2018` prints what each
+# rule matched.
+#
+# Districts: cdid115 (the file also has cdid116, the lines after Pennsylvania redrew for 2019).
+#
+# Left out on purpose:
+#   CC18_325e_new, CC18_325f_new: general tax questions, not tied to one vote.
+
+survey: CES 2018
+weight_preference: [commonweight]
+district_column: cdid115
+state_column: inputstate
+
+source:
+  title: Cooperative Election Study 2018
+  fielded: fall 2018, before the election
+  dataset_url: https://doi.org/10.7910/DVN/ZSBZ7K
+  about_url: https://cces.gov.harvard.edu/
+
+final_questions: &final
+  - On Passage
+  - Passage of the Bill
+  - Suspend the Rules and Pass
+  - Concur
+  - Conference Report
+  - Agreeing to the Resolution
+  - Joint Resolution
+  - Concurrent Resolution
+
+items:
+  CC18_326:
+    question: The 2017 tax bill (Tax Cuts and Jobs Act)
+    votes:
+      house:  {bill: [hr, 1], questions: [Concur, Conference Report]}
+      senate: {bill: [hr, 1], questions: [Concur, Conference Report]}
+
+  CC18_327c:
+    question: Repeal the entire Affordable Care Act
+    votes:
+      senate:
+        date: 2017-07-26
+        expect: "45-55"
+        note: The Senate's vote on repealing the law without a replacement (an amendment to the House health bill); it failed.
+
+  CC18_327d:
+    question: Repeal only the Affordable Care Act's requirement that everyone have health insurance
+    match: related
+    note: The 2017 tax law ended the penalty for not having insurance, along with its tax changes.
+    votes:
+      house:  {bill: [hr, 1], questions: [Concur, Conference Report]}
+      senate: {bill: [hr, 1], questions: [Concur, Conference Report]}
+
+  CC18_327e:
+    question: Partly repeal the Affordable Care Act (American Health Care Act)
+    votes:
+      house: {bill: [hr, 1628], questions: [On Passage]}
+
+  CC18_328b:
+    question: Appoint Neil Gorsuch to the Supreme Court
+    votes:
+      senate: {find: Gorsuch, questions: [Nomination]}
+
+  CC18_328d:
+    question: Require the President to get Congress's approval to ease sanctions on Russia
+    votes:
+      house:  {bill: [hr, 3364], questions: *final}
+      senate: {bill: [hr, 3364], questions: *final}
+
+  CC18_328e:
+    question: Impose sanctions on countries and firms doing business with North Korea
+    match: related
+    note: Part of the 2017 sanctions law on Russia, Iran and North Korea.
+    votes:
+      house:  {bill: [hr, 3364], questions: *final}
+      senate: {bill: [hr, 3364], questions: *final}
+
+  CC18_328f:
+    question: Appoint Brett Kavanaugh to the Supreme Court
+    votes:
+      senate: {find: Kavanaugh, questions: [Nomination]}

@@ -1,0 +1,90 @@
+# CES 2020 questions about bills, matched to votes of the 116th Congress (2019-2020) and, for the
+# Kavanaugh question, the 115th (Senate only). Answer codes: 1 = Support, 2 = Oppose.
+# `ces link 2020` prints what each rule matched.
+#
+# Left out on purpose:
+#   CC20_327d, CC20_327e (repeal the ACA / restore its mandate): no floor vote in the 116th Congress.
+
+survey: CES 2020
+weight_preference: [commonweight]
+district_column: cdid116
+state_column: inputstate
+
+source:
+  title: Cooperative Election Study 2020
+  fielded: fall 2020, before the election
+  dataset_url: https://doi.org/10.7910/DVN/E9N6PH
+  about_url: https://cces.gov.harvard.edu/
+
+final_questions: &final
+  - On Passage
+  - Passage of the Bill
+  - Suspend the Rules and Pass
+  - Concur
+  - Conference Report
+  - Agreeing to the Resolution
+  - Joint Resolution
+  - Concurrent Resolution
+
+items:
+  CC20_350a:
+    question: Prohibit discrimination based on sexual orientation and gender identity (Equality Act)
+    votes:
+      house: {bill: [hr, 5], questions: *final}
+
+  CC20_350b:
+    question: Raise the minimum wage to $15 an hour (Raise the Wage Act)
+    votes:
+      house: {bill: [hr, 582], questions: *final}
+
+  CC20_350c:
+    question: Confirm Brett Kavanaugh to the Supreme Court
+    votes:
+      senate: {congress: 115, find: Kavanaugh, questions: [Nomination]}
+
+  CC20_350d:
+    question: Require equal pay for women and men doing similar jobs (Paycheck Fairness Act)
+    votes:
+      house: {bill: [hr, 7], questions: *final}
+
+  CC20_350e:
+    question: Give permanent resident status to immigrants brought to the U.S. as children (American Dream and Promise Act)
+    votes:
+      house: {bill: [hr, 6], questions: *final}
+
+  CC20_350f:
+    question: Remove President Trump from office for abuse of power
+    votes:
+      house:
+        bill: [hres, 755]
+        expect: "230-197"
+        note: The House vote to impeach on the first article (abuse of power).
+      senate:
+        date: 2020-02-05
+        expect: "48-52"
+        note: The Senate's verdict on the first article; a Yea vote was "guilty" (remove from office).
+
+  CC20_350g:
+    question: Remove President Trump from office for obstruction of Congress
+    votes:
+      house:
+        bill: [hres, 755]
+        expect: "229-198"
+        note: The House vote to impeach on the second article (obstruction of Congress).
+      senate:
+        date: 2020-02-05
+        expect: "47-53"
+        note: The Senate's verdict on the second article; a Yea vote was "guilty" (remove from office).
+
+  CC20_351a:
+    question: CARES Act ($2 trillion in coronavirus relief, March 2020)
+    votes:
+      senate:
+        bill: [hr, 748]
+        questions: *final
+        note: The House passed it by voice vote, so there is no House roll call to compare.
+
+  CC20_351b:
+    question: HEROES Act ($3 trillion more in coronavirus relief, May 2020)
+    votes:
+      house: {bill: [hr, 6800], questions: *final}

@@ -220,6 +220,29 @@ House district (`cdid119` for 2025, `cdid118` for 2024), survey weights, and ans
 **Exact wording.** "See the exact question" links to the survey guide on Dataverse, which
 the loader finds automatically. Readers search it for the item's code (e.g. `CC25_340a`).
 
+**Earlier years (2012–2023).** Prepared with `watch --draft`, then matched by hand in
+`config/ces_<year>_items.yaml`. What differs from year to year:
+- **Column names.** District columns are `cdid` (2012: 112th lines; 2014: 113th; 2015: 114th)
+  or `cdid<congress>`; weights are `weight_vv` (2012), `weight` (2013–2015), `weights_common`
+  (2017) and `commonweight` (2016, 2018–2023). Answers are Support/Oppose or For/Against, coded
+  1/2 in every year.
+- **Which lines.** A redistricting year's file carries both the old and new lines (e.g. 2016:
+  `cdid113` for the 113th/114th, `cdid115` for the lines drawn after); the item file uses the lines
+  of the Congress whose votes are compared.
+- **Votes from an earlier Congress.** Surveys often ask about bills passed years before (CES 2023
+  asks about the 2021 infrastructure law). A rule can name `congress:`. For the House that's
+  allowed only when the survey's district lines are the same as that Congress's
+  (`district_lines_also`, e.g. the 111th and 112th both used the 2002 lines); otherwise the item
+  is compared with senators only. The loader refuses a House rule that crosses lines.
+- **Amendment and procedural votes** (e.g. the 2012 Blunt amendment, tabled 51–48; the 2017
+  Senate repeal amendment, 45–55) have no bill of their own in the record, so their rules name
+  the date and the tally (`expect`), and a wrong guess finds nothing rather than the wrong vote.
+- **Left out:** questions with no floor vote (e.g. Merrick Garland, Cuba relations, a $15 minimum
+  wage in 2016), general policy questions, and items where several votes could be meant; each
+  file lists its omissions and why.
+- **2008–2011** use different column names (V-numbers) and are added once those are confirmed;
+  **2007** is published only as an SPSS file, which the loader doesn't read.
+
 ## 5. Constituent opinion: Program for Public Consultation (PPC)
 
 | | |

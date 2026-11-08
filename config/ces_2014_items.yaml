@@ -1,0 +1,59 @@
+# CES 2014 questions about bills, matched to votes of the 113th Congress (2013-2014) and, for
+# one item, the 112th (Senate only: House district lines changed in 2013).
+# Answer codes: 1 = Support, 2 = Oppose. `ces link 2014` prints what each rule matched.
+#
+# Districts: cdid is the 113th Congress lines.
+#
+# Left out on purpose:
+#   CC14_325_2 (Simpson-Bowles), CC14_325_4 (Tax Hike Prevention Act): 2012 votes in the House
+#             only, under the district lines used before 2013.
+#   CC14_324_*, CC14_326_4: general questions, not tied to a vote.
+
+survey: CES 2014
+weight_preference: [weight]
+district_column: cdid
+district_congress: 113
+state_column: inputstate
+
+source:
+  title: Cooperative Election Study 2014
+  fielded: fall 2014, before the election
+  dataset_url: https://doi.org/10.7910/DVN/XFXJVY
+  about_url: https://cces.gov.harvard.edu/
+
+final_questions: &final
+  - On Passage
+  - Passage of the Bill
+  - Suspend the Rules and Pass
+  - Concur
+  - Conference Report
+  - Agreeing to the Resolution
+  - Joint Resolution
+  - Concurrent Resolution
+
+items:
+  CC14_325_1:
+    question: Ryan budget plan (House budget resolution)
+    match: related
+    note: >-
+      The survey asked about "the Ryan budget"; this is the House's 2014 Ryan budget (for 2015),
+      which may not be the version the question describes.
+    votes:
+      house: {bill: [hconres, 96], questions: *final}
+
+  CC14_325_3:
+    question: Middle Class Tax Cut Act (extend the Bush-era income tax cuts for incomes under $250,000)
+    votes:
+      senate: {congress: 112, bill: [s, 3412], questions: *final}
+
+  CC14_325_5:
+    question: Raise the debt ceiling
+    votes:
+      house:  {bill: [s, 540], questions: *final}
+      senate: {bill: [s, 540], questions: *final}
+
+  CC14_331_1:
+    question: Agriculture bill (farm programs and food stamps, 2014 Farm Bill)
+    votes:
+      house:  {bill: [hr, 2642], questions: [Conference Report]}
+      senate: {bill: [hr, 2642], questions: [Conference Report]}

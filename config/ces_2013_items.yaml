@@ -1,0 +1,54 @@
+# CES 2013 questions about bills, matched to votes of the 113th Congress (2013-2014).
+# Answer codes: 1 = Support, 2 = Oppose. `ces link 2013` prints what each rule matched.
+#
+# Left out on purpose:
+#   CC332B (Simpson-Bowles budget): voted on only in the House, in March 2012 (112th Congress),
+#             under district lines that changed in 2013.
+
+survey: CES 2013
+weight_preference: [weight]
+district_column: cdid113
+state_column: inputstate
+
+source:
+  title: Cooperative Election Study 2013
+  fielded: fall 2013
+  dataset_url: https://doi.org/10.7910/DVN/KPP85M
+  about_url: https://cces.gov.harvard.edu/
+
+final_questions: &final
+  - On Passage
+  - Passage of the Bill
+  - Suspend the Rules and Pass
+  - Concur
+  - Conference Report
+  - Agreeing to the Resolution
+  - Joint Resolution
+  - Concurrent Resolution
+
+items:
+  CC332A:
+    question: Ban abortions after 20 weeks of pregnancy (Pain-Capable Unborn Child Protection Act)
+    votes:
+      house: {bill: [hr, 1797], questions: *final}
+
+  CC332C:
+    question: Repeal the Affordable Care Act
+    votes:
+      house: {bill: [hr, 45], questions: *final}
+
+  CC332E:
+    question: Let states collect sales tax on online purchases from out-of-state sellers (Marketplace Fairness Act)
+    votes:
+      senate: {bill: [s, 743], questions: *final}
+
+  CC332F:
+    question: Renew the Violence Against Women Act
+    votes:
+      house:  {bill: [s, 47], questions: *final}
+      senate: {bill: [s, 47], questions: *final}
+
+  CC332H:
+    question: Student Success Act (return control of K-12 school standards to states)
+    votes:
+      house: {bill: [hr, 5], questions: *final}

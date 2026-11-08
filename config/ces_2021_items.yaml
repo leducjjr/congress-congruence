@@ -1,0 +1,78 @@
+# CES 2021 questions about bills, matched to votes of the 117th Congress (2021-2022).
+# Answer codes: 1 = Support, 2 = Oppose. `ces link 2021` prints what each rule matched.
+#
+# Left out on purpose:
+#   CC21_320b, CC21_320c, CC21_324c: general questions, not tied to a vote.
+
+survey: CES 2021
+weight_preference: [commonweight]
+district_column: cdid117
+state_column: inputstate
+
+source:
+  title: Cooperative Election Study 2021
+  fielded: fall 2021
+  dataset_url: https://doi.org/10.7910/DVN/OPQOCU
+  about_url: https://cces.gov.harvard.edu/
+
+final_questions: &final
+  - On Passage
+  - Passage of the Bill
+  - Suspend the Rules and Pass
+  - Concur
+  - Conference Report
+  - Agreeing to the Resolution
+  - Joint Resolution
+  - Concurrent Resolution
+
+items:
+  CC21_350a:
+    question: Establish a commission to investigate the January 6, 2021, attack on the U.S. Capitol
+    votes:
+      house: {bill: [hr, 3233], questions: *final}
+      senate:
+        bill: [hr, 3233]
+        questions: [Cloture]
+        note: The Senate voted only on whether to end debate and take a final vote; it fell short of 60.
+
+  CC21_350b:
+    question: Authorize up to $1.9 trillion in COVID relief (American Rescue Plan)
+    votes:
+      house:  {bill: [hr, 1319], questions: *final}
+      senate: {bill: [hr, 1319], questions: *final}
+
+  CC21_350c:
+    question: Increase accountability for police misconduct (George Floyd Justice in Policing Act)
+    votes:
+      house: {bill: [hr, 1280], questions: *final}
+
+  CC21_350d:
+    question: Protect workers who strike and unions' organizing (PRO Act)
+    votes:
+      house: {bill: [hr, 842], questions: *final}
+
+  CC21_350e:
+    question: Require Justice Department approval of election-law changes in places with a history of discrimination (John Lewis Voting Rights Advancement Act)
+    votes:
+      house: {bill: [hr, 4], questions: *final}
+
+  CC21_350f:
+    question: Prohibit discrimination based on gender identity and sexual orientation (Equality Act)
+    votes:
+      house: {bill: [hr, 5], questions: *final}
+
+  CC21_350g:
+    question: Require equal pay for women and men doing similar jobs (Paycheck Fairness Act)
+    votes:
+      house: {bill: [hr, 7], questions: *final}
+
+  CC21_350h:
+    question: Increase federal spending on high-tech research and development (U.S. Innovation and Competition Act)
+    votes:
+      senate: {bill: [s, 1260], questions: *final}
+
+  CC21_350i:
+    question: Spend $150 billion a year for 8 years on roads, bridges, transit, water systems and broadband (Infrastructure Investment and Jobs Act)
+    votes:
+      house:  {bill: [hr, 3684], questions: *final}
+      senate: {bill: [hr, 3684], questions: *final}

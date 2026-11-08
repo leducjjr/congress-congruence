@@ -1,0 +1,74 @@
+# CES 2017 questions about bills, matched to votes of the 115th Congress (2017-2018).
+# Answer codes: 1 = Support, 2 = Oppose. `ces link 2017` prints what each rule matched.
+
+survey: CES 2017
+weight_preference: [weights_common]
+district_column: cdid115
+state_column: inputstate
+
+source:
+  title: Cooperative Election Study 2017
+  fielded: fall 2017
+  dataset_url: https://doi.org/10.7910/DVN/3STEZY
+  about_url: https://cces.gov.harvard.edu/
+
+final_questions: &final
+  - On Passage
+  - Passage of the Bill
+  - Suspend the Rules and Pass
+  - Concur
+  - Conference Report
+  - Agreeing to the Resolution
+  - Joint Resolution
+  - Concurrent Resolution
+
+items:
+  CC17_340A:
+    question: Repeal the Affordable Care Act
+    votes:
+      senate:
+        date: 2017-07-26
+        expect: "45-55"
+        note: The Senate's vote on repealing the law without a replacement (an amendment to the House health bill); it failed.
+
+  CC17_340B:
+    question: Confirm Neil Gorsuch to the Supreme Court
+    votes:
+      senate: {find: Gorsuch, questions: [Nomination]}
+
+  CC17_340C:
+    question: American Health Care Act (partly repeal and replace the Affordable Care Act)
+    votes:
+      house: {bill: [hr, 1628], questions: [On Passage]}
+
+  CC17_340D:
+    question: Financial CHOICE Act (roll back the Dodd-Frank financial rules)
+    votes:
+      house: {bill: [hr, 10], questions: *final}
+
+  CC17_340E:
+    question: Kate's Law (longer prison terms for people who re-enter the U.S. illegally after deportation)
+    votes:
+      house: {bill: [hr, 3004], questions: *final}
+
+  CC17_340F:
+    question: Countering America's Adversaries Through Sanctions Act (sanctions on Russia, Iran and North Korea)
+    votes:
+      house:  {bill: [hr, 3364], questions: *final}
+      senate: {bill: [hr, 3364], questions: *final}
+
+  CC17_340G:
+    question: No Sanctuary for Criminals Act (withhold grants from cities that limit cooperation with immigration enforcement)
+    votes:
+      house: {bill: [hr, 3003], questions: *final}
+
+  CC17_340H:
+    question: Confirm Betsy DeVos as Secretary of Education
+    votes:
+      senate: {find: DeVos, questions: [Nomination]}
+
+  CC17_340I:
+    question: Consolidated Appropriations Act of 2017 (government funding through September 2017)
+    votes:
+      house:  {bill: [hr, 244], questions: *final}
+      senate: {bill: [hr, 244], questions: *final}
