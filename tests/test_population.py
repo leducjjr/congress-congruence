@@ -102,3 +102,16 @@ def test_non_data_reply_is_reported_in_plain_words():
             return R()
     with pytest.raises(RuntimeError, match="unknown/unsupported geography"):
         population.fetch(2024, "congressional district:*", "state:*", Http())
+
+
+def test_missing_key_redirect_explains_how_to_get_a_key():
+    class Http:
+        def get(self, url, params, timeout):
+            class R:
+                url = "https://api.census.gov/data/missing_key.html"
+                status_code, text = 200, "<html><title>Missing Key</title></html>"
+                def raise_for_status(self): pass
+                def json(self): raise ValueError("not json")
+            return R()
+    with pytest.raises(RuntimeError, match="key_signup"):
+        population.fetch(2024, "state:*", None, Http())

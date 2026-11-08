@@ -7,8 +7,8 @@ Each ACS release reports districts as drawn for one Congress, and says which in 
 district names ("Congressional District 6 (119th Congress), Texas"); that's what the
 rows are filed under. Re-running a year replaces its rows.
 
-Uses https://api.census.gov (no key needed at this volume; set CENSUS_API_KEY in .env
-to use one). Guam, the Virgin Islands, American Samoa and the Northern Mariana Islands
+Uses https://api.census.gov, which requires a free key: sign up at
+https://api.census.gov/data/key_signup.html and put CENSUS_API_KEY=<key> in .env. Guam, the Virgin Islands, American Samoa and the Northern Mariana Islands
 aren't in the ACS, so their delegates show no population.
 """
 
@@ -42,6 +42,13 @@ def fetch(year: int, geography: str, within: str | None = None, http=None) -> li
     if os.environ.get("CENSUS_API_KEY"):
         params["key"] = os.environ["CENSUS_API_KEY"]
     resp = (http or http_session()).get(API.format(year=year), params=params, timeout=60)
+    landed = str(getattr(resp, "url", "") or "")
+    if "missing_key" in landed or "invalid_key" in landed:
+        raise RuntimeError(
+            "The Census API needs a free key (it redirected to "
+            f"{'its missing-key page' if 'missing' in landed else 'its invalid-key page'}). "
+            "Sign up at https://api.census.gov/data/key_signup.html, click the activation link in the "
+            "email, then add CENSUS_API_KEY=<key> to .env and run this again.")
     try:
         resp.raise_for_status()
         return resp.json()
