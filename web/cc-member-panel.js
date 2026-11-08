@@ -98,7 +98,18 @@
     h3[tabindex]:focus-visible { outline: 2px solid var(--mark); outline-offset: 4px; }
     h3 { scroll-margin-top: 12px; }
     .intro + .intro { margin-top: 0; }
-    .intro { margin: -4px 0 10px; font-size: 0.85rem; color: var(--ink-soft); max-width: 70ch; }
+    .intro { margin: -4px 0 10px; font-size: 0.85rem; color: var(--ink-soft); }
+    /* Longer explanations fold away (closed by default), like a "details" block on a wiki page. */
+    details.more { margin: -6px 0 10px; font-size: 0.85rem; color: var(--ink-soft); }
+    details.more > summary { cursor: pointer; width: fit-content; color: var(--ink); list-style: none;
+                             text-decoration: underline; text-decoration-color: var(--mark);
+                             text-underline-offset: 2px; padding: 2px 0; }
+    details.more > summary::-webkit-details-marker { display: none; }
+    details.more > summary::before { content: "\\25B8"; display: inline-block; width: 1.1em; color: var(--mark);
+                                     text-decoration: none; transition: transform 0.15s; }
+    details.more[open] > summary::before { transform: rotate(90deg); }
+    details.more > p { margin: 6px 0 0; }
+    @media (prefers-reduced-motion: reduce) { details.more > summary::before { transition: none; } }
     .op-tag {
       grid-column: 2; justify-self: start; margin-top: 4px; font: inherit; font-size: 0.8rem; color: var(--ink);
       background: var(--surface-sunk); border: 1px solid var(--rule); border-radius: 999px; padding: 1px 10px; cursor: pointer;
@@ -333,6 +344,14 @@
         this.body.replaceChildren(h("p", { class: "error", role: "alert" },
           `Couldn't load this voting record: ${err.message}. Reload the page to try again.`));
       }
+    }
+
+    // A folded explanation. Its open/closed state survives re-renders (e.g. "Show more votes").
+    foldable(key, summary, ...body) {
+      this.folds = this.folds || {};
+      const d = h("details", { class: "more", open: !!this.folds[key] }, h("summary", {}, summary), ...body);
+      d.addEventListener("toggle", () => { this.folds[key] = d.open; });
+      return d;
     }
 
     render() {
@@ -577,22 +596,24 @@
       return h("section", { class: "opinion" },
         h("h3", { id: "compared", tabindex: "-1" }, "Compared with constituents"),
         h("p", { class: "intro" },
-          `Did this member vote the way most people ${where ? `in ${where}` : "they represented"} wanted? `,
-          `${several ? "Surveys" : "A survey"} asked people about a few major bills; this section `,
-          "compares the member's vote on each with what people where they live said. ",
-          "Only bills a survey asked about can be compared."),
-        h("p", { class: "intro" },
-          "How to read the bars: the dark mark is the estimated share who support the bill, and the shaded band is ",
+          `Did this member vote the way most people ${where ? `in ${where}` : "they represented"} wanted?`),
+        this.foldable("how-compared", "How this works and how to read the bars",
+          h("p", {},
+            `${several ? "Surveys" : "A survey"} asked people about a few major bills; this section `,
+            "compares the member's vote on each with what people where they live said. ",
+            "Only bills a survey asked about can be compared."),
+          h("p", {},
+          "The dark mark is the estimated share who support the bill, and the shaded band is ",
           "where support likely falls. The tick in the middle is an even split; if the band crosses it, the area is ",
-          "too close to call. The member's vote sits at the end it chose, so when vote and band are on the same side, ",
-          "they agree. ",
+          "too close to call. The member's vote sits at the end of the scale it supported (usually Yea at the support end), ",
+          "so when vote and band are on the same side, they agree. ",
           m.chamber === "senate"
             ? "Senators are compared with their whole state."
             // Only true of small district samples (the CES has a few dozen people per district;
             // district surveys such as PPC's have hundreds), so say it only when it applies.
             : o.items.some(i => i.constituents.area === "district" && i.constituents.respondents < 100)
               ? "Where a survey reached only a few dozen people in the district, its estimate leans on statewide answers, so many of those are too close to call."
-              : ""),
+              : "")),
         lead,
         (o.samples || []).length ? h("p", { class: "op-sample" }, "People surveyed: ",
           o.samples.map((x, k) => [k ? "; " : "",
