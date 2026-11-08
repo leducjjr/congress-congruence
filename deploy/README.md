@@ -91,7 +91,7 @@ Open `https://dev.yourdomain.org`, sign in with `john` and the dev-site password
 git pull
 pip install -r requirements.txt
 sudo systemctl restart congress-api     # if API code changed
-scripts/publish_web.sh                  # if panel files changed
+scripts/publish_web.sh                  # if the panel or any page changed (builds the site)
 ```
 
 ## If something's wrong

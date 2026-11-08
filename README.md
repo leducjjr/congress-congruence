@@ -27,7 +27,10 @@ src/congress_congruence/      Python package
   ingest/votes.py             Fetches, validates and loads votes (both chambers)
   ingest/voteview.py          Loads votes from Voteview (Senate fallback, history)
   api/app.py                  Read-only JSON API (FastAPI)
-web/                          The panel: cc-member-panel.js and a dev page (index.html)
+web/                          The member panel web component (cc-member-panel.js)
+site/                         The website: shared frame (header/footer), styles, and pages
+  pages/                      One file per page; reference pages are Markdown, easy to edit
+scripts/build_site.py         Wraps every page in the frame; run by scripts/publish_web.sh
 deploy/                       Server setup: API service, nginx site, step-by-step README
 scripts/                      Scheduled jobs and publishing helpers
 tests/                        Automated tests (pytest)
@@ -116,7 +119,12 @@ It shows the member's seat and party, a strip of their recent votes (shapes,
 not party colours: filled = Yea, ring = Nay, square = Present, dash = did not
 vote), how often they missed votes, how often they voted with their party's
 majority, and a list of recent votes linking to Congress.gov and the official
-roll call. `web/index.html` is a dev page to pick a state and member.
+roll call. The site's home page (`site/pages/index.html`) lets visitors pick a state and member.
+
+**Website pages.** Every page shares one header and footer (`site/frame.html`). Reference
+pages (Sources, Methods, Glossary, About, Privacy) are Markdown files in `site/pages/`:
+edit the text, then run `scripts/publish_web.sh`. A new page needs a short header (`title`,
+`description`); add it to `NAV` in `scripts/build_site.py` to put it in the header menu.
 
 The API (`api/app.py`) serves `/v1/members`, `/v1/members/{id}`,
 `/v1/members/{id}/votes` and `/v1/health`. Its database connections are

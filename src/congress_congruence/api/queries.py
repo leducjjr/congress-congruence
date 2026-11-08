@@ -186,3 +186,12 @@ select (select round(avg(population)) from core.area_population
        (select max(population) from core.area_population where congress = %(congress)s and district is null
            and state not in ('DC', 'PR')) as largest_pop
 """
+
+# Every survey loaded, for the Sources page, with how many of its questions are compared with votes.
+SURVEY_LIST = """
+select s.survey, s.title, s.fielded, s.respondents, s.dataset_url, s.guide_url, s.about_url,
+       coalesce(s.organization, s.survey) as organization, s.description,
+       (select count(distinct v.variable) from core.survey_item_vote v where v.survey = s.survey) as items
+  from core.survey s
+ order by coalesce(s.organization, s.survey), s.survey desc
+"""

@@ -1,0 +1,97 @@
+---
+title: Find your members
+description: See how your senators and representative voted, and how their votes compare with what people where they live told independent surveys.
+head: |
+  <script src="cc-member-panel.js" defer></script>
+  <style>
+    .pick { display: grid; grid-template-columns: 7rem minmax(0, 1fr); gap: 10px; margin: 0 0 20px; max-width: 40rem; }
+    .pick label { display: grid; gap: 4px; font-size: 0.85rem; color: var(--ink-soft); }
+    .pick select { font: inherit; font-size: 1rem; color: var(--ink); background: var(--surface);
+      border: 1px solid var(--rule); border-radius: 6px; padding: 8px 10px; width: 100%; }
+    .home h1 { font-size: 1.35rem; font-weight: 700; margin: 0 0 4px; letter-spacing: -0.01em; }
+    .home .intro { color: var(--ink-soft); margin: 0 0 6px; font-size: 0.98rem; }
+    .home .coverage { color: var(--ink-soft); font-size: 0.85rem; margin: 0 0 20px; }
+    .home .coverage:empty { display: none; }
+    .status { color: var(--ink-soft); font-size: 0.9rem; min-height: 1.5em; margin: 0 0 12px; }
+  </style>
+main_class: home
+---
+<h1>How does your member of Congress vote, compared with the people they represent?</h1>
+<p class="intro">Pick a state, then a senator or representative. You'll see their voting record and,
+  where independent surveys asked about a bill, how their vote lines up with what people where they live said.
+  <a href="methods.html">How this works</a>.</p>
+<p class="coverage" data-coverage></p>
+
+<div class="pick">
+  <label>State
+    <select id="state"><option value="">Choose</option></select>
+  </label>
+  <label>Member
+    <select id="member" disabled><option value="">Choose a state first</option></select>
+  </label>
+</div>
+<p class="status" id="status" role="status"></p>
+
+<cc-member-panel id="panel" hidden></cc-member-panel>
+
+<script>
+  const API = "/api";
+  const STATES = { AL:"Alabama",AK:"Alaska",AZ:"Arizona",AR:"Arkansas",CA:"California",CO:"Colorado",CT:"Connecticut",
+    DE:"Delaware",FL:"Florida",GA:"Georgia",HI:"Hawaii",ID:"Idaho",IL:"Illinois",IN:"Indiana",IA:"Iowa",KS:"Kansas",
+    KY:"Kentucky",LA:"Louisiana",ME:"Maine",MD:"Maryland",MA:"Massachusetts",MI:"Michigan",MN:"Minnesota",MS:"Mississippi",
+    MO:"Missouri",MT:"Montana",NE:"Nebraska",NV:"Nevada",NH:"New Hampshire",NJ:"New Jersey",NM:"New Mexico",NY:"New York",
+    NC:"North Carolina",ND:"North Dakota",OH:"Ohio",OK:"Oklahoma",OR:"Oregon",PA:"Pennsylvania",RI:"Rhode Island",
+    SC:"South Carolina",SD:"South Dakota",TN:"Tennessee",TX:"Texas",UT:"Utah",VT:"Vermont",VA:"Virginia",WA:"Washington",
+    WV:"West Virginia",WI:"Wisconsin",WY:"Wyoming",DC:"District of Columbia",PR:"Puerto Rico",GU:"Guam",
+    VI:"U.S. Virgin Islands",AS:"American Samoa",MP:"Northern Mariana Islands" };
+
+  const $ = id => document.getElementById(id);
+  const stateSel = $("state"), memberSel = $("member"), panel = $("panel"), status = $("status");
+
+  for (const [code, name] of Object.entries(STATES)) stateSel.add(new Option(name, code));
+
+  async function getJSON(path) {
+    const res = await fetch(API + path);
+    if (!res.ok) throw new Error(`the server answered ${res.status}`);
+    return res.json();
+  }
+
+  async function loadState(code, selectId) {
+    memberSel.replaceChildren(new Option(code ? "Loading…" : "Choose a state first", ""));
+    memberSel.disabled = true;
+    if (!code) return;
+    try {
+      const { members } = await getJSON(`/v1/members?state=${code}`);
+      memberSel.replaceChildren(new Option("Choose", ""));
+      for (const chamber of ["senate", "house"]) {
+        const group = document.createElement("optgroup");
+        group.label = chamber === "senate" ? "Senators" : "Representatives";
+        for (const m of members.filter(x => x.chamber === chamber)) {
+          const where = chamber === "house" ? `${m.seat}, ` : "";
+          group.append(new Option(`${m.name} (${where}${m.party})`, m.bioguide_id));
+        }
+        if (group.children.length) memberSel.append(group);
+      }
+      memberSel.disabled = false;
+      status.textContent = "";
+      if (selectId) { memberSel.value = selectId; showMember(selectId); }
+    } catch (e) {
+      memberSel.replaceChildren(new Option("Couldn't load members", ""));
+      status.textContent = `Couldn't load members for ${STATES[code]}: ${e.message}. Reload to try again.`;
+    }
+  }
+
+  function showMember(id) {
+    if (!id) { panel.hidden = true; history.replaceState(null, "", location.pathname); return; }
+    panel.setAttribute("member", id);
+    panel.hidden = false;
+    history.replaceState(null, "", `#${stateSel.value}/${id}`);
+  }
+
+  stateSel.addEventListener("change", () => { panel.hidden = true; loadState(stateSel.value); });
+  memberSel.addEventListener("change", () => showMember(memberSel.value));
+
+  // A link like #TX/C001098 opens straight to that member.
+  const [hashState, hashId] = location.hash.slice(1).split("/");
+  if (STATES[hashState]) { stateSel.value = hashState; loadState(hashState, hashId); }
+</script>

@@ -1,6 +1,9 @@
 # Site plan: header, pages and reference material
 
-Status: proposal (Nov 2026). Today the site is one page (pick a state and a member, see the
+Status: steps 1–2 under way (Nov 2026): the shared header and footer, Find your members,
+Sources, Methods, Glossary, About and Privacy are built. Next: Surveyed votes.
+
+Originally a proposal (Nov 2026). Today the site is one page (pick a state and a member, see the
 panel). This plan turns it into a small site with a header, a footer, and reference pages, ready for
 the public launch at uscongressvsvoters.com.
 

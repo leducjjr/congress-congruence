@@ -28,6 +28,7 @@ Full details of every source and its special handling: `docs/DATA_SOURCES.md`
 - Watcher (monthly): new CES releases are drafted for review; new Census releases load automatically.
 
 ## Site plan
+Pages live in `site/pages/` (Markdown for reference pages), built by `scripts/build_site.py`.
 See `docs/SITE_PLAN.md`: header, footer and reference pages, leading with the vote-vs-survey comparison.
 
 ## Next candidates (agreed order)

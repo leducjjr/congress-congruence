@@ -5,6 +5,7 @@ Run locally:
 
 Endpoints (all GET):
     /v1/health                         is the database reachable; how fresh is the data
+    /v1/surveys                        every survey loaded, with links (Sources page)
     /v1/members?state=TX&chamber=house members serving today
     /v1/members/{bioguide_id}          profile, attendance, votes with party majority
     /v1/members/{bioguide_id}/votes    most recent votes (limit=1..100, default 20)
@@ -108,6 +109,15 @@ def health(response: Response):
             for r in fetch(q.FRESHNESS)]
     runs = {r["job"]: r["finished_at"] for r in fetch(q.LAST_RUNS)}
     return {"status": "ok", "data": data, "last_successful_runs": runs}
+
+
+@app.get("/v1/surveys")
+def surveys(response: Response):
+    """Every survey loaded, newest first within each organization (for the Sources page)."""
+    response.headers["Cache-Control"] = CACHE
+    keys = ("survey", "title", "fielded", "respondents", "dataset_url", "guide_url", "about_url",
+            "organization", "description", "items")
+    return {"surveys": [{k: r[k] for k in keys} for r in fetch(q.SURVEY_LIST)]}
 
 
 @app.get("/v1/members")

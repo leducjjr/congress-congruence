@@ -9,6 +9,8 @@
  *   member     Bioguide ID (required), e.g. B001277
  *   api-base   where the API lives; default "/api" (same site)
  *   votes      how many recent votes to list; default 10 (max 100)
+ *   site-base  where the site's reference pages are (Sources, Methods, Glossary); default: the folder
+ *              this script was loaded from, so an embed elsewhere still links to them
  *
  * Design notes
  *   - No party colours. Votes are told apart by shape (filled / ring / dash),
@@ -24,6 +26,9 @@
     link.href = FONT_HREF;
     document.head.appendChild(link);
   }
+
+  // Where the reference pages live, unless the page says otherwise (site-base attribute).
+  const SCRIPT_BASE = (() => { try { return new URL(".", document.currentScript.src).href; } catch { return ""; } })();
 
   const STRIP_SIZE = 100; // votes fetched for the strip; narrow screens show the newest that fit
 
@@ -584,17 +589,24 @@
             i.wording_hint ? ` (in the survey guide, search for ${i.wording_hint})` : ` (questionnaire with ${here}'s results, PDF)`) : null);
       });
 
-      const link = (href, text) => href ? h("a", { href, target: "_blank", rel: "noopener" }, text) : null;
-      const sourceLines = [...surveys.values()].map((sv, k) => h("p", { class: "op-source" },
-        k === 0 ? h("strong", {}, several ? "Sources: " : "Source: ") : null,
-        `${sv.title}`,
-        sv.fielded || sv.respondents
-          ? ` (${[sv.fielded && `interviewed ${sv.fielded}`,
-                 sv.respondents && `${sv.respondents.toLocaleString()} adults surveyed`].filter(Boolean).join(", ")})`
-          : "",
-        `, ${sv.description || "a survey of U.S. adults"}. `,
-        [link(sv.about_url, "About the survey"), link(sv.guide_url, "Questions asked (PDF)"),
-         link(sv.dataset_url, "Survey data")].filter(Boolean).flatMap((a, j) => j ? [" | ", a] : [a])));
+      // One line: each survey organization (with the years used), linked to its section of the
+      // site's Sources page, which has how each survey was done and links to questions and data.
+      const base = this.getAttribute("site-base") || SCRIPT_BASE;
+      const page = (file, anchor) => `${base}${file}${anchor ? `#${anchor}` : ""}`;
+      const slug = t => t.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+      const byOrg = new Map();
+      for (const sv of surveys.values()) {
+        const org = sv.organization || sv.title;
+        const year = ((sv.name || "").match(/(\d{4})$/) || [])[1];
+        byOrg.set(org, [...(byOrg.get(org) || []), year].filter(Boolean));
+      }
+      const orgLinks = [...byOrg].map(([org, years]) =>
+        [h("a", { href: page("sources.html", slug(org)) }, org), years.length ? ` (${years.sort().join(", ")})` : ""]);
+      const sourceLines = orgLinks.length ? [h("p", { class: "op-source" },
+        h("strong", {}, orgLinks.length > 1 ? "Sources: " : "Source: "),
+        orgLinks.flatMap((x, j) => j ? ["; ", ...x] : x), ". ",
+        h("a", { href: page("sources.html", "surveys") }, "How each survey was done"), " · ",
+        h("a", { href: page("methods.html") }, "How the comparison works"), ".")] : [];
 
       return h("section", { class: "opinion" },
         h("h3", { id: "compared", tabindex: "-1" }, "Compared with constituents"),

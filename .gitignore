@@ -7,3 +7,4 @@ data/raw/*
 !data/raw/.gitkeep
 logs/
 data/ppc/
+build/

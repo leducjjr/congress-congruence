@@ -335,3 +335,14 @@ def test_load_and_compare(conn, monkeypatch, tmp_path):
     assert b["summary"]["with_majority"] == 0
     assert a["by_source"] == [{"organization": "Program for Public Consultation", **a["summary"]}]
     assert a["surveys"][0]["description"] == "d"
+
+
+def test_surveys_endpoint_lists_each_survey_with_its_question_count(conn, monkeypatch):
+    test_load_and_compare(conn, monkeypatch, None)
+    from fastapi.testclient import TestClient
+    from congress_congruence.api import app as api
+    monkeypatch.setenv("API_DATABASE_URL", os.environ["TEST_DATABASE_URL"])
+    with TestClient(api.app) as client:
+        got = client.get("/v1/surveys").json()["surveys"]
+    assert [(s["survey"], s["organization"], s["items"]) for s in got] == \
+        [("PPC 2026", "Program for Public Consultation", 3)]

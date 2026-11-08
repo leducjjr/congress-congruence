@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{title}} · US Congress vs Voters</title>
+  <meta name="description" content="{{description}}">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700&display=swap">
+  <link rel="stylesheet" href="site.css">
+{{head}}
+</head>
+<body class="page-{{slug}}">
+<a class="skip" href="#main">Skip to main content</a>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="index.html">US Congress <span>vs</span> Voters</a>
+    <nav aria-label="Site">
+      <ul>
+{{nav}}
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main id="main" class="wrap {{main_class}}" tabindex="-1">
+{{body}}
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p class="coverage" id="site-coverage"></p>
+    <p><strong>Where the data comes from:</strong>
+      <a href="https://clerk.house.gov/Votes">House Clerk</a> ·
+      <a href="https://www.senate.gov/legislative/votes_new.htm">U.S. Senate</a> (via <a href="https://voteview.com">Voteview</a>) ·
+      <a href="https://www.congress.gov/">Congress.gov</a> ·
+      <a href="https://cces.gov.harvard.edu/">Cooperative Election Study</a> ·
+      <a href="https://publicconsultation.org/">Program for Public Consultation</a> ·
+      <a href="https://www.census.gov/programs-surveys/acs">Census Bureau</a>.
+      Details on the <a href="sources.html">Sources</a> page.</p>
+    <p>An independent civic project, not affiliated with the U.S. government, Congress, any political
+      party or campaign, or any survey organization. No accounts, no cookies, no tracking.</p>
+    <p class="footer-links">
+      <a href="sources.html">Sources</a> · <a href="methods.html">Methods</a> ·
+      <a href="glossary.html">Glossary</a> · <a href="about.html">About</a> ·
+      <a href="privacy.html">Privacy</a></p>
+  </div>
+</footer>
+<script src="site.js" defer></script>
+</body>
+</html>
