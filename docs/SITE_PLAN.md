@@ -5,8 +5,8 @@ Sources, Methods, Glossary, About, Contact (placeholder) and Privacy are built, 
 finds members (name, state, seat), survey questions and votes (search.html). Subject tags from
 Congress.gov feed search. Surveyed votes (list + per-question chart and table) is built. Former members:
 figures per Congress and chamber, a 'Former …' status line, and a Former members group in the picker
-and search (seat history and a Congress selector wait for earlier Congresses to be loaded). Next:
-state ballot-measure results.
+and search (seat history and a Congress selector wait for earlier Congresses to be loaded). State
+ballot-measure results (2024) are shown beside the surveys as related votes.
 
 Originally a proposal (Nov 2026). Today the site is one page (pick a state and a member, see the
 panel). This plan turns it into a small site with a header, a footer, and reference pages, ready for

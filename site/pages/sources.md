@@ -110,6 +110,28 @@ Only members from the states and districts it surveyed get these comparisons.
 
 <div data-surveys="Program for Public Consultation"><p class="note">Loading the list…</p></div>
 
+## State ballot measures {#state-ballot-measures}
+
+**What they are:** questions a state's voters decided themselves on the ballot, such as a
+constitutional amendment. These aren't surveys: they are certified counts of votes actually cast, so
+there is no sample and no margin of error.
+
+**What we use:** each measure's certified statewide Yes and No totals, as compiled by
+[Ballotpedia](https://ballotpedia.org/2024_ballot_measure_election_results), with a link to each
+measure's own page. A statewide result is compared only with members who represent the whole state:
+senators, and the representative of a state with a single House seat. Representatives of states with
+several districts aren't compared, because a statewide result doesn't say what their own district voted.
+
+**How they're shown:** no ballot measure asks exactly what a bill in Congress does, so every
+comparison is marked as a **related vote** and none is counted in a member's score. For example,
+several states amended their constitutions in 2024 to say only U.S. citizens may vote; the SAVE
+America Act in Congress would also require documents proving citizenship to register. Measures with
+no matching vote in Congress (for example on abortion or the minimum wage) are left out.
+
+**Loaded on this site:**
+
+<div data-surveys="State ballot measures"><p class="note">Loading the list…</p></div>
+
 ## Population {#population}
 
 **Source:** the Census Bureau's American Community Survey, 1-year estimates of total population for

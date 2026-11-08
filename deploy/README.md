@@ -195,6 +195,19 @@ python -m congress_congruence.ingest.ppc load 2026
 
 `fetch` reads only public PDFs; nothing reaches the panel until `load`.
 
+## Loading state ballot-measure results
+
+The results are typed into `config/ballot_<year>_items.yaml` (certified counts, with a link
+per measure), so there is nothing to download.
+
+```bash
+git pull
+python -m congress_congruence.db migrate          # 008: survey kind (survey | ballot), measure names
+python -m congress_congruence.ingest.ballots link 2024   # check which Senate vote each item uses
+python -m congress_congruence.ingest.ballots load 2024
+sudo systemctl restart congress-api && scripts/publish_web.sh
+```
+
 ## Feedback form
 
 The Contact page's form posts to `/api/v1/feedback`, which emails the message from a send-only

@@ -1,0 +1,79 @@
+# Statewide ballot measures (2024) compared with votes in the 119th Congress. Load with
+#   python -m congress_congruence.ingest.ballots link 2024
+#   python -m congress_congruence.ingest.ballots load 2024
+#
+# These are certified results: votes actually cast, so there is no margin of error. Each state's
+# result is compared only with members who represent the whole state (senators, and the
+# representative of a one-district state). No measure asked exactly what Congress voted on, so
+# every item is match: related, shown for context and never counted.
+#
+# Counts: certified results as compiled by Ballotpedia, linked per measure. Ballot measures on
+# abortion, minimum wage and marijuana in 2024 had no matching vote in this Congress and are left out.
+
+survey: Ballot measures 2024
+congress: 119
+kind: ballot
+
+source:
+  title: State ballot measures, November 2024 (certified results)
+  organization: State ballot measures
+  description: >-
+    statewide ballot measures: certified votes cast by each state's voters, compared only with members
+    who represent the whole state
+  fielded: November 5, 2024
+  about_url: https://ballotpedia.org/2024_ballot_measure_election_results
+
+# The Senate never passed the SAVE America Act (S. 1383; House version H.R. 7296). The rule takes its
+# last recorded Senate vote; `ballots link 2024` shows which one, to check.
+save_america_senate: &save_senate
+  bill: [s, 1383]
+  note: >-
+    The Senate never passed the SAVE America Act, which would require proof of citizenship to register
+    and photo ID to vote in federal elections. This is its last recorded Senate vote on the bill.
+# House: only a one-district state's representative is compared with a statewide result, and no
+# one-district state voted on these in 2024. Kept for 2026 (South Dakota and Alaska have measures).
+save_america_house: &save_house
+  date: 2026-02-11
+  questions: [On Passage]
+  expect: "218-213"
+  note: The SAVE America Act would require proof of citizenship to register and photo ID to vote in federal elections.
+
+items:
+  BM24_CITIZEN:
+    question: Amend the state constitution to say only U.S. citizens may vote
+    match: related
+    note: >-
+      Related, not the same: these state amendments say only citizens may vote. The bill in Congress
+      would also require documents proving citizenship to register, and photo ID to vote.
+    votes:
+      senate: *save_senate
+    results:
+      - {state: ID, measure: "Idaho HJR 5", yes_votes: 572865, no_votes: 309456,
+         url: "https://ballotpedia.org/Idaho_HJR_5,_Citizenship_Requirement_for_Voting_Amendment_(2024)"}
+      - {state: IA, measure: "Iowa Amendment 1 (also let 17-year-olds vote in primaries)", yes_votes: 1150332, no_votes: 341034,
+         url: "https://ballotpedia.org/Iowa_Amendment_1,_Require_Citizenship_to_Vote_in_Elections_and_Allow_17-Year-Olds_to_Vote_in_Primaries_Amendment_(2024)"}
+      - {state: KY, measure: "Kentucky Constitutional Amendment 1", yes_votes: 1208898, no_votes: 727515,
+         url: "https://ballotpedia.org/Kentucky_Constitutional_Amendment_1,_Citizenship_Requirement_for_Voting_Amendment_(2024)"}
+      - {state: MO, measure: "Missouri Amendment 7 (also banned ranked-choice voting)", yes_votes: 1966852, no_votes: 906851,
+         url: "https://ballotpedia.org/Missouri_Amendment_7,_Require_Citizenship_to_Vote_and_Prohibit_Ranked-Choice_Voting_Amendment_(2024)"}
+      - {state: NC, measure: "North Carolina Citizenship Requirement for Voting Amendment", yes_votes: 4184680, no_votes: 1208865,
+         url: "https://ballotpedia.org/North_Carolina_Citizenship_Requirement_for_Voting_Amendment_(2024)"}
+      - {state: OK, measure: "Oklahoma State Question 834", yes_votes: 1207520, no_votes: 288267,
+         url: "https://ballotpedia.org/Oklahoma_State_Question_834,_Citizenship_Requirement_for_Voting_Amendment_(2024)"}
+      - {state: SC, measure: "South Carolina Citizenship Requirement for Voting Amendment", yes_votes: 1982956, no_votes: 324432,
+         url: "https://ballotpedia.org/South_Carolina_Citizenship_Requirement_for_Voting_Amendment_(2024)"}
+      - {state: WI, measure: "Wisconsin Citizenship Voting Requirement Amendment", yes_votes: 2272446, no_votes: 950445,
+         url: "https://ballotpedia.org/Wisconsin_Citizenship_Voting_Requirement_Amendment_(2024)"}
+
+  BM24_VOTER_ID:
+    question: Require voters to show identification to vote
+    match: related
+    note: >-
+      Related, not the same: Nevada's measure requires ID to vote. The bill in Congress would also
+      require documents proving citizenship to register. Nevada voters must approve it again in 2026
+      for it to take effect.
+    votes:
+      senate: *save_senate
+    results:
+      - {state: NV, measure: "Nevada Question 7", yes_votes: 1031153, no_votes: 376873,
+         url: "https://ballotpedia.org/Nevada_Question_7,_Require_Voter_Identification_Initiative_(2024)"}

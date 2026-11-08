@@ -364,14 +364,16 @@ def save_items(cur, survey: str, src: dict, respondents: int | None,
     and write the item-to-vote links. items: (variable, config entry, label in the data file)."""
     cur.execute(
         """insert into core.survey (survey, title, fielded, respondents, dataset_url, guide_url, about_url,
-                                    organization, description)
-           values (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                                    organization, description, kind)
+           values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
            on conflict (survey) do update set title = excluded.title, fielded = excluded.fielded,
                respondents = excluded.respondents, dataset_url = excluded.dataset_url,
                guide_url = excluded.guide_url, about_url = excluded.about_url,
-               organization = excluded.organization, description = excluded.description""",
+               organization = excluded.organization, description = excluded.description,
+               kind = excluded.kind""",
         (survey, src.get("title", survey), src.get("fielded"), respondents, src.get("dataset_url"),
-         src.get("guide_url"), src.get("about_url"), src.get("organization"), src.get("description")))
+         src.get("guide_url"), src.get("about_url"), src.get("organization"), src.get("description"),
+         src.get("kind", "survey")))
     cur.execute("delete from core.survey_item where survey = %s", (survey,))   # cascades
     for var, item, label in items:
         cur.execute("insert into core.survey_item (survey, variable, question, survey_label, note) "

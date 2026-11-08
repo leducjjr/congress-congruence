@@ -31,6 +31,14 @@
       `Clear majority in favor in ${s.support}, opposed in ${s.oppose}, too close to call in ${s.too_close}.`);
   }
 
+  // A ballot measure: the share voting yes in each state that voted on it, and where it passed.
+  function ballotLine(s) {
+    if (!s) return null;
+    const range = s.lowest_pct === s.highest_pct ? pct(s.lowest_pct) : `${pct(s.lowest_pct)} to ${pct(s.highest_pct)}`;
+    return el("p", {}, `Yes vote in the ${plural(s.areas, "state", "states")} that voted on it: ${range}. `,
+      s.oppose ? `Passed in ${s.support}, failed in ${s.oppose}.` : s.areas === 1 ? "It passed." : `Passed in all ${s.support}.`);
+  }
+
   const detailHref = q => `surveyed.html?${new URLSearchParams({ survey: q.survey, item: q.item })}`;
 
   // One vote's line in a question card: what happened, and how members lined up with their areas.
@@ -59,12 +67,16 @@
   function questionCard(q, opts = {}) {
     return el("article", { class: "result question-card", id: `q-${q.survey}-${q.item}`.replace(/\s+/g, "-") },
       el(opts.heading || "h3", {}, opts.link ? el("a", { href: detailHref(q) }, q.question) : q.question),
-      el("p", { class: "meta" }, `${q.source.organization} · ${q.source.title}`, q.source.fielded ? ` · asked ${q.source.fielded}` : "", " · ",
-        el("a", { href: q.source.guide_url || `sources.html#${slug(q.source.organization)}` },
-           q.source.guide_url ? "Survey questions" : "About this survey")),
+      q.source.kind === "ballot"
+        ? el("p", { class: "meta" }, `${q.source.title}`, q.source.fielded ? ` · voted ${q.source.fielded}` : "", " · ",
+            el("a", { href: `sources.html#${slug(q.source.organization)}` }, "About ballot measures"))
+        : el("p", { class: "meta" }, `${q.source.organization} · ${q.source.title}`, q.source.fielded ? ` · asked ${q.source.fielded}` : "", " · ",
+            el("a", { href: q.source.guide_url || `sources.html#${slug(q.source.organization)}` },
+               q.source.guide_url ? "Survey questions" : "About this survey")),
       q.note ? el("p", { class: "meta" }, q.note) : null,
-      spreadLine({ one: "state", many: "states" }, q.spread.states),
-      spreadLine({ one: "district", many: "districts" }, q.spread.districts),
+      q.source.kind === "ballot" ? ballotLine(q.spread.states) : [
+        spreadLine({ one: "state", many: "states" }, q.spread.states),
+        spreadLine({ one: "district", many: "districts" }, q.spread.districts)],
       q.votes.map(voteSummary),
       opts.link ? el("p", {}, el("a", { class: "more-link", href: detailHref(q) }, "See how every member voted →")) : null);
   }

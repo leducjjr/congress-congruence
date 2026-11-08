@@ -70,6 +70,14 @@ range comes from the published margin of error, converted to the same 90% level 
 Where one margin is given as a range for several districts, we use the larger figure, so our ranges are
 never narrower than the survey supports.
 
+### State ballot measures {#estimates-ballot}
+
+For a state ballot measure, the figure is the share of votes cast that were Yes: Yes ÷ (Yes + No),
+from the certified results. Blank ballots aren't counted, the same way surveys leave out people who
+didn't answer. Because these are real votes rather than a sample, there is no range; the majority is
+whichever side won, and only an exact tie would be too close to call. Each result is compared only
+with members who represent the whole state, and always as a related vote that isn't counted.
+
 ## Showing the sources side by side {#side-by-side}
 
 Different surveys ask different questions, in different years, in different ways. Rather than blend

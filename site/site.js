@@ -158,7 +158,8 @@
         box.innerHTML = `<table class="survey-table"><thead><tr><th>Survey</th><th>Interviewed</th>
           <th>People surveyed</th><th>Questions compared</th><th>Links</th></tr></thead><tbody>${
           mine.map(s => `<tr><td>${esc(s.title)}</td><td>${esc(s.fielded || "")}</td>
-            <td>${s.respondents ? s.respondents.toLocaleString() : "see the survey"}</td>
+            <td>${s.kind === "ballot" ? "voters in each state (certified results)"
+                  : s.respondents ? s.respondents.toLocaleString() : "see the survey"}</td>
             <td>${s.items}</td>
             <td>${[link(s.about_url, "About"), link(s.guide_url, "Questions asked"), link(s.dataset_url, "Data")]
                    .filter(Boolean).join(" · ")}</td></tr>`).join("")}</tbody></table>`;

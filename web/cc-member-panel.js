@@ -533,8 +533,9 @@
       const tail = related ? ", related question (not counted)"
         : { with: `, with the ${whose} majority`, against: `, against the ${whose} majority`,
             too_close: ", too close to call" }[item.agreement] || "";
-      const tag = h("button", { type: "button", class: "op-tag" },
-        `Surveyed: ${where} ${Math.round(item.constituents.support_pct)}% support${tail}`);
+      const tag = h("button", { type: "button", class: "op-tag" }, item.kind === "ballot"
+        ? `Ballot measure: ${where} voters ${Math.round(item.constituents.support_pct)}% yes${tail}`
+        : `Surveyed: ${where} ${Math.round(item.constituents.support_pct)}% support${tail}`);
       tag.addEventListener("click", () => this.flash(this.root.querySelector(`li[data-op="${CSS.escape(v.roll_call_id)}"]`)));
       return tag;
     }
@@ -584,29 +585,42 @@
         const voted = i.position === "yea" || i.position === "nay" ? `Voted ${POSITION_TEXT[i.position]}` : "Did not vote";
         const verdict = verdictFor(i);
         const related = i.match === "related";
-        return h("li", { "data-op": i.vote.roll_call_id },
-          h("p", { class: "op-q" }, i.question,
-            related ? h("span", { class: "op-related", title: "The vote was on a related bill, not exactly this proposal" },
-              "Related vote") : null),
-          this.rangeBar(c.support_pct, lo, hi,
-            `${here}: about ${Math.round(c.support_pct)}% support, likely between ${Math.round(lo)}% and ${Math.round(hi)}%. ${voted}${verdict ? ", " + verdict : ""}.`,
-            i.sided_with, related ? "related" : i.agreement, i.position),
-          h("p", { class: "op-est" },
+        const ballot = i.kind === "ballot";
+        // A ballot measure is a count of votes cast, so it has no likely range.
+        const barText = ballot
+          ? `${here}: ${Math.round(c.support_pct)}% of voters voted yes on ${c.area_note || "a state ballot measure"}. ${voted}${verdict ? ", " + verdict : ""}.`
+          : `${here}: about ${Math.round(c.support_pct)}% support, likely between ${Math.round(lo)}% and ${Math.round(hi)}%. ${voted}${verdict ? ", " + verdict : ""}.`;
+        const estimate = ballot
+          ? h("p", { class: "op-est" },
+              `${here} voters: ${Math.round(c.support_pct)}% yes on ${c.area_note || "a state ballot measure"}, `,
+              `${c.respondents.toLocaleString()} votes cast (certified result).`)
+          : h("p", { class: "op-est" },
             `${here}: ${Math.round(c.support_pct)}% support (likely ${Math.round(lo)}–${Math.round(hi)}%), `,
             `from ${c.respondents.toLocaleString()} ${c.respondents === 1 ? "person" : "people"} surveyed in ${here}`,
             c.respondents < 20 && c.area === "district" ? ", so this leans mostly on statewide answers" : "",
             several && sv ? ` (${sv.title})` : "",
-            "."),
-          h("p", { class: "op-vote" }, mark(i.position, 11),
-            h("span", {}, h("strong", {}, voted), verdict ? `, ${verdict}` : "", ". "),
-            h("a", { href: i.vote.official_url, target: "_blank", rel: "noopener" }, fmtDate(i.vote.date))),
-          i.note ? h("p", { class: "op-note" }, i.note) : null,
-          i.wording_url ? h("p", { class: "op-note" },
+            ".");
+        const wording = !i.wording_url ? null : ballot
+          ? h("p", { class: "op-note" }, h("a", { href: i.wording_url, target: "_blank", rel: "noopener" },
+              "See the measure and its result"))
+          : h("p", { class: "op-note" },
             h("a", { href: i.wording_url, target: "_blank", rel: "noopener",
                      title: i.wording_hint ? `Opens the ${sv?.title || "survey"} guide; search it for ${i.wording_hint}`
                                            : `Opens the questionnaire with ${here}'s results` },
               "See the exact question"),
-            i.wording_hint ? ` (in the survey guide, search for ${i.wording_hint})` : ` (questionnaire with ${here}'s results, PDF)`) : null);
+            i.wording_hint ? ` (in the survey guide, search for ${i.wording_hint})` : ` (questionnaire with ${here}'s results, PDF)`);
+        return h("li", { "data-op": i.vote.roll_call_id },
+          h("p", { class: "op-q" }, i.question,
+            related ? h("span", { class: "op-related", title: "The vote was on a related bill, not exactly this proposal" },
+              "Related vote") : null),
+          this.rangeBar(c.support_pct, lo, hi, barText,
+            i.sided_with, related ? "related" : i.agreement, i.position),
+          estimate,
+          h("p", { class: "op-vote" }, mark(i.position, 11),
+            h("span", {}, h("strong", {}, voted), verdict ? `, ${verdict}` : "", ". "),
+            h("a", { href: i.vote.official_url, target: "_blank", rel: "noopener" }, fmtDate(i.vote.date))),
+          i.note ? h("p", { class: "op-note" }, i.note) : null,
+          wording);
       });
 
       // One line: each survey organization (with the years used), linked to its section of the
@@ -639,6 +653,10 @@
             `${several ? "Surveys" : "A survey"} asked people about a few major bills; this section `,
             "compares the member's vote on each with what people where they live said. ",
             "Only bills a survey asked about can be compared."),
+          o.items.some(i => i.kind === "ballot") ? h("p", {},
+            "State ballot measures are not surveys: they are the certified votes of the state's own voters on a ",
+            "similar question, so they have no range. They are compared only with members who represent the whole ",
+            "state (senators, and the representative of a one-district state), and only as related votes, never counted.") : null,
           h("p", {},
           "The dark mark is the estimated share who support the bill, and the shaded band is ",
           "where support likely falls. The tick in the middle is an even split; if the band crosses it, the area is ",

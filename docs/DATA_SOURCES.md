@@ -257,6 +257,47 @@ own sample of roughly 400 to 2,000 people.
 - **Coverage.** Only senators from surveyed states and representatives from surveyed
   districts get PPC comparisons. Texas was surveyed statewide, with no Texas districts.
 
+## 5a. Constituent opinion: state ballot measures
+
+| | |
+| --- | --- |
+| Source | Certified statewide results, as compiled by [Ballotpedia](https://ballotpedia.org/2024_ballot_measure_election_results); each measure links to its own page |
+| What it is | Votes actually cast by a state's voters on a measure (e.g. a constitutional amendment). Not a survey: no sample, no margin of error |
+| Fetched by | Hand-entered in `config/ballot_<year>_items.yaml` (measure name, Yes and No counts, link); `python -m congress_congruence.ingest.ballots link|load <year>` |
+| Stored as | `core.survey` with `kind = 'ballot'` (organization "State ballot measures"); one `core.opinion_estimate` row per state, method `certified-results-v1` |
+
+How the figures are calculated:
+
+- **Support** = Yes ÷ (Yes + No). Blank or undervoted ballots aren't counted, the same way surveys
+  leave out people who didn't answer.
+- **No range.** `support_low = support_high = support`. The majority is the side that won; only an
+  exact tie is "too close to call".
+- **respondents = effective_n = votes cast** on the measure, so code that reads sample size still
+  works; the panel says "votes cast", never "people surveyed", and ballot rows are left out of the
+  "People surveyed" line.
+- **area_note** holds the state's own measure name (e.g. "Idaho HJR 5"), shown on the panel and the
+  Surveyed votes page; **source_url** is the measure's page.
+
+Special handling:
+
+- **Who is compared.** A statewide result is compared only with members who represent the whole
+  state: senators (district null) and the representative of a one-district state (the loader copies
+  the row to district 0, using the House seats in place on November 15 of the measure's year).
+  Representatives of states with several districts aren't compared: a statewide result doesn't say
+  what their district voted. The 2024 citizenship and voter-ID measures were in no one-district
+  state, so the 2024 file links Senate votes only; a House rule is kept for 2026 (Alaska, South Dakota).
+- **Always related.** No measure asks exactly what a bill in Congress does (the state amendments say
+  only citizens may vote; the SAVE America Act would also require documents proving citizenship to
+  register and photo ID to vote), so every 2024 item is `match: related`: shown, never counted.
+- **Bundled measures** are named with what else they did, e.g. "Missouri Amendment 7 (also banned
+  ranked-choice voting)" and "Iowa Amendment 1 (also let 17-year-olds vote in primaries)", because a
+  Yes vote was for the whole package.
+- **Left out:** 2024 measures with no matching floor vote in the 119th Congress (abortion, minimum
+  wage, marijuana and others).
+- **YAML keys.** Counts are `yes_votes` and `no_votes`: a bare `yes`/`no` key reads as true/false in YAML.
+- **2026 measures** go in `config/ballot_2026_items.yaml` once states certify (expected: voter ID in
+  NV, NC, OH, CA; citizenship in AK, AR, KS, SD, WV; Colorado Amendment 81 with the Laken Riley Act).
+
 ## 6. Residents per area: Census Bureau
 
 | | |
@@ -297,7 +338,4 @@ own sample of roughly 400 to 2,000 people.
 
 ## 8. Candidate sources not yet added
 
-- **State ballot-measure results.** These are actual votes on topics like abortion, minimum
-  wage and marijuana. They would mostly be "related" matches, compared with senators
-  statewide.
 - **AP VoteCast.** Every state, election years only. Reuse terms need checking first.

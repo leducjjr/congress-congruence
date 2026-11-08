@@ -75,7 +75,8 @@ addEventListener("DOMContentLoaded", () => {
     view.replaceChildren(
       el("h1", {}, "Surveyed votes"),
       el("p", { class: "lede" }, "Every bill independent surveys asked people about, and how members of Congress voted ",
-        "compared with what people where they live said. Each survey organization is shown separately. ",
+        "compared with what people where they live said. State ballot measures, where voters decided a similar question ",
+        "themselves, are shown too. Each source is shown separately. ",
         el("a", { href: "methods.html" }, "How the comparison works"), "."),
       ...(questions.length ? [...byOrg].map(([org, qs]) => el("section", { class: "group org-group", id: window.CC.slug(org) },
         el("h2", {}, org, el("small", {}, `${plural(qs.length, "question", "questions")} · `,
@@ -88,6 +89,11 @@ addEventListener("DOMContentLoaded", () => {
 
   const VERDICT = { with: "With the majority", against: "Against the majority", too_close: "Too close to call",
                     not_surveyed: "Area not surveyed", did_not_vote: "Didn't vote" };
+  // A state ballot measure (certified votes, statewide, no range) rather than a survey.
+  let ballot = false;
+  const areaText = m => ballot
+    ? `${pct(m.area.support_pct)} voted yes on ${m.area.area_note || "the state's measure"}`
+    : `${pct(m.area.support_pct)} support where they live (likely ${pct(m.area.low_pct)}–${pct(m.area.high_pct)})`;
 
   // Beeswarm: place each dot at its x, nudging up/down from the row's centre line until it doesn't
   // overlap a dot already placed. Simple and good enough for a few hundred members.
@@ -168,7 +174,7 @@ addEventListener("DOMContentLoaded", () => {
         const cls = `dot ${related ? "related" : m.agreement} ${m.position}`;
         a.append(S("circle", { cx: p.x, cy: cy + p.dy, r, class: cls }));
         a.append(S("title", {}, `${m.name} (${m.seat}, ${m.party}): voted ${POS[m.position]}; ` +
-          `${pct(m.area.support_pct)} support where they live (likely ${pct(m.area.low_pct)}–${pct(m.area.high_pct)}). ` +
+          `${areaText(m)}. ` +
           (related ? "Related vote, not counted." : VERDICT[m.agreement] + ".")));
         svg.append(a);
       }
@@ -184,7 +190,9 @@ addEventListener("DOMContentLoaded", () => {
       return s;
     };
     return el("div", { class: "legend" },
-      el("span", { class: "axis-caption" }, `Left to right: estimated support where the member lives (${v.chamber === "senate" ? "state" : "district"}), from ${range.split("–")[0]}% to ${range.split("–")[1]}%. The middle line is an even split.`),
+      el("span", { class: "axis-caption" }, ballot
+        ? `Left to right: share of the member's state voting yes on its ballot measure, from ${range.split("–")[0]}% to ${range.split("–")[1]}%. The middle line is an even split.`
+        : `Left to right: estimated support where the member lives (${v.chamber === "senate" ? "state" : "district"}), from ${range.split("–")[0]}% to ${range.split("–")[1]}%. The middle line is an even split.`),
       el("span", {}, dot("with", true), "With a clear majority where they live"),
       el("span", {}, dot("against", true), "Against a clear majority"),
       el("span", {}, dot("too_close", true), "Too close to call"),
@@ -207,7 +215,7 @@ addEventListener("DOMContentLoaded", () => {
     const chipEls = chips;
     search.addEventListener("input", () => { text = search.value.trim().toLowerCase(); draw(); });
     const cols = [["name", "Member"], ["seat", v.chamber === "senate" ? "State" : "District"], ["party", "Party"],
-                  ["position", "Vote"], ["support", "Support where they live"], ["agreement", "Compared with their area"]];
+                  ["position", "Vote"], ["support", ballot ? "Yes vote in their state" : "Support where they live"], ["agreement", "Compared with their area"]];
     const thead = el("tr", {}, cols.map(([k, label]) => {
       const th = el("th", { scope: "col" }, el("button", { type: "button" }, label));
       th.firstChild.addEventListener("click", () => { dir = sortKey === k ? -dir : 1; sortKey = k; draw(); });
@@ -226,7 +234,9 @@ addEventListener("DOMContentLoaded", () => {
       tbody.replaceChildren(...shown.map(m => el("tr", {},
         el("td", {}, el("a", { href: `index.html#${m.state}/${m.bioguide_id}` }, m.name)),
         el("td", {}, m.seat), el("td", {}, m.party || ""), el("td", {}, POS[m.position] || m.position),
-        el("td", {}, m.area ? `${pct(m.area.support_pct)} (likely ${pct(m.area.low_pct)}–${pct(m.area.high_pct)})` : "not surveyed"),
+        el("td", {}, m.area ? (ballot ? `${pct(m.area.support_pct)} yes (${m.area.area_note || "state measure"})`
+                                      : `${pct(m.area.support_pct)} (likely ${pct(m.area.low_pct)}–${pct(m.area.high_pct)})`)
+                            : ballot ? "no measure" : "not surveyed"),
         el("td", { class: `verdict ${v.match === "related" ? "" : m.agreement}` },
           v.match === "related" && m.area ? "Related vote, not counted" : VERDICT[m.agreement]))));
       count.textContent = `Showing ${plural(shown.length, "member", "members")}.`;
@@ -240,6 +250,8 @@ addEventListener("DOMContentLoaded", () => {
 
   async function showDetail() {
     const q = await get(`/v1/surveyed/detail?${new URLSearchParams({ survey, item })}`);
+    ballot = q.source.kind === "ballot";
+    if (ballot) VERDICT.not_surveyed = "No measure in their state";
     document.title = `${q.question} · Surveyed votes · US Congress vs Voters`;
     view.replaceChildren(
       el("p", { class: "back" }, el("a", { href: "surveyed.html" }, "← All surveyed votes")),
@@ -249,9 +261,12 @@ addEventListener("DOMContentLoaded", () => {
         el("p", { class: "sub" }, `${date(v.date)} · ${v.question || ""} — ${v.result || ""} ${v.yea}–${v.nay}`,
           v.support_side === "nay" ? ". This vote was on blocking the proposal, so voting Nay supported it" : "", "."),
         v.match === "related" ? el("p", { class: "meta" },
-          "Related vote: close to, but not the same as, what the survey asked, so it's shown in grey and nobody is scored on it.") : null,
+          `Related vote: close to, but not the same as, what ${ballot ? "the ballot measures asked" : "the survey asked"}, so it's shown in grey and nobody is scored on it.`) : null,
+        ballot ? el("p", { class: "meta" }, "Only members who represent a whole state that voted on a measure are shown: senators, and the representative of a one-district state.") : null,
         el("details", { class: "more how" }, el("summary", {}, "How to read this chart"),
-          el("p", {}, "Each dot is a member of Congress. Left to right is the estimated share of people where they live who support the proposal; the line in the middle is an even split, and the scale covers just the range the areas fall in. ",
+          el("p", {}, "Each dot is a member of Congress. Left to right is ",
+            ballot ? "the share of their state's voters who voted yes on its ballot measure;" : "the estimated share of people where they live who support the proposal;",
+            " the line in the middle is an even split, and the scale covers just the range the areas fall in. ",
             "Members in the top row voted for the proposal, those in the bottom row against it. So a dot in the top right or bottom left voted the way most people where they live wanted; ",
             "top left or bottom right, the other way. Grey dots are in areas where the survey can't tell which side most people are on. ",
             "Hover or tap a dot for the member's name, or use the table below.")),

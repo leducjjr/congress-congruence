@@ -60,6 +60,11 @@ Delegate {#delegate}
 
 ## Surveys and estimates {#surveys}
 
+Ballot measure {#ballot-measure}
+:   A question put directly to a state's voters, such as a constitutional amendment or a citizens'
+    initiative. This site shows certified statewide results beside the surveys, compared only with
+    members who represent the whole state, and never counted in a member's score.
+
 Weighting {#weighting}
 :   Surveys adjust each respondent's influence so the people surveyed match the population, for example by
     age, education and region. We use each survey's own weights.

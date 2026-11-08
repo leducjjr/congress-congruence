@@ -124,7 +124,7 @@ def surveys(response: Response):
     """Every survey loaded, newest first within each organization (for the Sources page)."""
     response.headers["Cache-Control"] = CACHE
     keys = ("survey", "title", "fielded", "respondents", "dataset_url", "guide_url", "about_url",
-            "organization", "description", "items")
+            "organization", "description", "kind", "items")
     return {"surveys": [{k: r[k] for k in keys} for r in fetch(q.SURVEY_LIST)]}
 
 
@@ -228,8 +228,10 @@ def question_cards(qrows: list[dict], members: list[str]) -> list[dict]:
     return [{
         "survey": r["survey"], "item": r["variable"], "question": r["question"], "note": r["note"],
         "source": {"title": r["title"], "organization": r["organization"], "fielded": r["fielded"],
-                   "guide_url": r["guide_url"]},
-        "spread": spreads.get((r["survey"], r["variable"]), {}),
+                   "guide_url": r["guide_url"], "about_url": r.get("about_url"), "kind": r.get("kind", "survey")},
+        # A ballot measure's result is statewide; its copies for at-large House seats aren't districts.
+        "spread": {k: v for k, v in spreads.get((r["survey"], r["variable"]), {}).items()
+                   if r.get("kind") != "ballot" or k == "states"},
         "votes": [{
             "chamber": t["chamber"], "match": t["match_kind"], "support_side": t["support_side"],
             "roll_call_id": t["roll_call_id"], "date": t["vote_date"], "question": t["question"],
@@ -305,7 +307,8 @@ def surveyed_detail(response: Response,
             "position": r["position"], "sided_with": sided_with(r["position"], r["support_side"]),
             "area": {"support_pct": round(100 * r["support"], 1), "low_pct": round(100 * r["support_low"], 1),
                      "high_pct": round(100 * r["support_high"], 1), "majority": r["majority"],
-                     "respondents": r["respondents"]} if surveyed_area else None,
+                     "respondents": r["respondents"], "area_note": r["area_note"],
+                     "source_url": r["source_url"]} if surveyed_area else None,
             "agreement": agreement(r["position"], r["majority"], r["support_side"]) if surveyed_area
                          else ("not_surveyed" if r["position"] in ("yea", "nay") else "did_not_vote"),
         })
@@ -497,6 +500,7 @@ def member_opinion(bioguide_id: str, response: Response):
     surveys = {r["survey"]: r for r in fetch(q.SURVEYS)}
     items = [{
         "survey": r["survey"],
+        "kind": r["kind"],                              # survey | ballot (certified votes on a state measure)
         "item": r["variable"],
         "question": r["question"],
         "note": r["note"],
@@ -520,13 +524,16 @@ def member_opinion(bioguide_id: str, response: Response):
             "support_pct": round(100 * r["support"], 1),
             "range_pct": [round(100 * r["support_low"], 1), round(100 * r["support_high"], 1)],
             "majority": r["majority"],
-            "respondents": r["respondents"],
+            "respondents": r["respondents"],             # for a ballot measure: votes cast on it
             "residents": r["residents"],
+            "area_note": r["area_note"],                 # for a ballot measure: the state's measure name
         },
         "agreement": agreement(r["position"], r["majority"], r["support_side"]),
     } for r in rows]
     samples, res = {}, {}
     for i in items:
+        if i["kind"] == "ballot":
+            continue                                     # votes cast, not people surveyed
         key = (i["survey"], i["constituents"]["area_label"])
         samples[key] = max(samples.get(key, 0), i["constituents"]["respondents"])
         res[key] = i["constituents"]["residents"]
@@ -544,7 +551,7 @@ def member_opinion(bioguide_id: str, response: Response):
         "surveys": [{
             "name": s["survey"], "title": s["title"], "fielded": s["fielded"], "respondents": s["respondents"],
             "dataset_url": s["dataset_url"], "guide_url": s["guide_url"], "about_url": s["about_url"],
-            "organization": s["organization"], "description": s["description"],
+            "organization": s["organization"], "description": s["description"], "kind": s["kind"],
         } for s in surveys.values() if any(i["survey"] == s["survey"] for i in items)],
         "items": items,
     }
