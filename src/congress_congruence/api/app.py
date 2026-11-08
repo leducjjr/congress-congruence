@@ -192,7 +192,7 @@ def member_opinion(bioguide_id: str, response: Response):
     row = get_member_row(bioguide_id)
     rows = fetch(q.OPINION, {"id": bioguide_id, "chamber": row["chamber"], "state": row["state"],
                              "district": row["district"] if row["chamber"] == "house" else None})
-    sizes = {r["survey"]: r["respondents"] for r in fetch(q.SURVEY_SIZES)}
+    surveys = {r["survey"]: r for r in fetch(q.SURVEYS)}
     items = [{
         "survey": r["survey"],
         "item": r["variable"],
@@ -223,6 +223,9 @@ def member_opinion(bioguide_id: str, response: Response):
             "clear_majority": len(counted),
             "with_majority": sum(i["agreement"] == "with" for i in counted),
         },
-        "surveys": [{"name": k, "respondents": v} for k, v in sizes.items()],
+        "surveys": [{
+            "name": s["survey"], "title": s["title"], "fielded": s["fielded"], "respondents": s["respondents"],
+            "dataset_url": s["dataset_url"], "guide_url": s["guide_url"], "about_url": s["about_url"],
+        } for s in surveys.values() if any(i["survey"] == s["survey"] for i in items)],
         "items": items,
     }

@@ -154,6 +154,9 @@
     .op-vote a { color: var(--ink-soft); white-space: nowrap; font-size: 0.85rem; }
     .op-note, .op-about { margin: 4px 0 0; font-size: 0.8rem; color: var(--ink-soft); }
     .op-about { margin-top: 10px; }
+    .op-source { margin: 12px 0 0; font-size: 0.8rem; color: var(--ink-soft); }
+    .op-source strong { color: var(--ink); font-weight: 600; }
+    .op-source a, .op-note a { color: var(--ink-soft); }
     .note { color: var(--ink-soft); }
     .error { color: var(--ink); background: var(--surface-sunk); border-radius: 6px; padding: 10px 12px; }
     .loading { color: var(--ink-soft); }
@@ -452,6 +455,8 @@
             ` surveyed votes where ${where}'s estimated majority was clear.`)
         : h("p", { class: "op-lead" }, `On these votes, ${where}'s estimated opinion was too close to call.`);
 
+      const survey = (o.surveys || [])[0];
+      const guide = survey?.guide_url;
       const rows = o.items.map(i => {
         const c = i.constituents;
         const [lo, hi] = c.range_pct;
@@ -461,17 +466,31 @@
           h("p", { class: "op-q" }, i.question),
           this.rangeBar(c.support_pct, lo, hi, `${where}: about ${Math.round(c.support_pct)}% support, likely between ${Math.round(lo)}% and ${Math.round(hi)}%`),
           h("p", { class: "op-est" },
-            `${where}: ${Math.round(c.support_pct)}% support (likely ${Math.round(lo)}–${Math.round(hi)}%)`),
+            `${where}: ${Math.round(c.support_pct)}% support (likely ${Math.round(lo)}–${Math.round(hi)}%), `,
+            `from ${c.respondents.toLocaleString()} ${c.respondents === 1 ? "person" : "people"} surveyed in ${where}`,
+            c.respondents < 20 && m.chamber === "house" ? ", so this leans mostly on statewide answers" : "",
+            "."),
           h("p", { class: "op-vote" }, mark(i.position, 11),
             h("span", {}, h("strong", {}, voted), tail, ". "),
             h("a", { href: i.vote.official_url, target: "_blank", rel: "noopener" }, fmtDate(i.vote.date))),
-          i.note ? h("p", { class: "op-note" }, i.note) : null);
+          i.note ? h("p", { class: "op-note" }, i.note) : null,
+          guide ? h("p", { class: "op-note" },
+            h("a", { href: guide, target: "_blank", rel: "noopener",
+                     title: `The exact wording is in the survey guide under ${i.item}` },
+              `Survey question ${i.item}`), " (exact wording in the survey guide)") : null);
       });
 
-      const survey = (o.surveys || [])[0];
-      const about = survey
-        ? `Estimates from the Cooperative Election Study (${survey.name}); about ${survey.respondents.toLocaleString()} people answered each question nationwide. `
-        : "";
+      const link = (href, text) => href ? h("a", { href, target: "_blank", rel: "noopener" }, text) : null;
+      const sourceLine = survey ? h("p", { class: "op-source" },
+        h("strong", {}, "Source: "),
+        `${survey.title}`,
+        survey.fielded || survey.respondents
+          ? ` (${[survey.fielded && `interviewed ${survey.fielded}`,
+                 survey.respondents && `${survey.respondents.toLocaleString()} adults nationwide`].filter(Boolean).join(", ")})`
+          : "",
+        ", a large academic survey of U.S. adults. ",
+        [link(survey.about_url, "About the survey"), link(survey.guide_url, "Questions asked (PDF)"),
+         link(survey.dataset_url, "Survey data")].filter(Boolean).flatMap((a, k) => k ? [" | ", a] : [a])) : null;
       return h("section", { class: "opinion" },
         h("h3", { id: "compared", tabindex: "-1" }, "Compared with constituents"),
         h("p", { class: "intro" },
@@ -482,7 +501,8 @@
         h("div", { class: "op-scale", "aria-hidden": "true" },
           h("span", {}, "All oppose"), h("span", {}, "Even split"), h("span", {}, "All support")),
         h("ol", { class: "op-list" }, rows),
-        h("p", { class: "op-about" }, about,
+        sourceLine,
+        h("p", { class: "op-about" },
           m.chamber === "senate"
             ? "Senators are compared with their whole state. "
             : "House districts have few respondents each, so estimates lean on statewide answers and many are too close to call. ",

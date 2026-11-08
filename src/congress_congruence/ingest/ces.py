@@ -356,6 +356,15 @@ def load(conn, year: int, local_file: Path | None = None) -> dict:
     survey = cfg["survey"]
     summary = {"respondents": nrows, "weight": weight_col, "items": len(items), "votes_linked": len(links)}
     with conn.transaction(), conn.cursor() as cur:
+        src = cfg.get("source", {})
+        cur.execute(
+            """insert into core.survey (survey, title, fielded, respondents, dataset_url, guide_url, about_url)
+               values (%s, %s, %s, %s, %s, %s, %s)
+               on conflict (survey) do update set title = excluded.title, fielded = excluded.fielded,
+                   respondents = excluded.respondents, dataset_url = excluded.dataset_url,
+                   guide_url = excluded.guide_url, about_url = excluded.about_url""",
+            (survey, src.get("title", survey), src.get("fielded"), src.get("respondents") or nrows,
+             src.get("dataset_url"), src.get("guide_url"), src.get("about_url")))
         cur.execute("delete from core.survey_item where survey = %s", (survey,))   # cascades
         for var in items:
             item = cfg["items"][var]

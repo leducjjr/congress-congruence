@@ -139,10 +139,8 @@ select si.survey, si.variable, si.question, coalesce(siv.reader_note, si.note) a
  order by r.vote_date, si.variable
 """
 
-# People who answered, per survey: the largest count among its questions.
-SURVEY_SIZES = """
-select survey, max(answered) as respondents from (
-  select survey, variable, sum(respondents) as answered
-    from core.opinion_estimate where district is null group by survey, variable) per_item
- group by survey
+# Where each survey comes from (title, when, size, links).
+SURVEYS = """
+select survey, title, fielded, respondents, dataset_url, guide_url, about_url
+  from core.survey order by survey
 """

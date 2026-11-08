@@ -218,3 +218,17 @@ def test_chamber_notes_only_show_on_that_chambers_panels(client):
     assert house["CC25_340e"] is None and "cloture" in senate["CC25_340e"]       # Senate-only note
     assert "H.Res. 590" in house["CC25_340g"] and senate["CC25_340g"] is None     # House-only note
     assert "full wording" in house["CC25_340f"] and "full wording" in senate["CC25_340f"]  # item-level note
+
+
+def test_api_names_the_survey_with_links(client):
+    s = client.get("/v1/members/H000001/opinion").json()["surveys"]
+    assert len(s) == 1
+    assert s[0]["title"] == "Cooperative Election Study 2025" and s[0]["fielded"] == "November 2025"
+    assert s[0]["respondents"] == 17000
+    assert s[0]["guide_url"].startswith("https://dataverse.harvard.edu/")
+    assert s[0]["dataset_url"] == "https://doi.org/10.7910/DVN/DFUGJR"
+
+
+def test_api_reports_respondents_per_area(client):
+    items = client.get("/v1/members/H000001/opinion").json()["items"]
+    assert all(i["constituents"]["respondents"] == 300 for i in items)   # TX-1 in the made-up survey
