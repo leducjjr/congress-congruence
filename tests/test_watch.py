@@ -140,3 +140,58 @@ def test_draft_is_valid_yaml(project, conn, survey_2027, monkeypatch):
     assert cfg["survey"] == "CES 2027" and cfg["dataset_id"] == "doi:10.7910/DVN/NEW27"
     assert set(cfg["items"]) == {"CC27_340a", "CC27_340b"}
     assert cfg["source"]["dataset_url"] == "https://doi.org/10.7910/DVN/NEW27"
+
+
+# ---------------------------------------------------------------- Census
+
+def census_fixture(congress):
+    from test_population import DISTRICTS_119, STATES   # pytest puts tests/ on the import path
+    districts = [DISTRICTS_119[0]] + [[r[0].replace("119th", f"{congress}th"), *r[1:]] for r in DISTRICTS_119[1:]]
+    return districts, STATES
+
+
+def test_census_watch_loads_the_next_release_when_published(conn, monkeypatch):
+    import requests
+    from congress_congruence.ingest import population
+    districts, states = census_fixture(119)
+    published = {2024}
+
+    def fake_fetch(year, geography, within=None, http=None):
+        if year not in published:
+            raise requests.HTTPError("404")
+        return districts if geography.startswith("congressional") else states
+
+    monkeypatch.setattr(population, "fetch", fake_fetch)
+    assert watch.check_census(conn) == []                    # nothing loaded yet: left to a person
+    population.load(conn, 2024)
+    assert watch.check_census(conn) == []                    # 2025 not published yet
+    published.add(2025)
+    msgs = watch.check_census(conn)
+    assert len(msgs) == 1 and "ACS 2025" in msgs[0] and "Nothing to review" in msgs[0]
+    assert watch.latest_acs_year(conn) == 2025
+    assert watch.check_census(conn) == []                    # 2026 not published
+
+
+def test_census_watch_surfaces_a_key_problem(conn, monkeypatch):
+    from congress_congruence.ingest import population
+    population_rows = census_fixture(119)
+    monkeypatch.setattr(population, "fetch", lambda *a, **k: population_rows[0] if "congressional" in a[1] else population_rows[1])
+    population.load(conn, 2024)
+
+    def no_key(*a, **k):
+        raise RuntimeError("The Census API needs a free key (it redirected to its missing-key page).")
+    monkeypatch.setattr(population, "fetch", no_key)
+    with pytest.raises(RuntimeError, match="free key"):
+        watch.check_census(conn)
+
+
+def test_run_separates_review_from_updates(project, conn, monkeypatch):
+    monkeypatch.setattr(watch, "SOURCES", {
+        "A": (lambda c: ["CES 2027 needs review"], "review"),
+        "B": (lambda c: ["Loaded ACS 2025"], "info"),
+        "C": (lambda c: (_ for _ in ()).throw(RuntimeError("boom")), "info"),
+    })
+    result = watch.run(conn)
+    assert result == {"needs_review": 1, "updated": 1, "errors": ["C: boom"]}
+    log = (project / "logs" / "review_needed.txt").read_text()
+    assert "CES 2027 needs review" in log and "Loaded ACS 2025" in log

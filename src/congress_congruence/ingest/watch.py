@@ -12,6 +12,9 @@ watcher records it, does the preparation that needs no judgment, and asks for re
                       A person checks the matches, saves the file as
                       config/ces_<year>_items.yaml, and runs `ces link` / `ces load`.
   Updated release  -> (a new version of a year already seen) note it; reload after review.
+  Census release   -> the next American Community Survey 1-year release, once published
+                      (usually September), is loaded automatically: population figures need
+                      no judgment. Reported, not held for review.
 
 What has been seen is kept in data/ces_releases.json. The first run only records what
 exists today, so it doesn't ask about years published long ago.
@@ -230,10 +233,41 @@ def draft_items(conn, year: int, rel: dict, columns, labels, values, nrows) -> s
 
 # ---------------------------------------------------------------- running
 
-SOURCES = {"CES": check_ces}
+# ---------------------------------------------------------------- Census population
+
+def latest_acs_year(conn) -> int | None:
+    with conn.cursor() as cur:
+        cur.execute("select max(substring(source from 'ACS ([0-9]{4})')::int) from core.area_population")
+        return cur.fetchone()[0]
 
 
-def notify(messages: list[str]) -> None:
+def check_census(conn, http=None) -> list[str]:
+    """Load the next ACS 1-year release once the Census API has it. No judgment is involved
+    (the loader reads which Congress's district lines it uses), so this loads and reports."""
+    import requests
+    from . import population
+    latest = latest_acs_year(conn)
+    if latest is None:
+        return []                                   # nothing loaded yet: done by hand first
+    year = latest + 1
+    try:
+        population.fetch(year, "state:*", None, http)
+    except requests.HTTPError:
+        return []                                   # not released yet
+    except RuntimeError as e:
+        if "free key" in str(e):
+            raise                                   # a real problem: surface it as an error
+        return []                                   # Census answers unreleased years with a message
+    result = population.load(conn, year, http)
+    return [f"Loaded Census population from {result['source']} ({result['congress']}th Congress district lines): "
+            f"{result['districts']} districts, {result['states']} states. Nothing to review."]
+
+
+# Each source: (check function, "review" if a person must act, "info" if it only reports).
+SOURCES = {"CES": (check_ces, "review"), "Census": (check_census, "info")}
+
+
+def notify(messages: list[str], needs_review: bool = True) -> None:
     out = config.PROJECT_ROOT / "logs" / "review_needed.txt"
     out.parent.mkdir(exist_ok=True)
     stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
@@ -244,24 +278,26 @@ def notify(messages: list[str]) -> None:
     if url:
         try:
             http_session().post(url, data="\n\n".join(messages).encode(), timeout=20,
-                                headers={"Title": "congress-congruence: survey needs review"})
+                                headers={"Title": "congress-congruence: " +
+                                         ("new data needs review" if needs_review else "data updated")})
         except Exception as e:
             log.warning("Notification failed: %s", e)
 
 
 def run(conn) -> dict:
-    messages, errors = [], []
-    for name, check in SOURCES.items():
+    review, info, errors = [], [], []
+    for name, (check, kind) in SOURCES.items():
         try:
-            messages += check(conn)
+            (review if kind == "review" else info).extend(check(conn))
         except Exception as e:
+            conn.rollback()
             log.exception("Checking %s failed", name)
             errors.append(f"{name}: {e}")
-    if messages:
-        notify(messages)
-    for m in messages:
+    if review or info:
+        notify(review + info, needs_review=bool(review))
+    for m in review + info:
         print(m)
-    return {"needs_review": len(messages), "errors": errors}
+    return {"needs_review": len(review), "updated": len(info), "errors": errors}
 
 
 def main(argv: list[str]) -> int:

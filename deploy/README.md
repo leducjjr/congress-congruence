@@ -152,10 +152,10 @@ fails or doesn't report on time (which also catches the server being down).
 Jobs report "started" and then "succeeded" or "failed" with their exit code.
 No `.env` line means no reporting for that job; nothing else changes.
 
-## New survey releases
+## New survey and Census releases
 
-`survey-watch` runs on the 1st of each month. It never changes what the panel
-shows. When the CES publishes a new year it downloads it, writes the inspection
+`survey-watch` runs on the 1st of each month. For surveys it never changes what
+the panel shows. When the CES publishes a new year it downloads it, writes the inspection
 report, and drafts `config/drafts/ces_<year>_items.yaml` listing every
 support/oppose question about Congress with the closest-matching votes as
 comments. When a year already loaded gets a new version, it says so.
@@ -172,3 +172,9 @@ python -m congress_congruence.ingest.watch --list    # releases seen so far
 ```
 
 The first run only records the releases that already exist.
+
+**Census population** is different: once the Census Bureau publishes the next
+American Community Survey 1-year release (usually September), the watcher loads
+it automatically, since population figures need no judgment, and reports it in
+the same log and notification. It needs `CENSUS_API_KEY` in `.env`; a missing or
+expired key shows up as a failed run (and an alert, if alerts are set up).
