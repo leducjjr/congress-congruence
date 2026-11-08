@@ -137,6 +137,7 @@ fails or doesn't report on time (which also catches the server being down).
    | members | `10 6 * * *` | 1 hour |
    | house | `17 */2 * * *` | 1 hour |
    | senate-voteview | `40 6 * * *` | 1 hour |
+   | survey-watch | `25 7 1 * *` | 1 day |
 
 3. Add each check's ping URL to `.env`:
 
@@ -145,7 +146,29 @@ fails or doesn't report on time (which also catches the server being down).
    HEALTHCHECK_MEMBERS=https://hc-ping.com/your-uuid-2
    HEALTHCHECK_HOUSE=https://hc-ping.com/your-uuid-3
    HEALTHCHECK_SENATE_VOTEVIEW=https://hc-ping.com/your-uuid-4
+   HEALTHCHECK_SURVEY_WATCH=https://hc-ping.com/your-uuid-5
    ```
 
 Jobs report "started" and then "succeeded" or "failed" with their exit code.
 No `.env` line means no reporting for that job; nothing else changes.
+
+## New survey releases
+
+`survey-watch` runs on the 1st of each month. It never changes what the panel
+shows. When the CES publishes a new year it downloads it, writes the inspection
+report, and drafts `config/drafts/ces_<year>_items.yaml` listing every
+support/oppose question about Congress with the closest-matching votes as
+comments. When a year already loaded gets a new version, it says so.
+
+It writes what needs attention to `logs/review_needed.txt`, and if `.env` has
+`NOTIFY_URL` (an ntfy.sh topic, for example) sends a phone notification.
+
+To act on a new year: review the draft with Claude or by hand, save it as
+`config/ces_<year>_items.yaml`, then `ces link <year>` (check the matches) and
+`ces load <year>`.
+
+```bash
+python -m congress_congruence.ingest.watch --list    # releases seen so far
+```
+
+The first run only records the releases that already exist.

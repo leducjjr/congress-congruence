@@ -44,6 +44,19 @@ ITEM_LABEL_WORDS = re.compile(
 
 # ---------------------------------------------------------------- Dataverse
 
+def dataset_id(year: int) -> str:
+    """Dataverse ID for a year: the built-in list, else one recorded by the survey watcher
+    (data/ces_releases.json), else an error naming what to do."""
+    if year in DATASETS:
+        return DATASETS[year]
+    found = config.PROJECT_ROOT / "data" / "ces_releases.json"
+    if found.exists():
+        known = json.loads(found.read_text())
+        if str(year) in known:
+            return known[str(year)]["id"]
+    raise KeyError(f"No Dataverse ID known for CES {year}. Run the survey watcher, or add it to DATASETS.")
+
+
 def dataset_files(persistent_id: str, http=None) -> dict:
     http = http or http_session()
     url = f"{DATAVERSE}/api/datasets/:persistentId/?persistentId={persistent_id}"
@@ -94,7 +107,7 @@ def pick_guide_file(files: list[dict]) -> dict | None:
 
 def guide_url_for(year: int) -> str | None:
     try:
-        f = pick_guide_file(dataset_files(DATASETS[year])["files"])
+        f = pick_guide_file(dataset_files(dataset_id(year))["files"])
     except Exception as e:      # the guide link is a nicety; never block a load on it
         log.warning("Couldn't look up the CES %s guide: %s", year, e)
         return None
@@ -183,8 +196,8 @@ def inspect(year: int, local_file: Path | None = None) -> Path:
         path = local_file
         say(f"Local file: {path}")
     else:
-        info = dataset_files(DATASETS[year])
-        say(f"Dataset {DATASETS[year]}  version {info['version']}  released {info['released']}")
+        info = dataset_files(dataset_id(year))
+        say(f"Dataset {dataset_id(year)}  version {info['version']}  released {info['released']}")
         say("Files:")
         for f in info["files"]:
             mb = round((f["bytes"] or 0) / 1e6, 1)
@@ -260,7 +273,7 @@ def find_data_file(year: int, local_file: Path | None) -> Path:
     found = sorted(folder.glob("*.dta")) + sorted(folder.glob("*.csv"))
     if found:
         return found[0]
-    info = dataset_files(DATASETS[year])
+    info = dataset_files(dataset_id(year))
     chosen = pick_data_file(info["files"])
     if not chosen:
         raise FileNotFoundError(f"No data file in the CES {year} release")
@@ -421,9 +434,12 @@ def main(argv: list[str]) -> int:
         print(__doc__)
         return 2
     cmd, year = args[0], int(args[1])
-    if year not in DATASETS and not local:
-        print(f"No Dataverse ID recorded for {year}. Known: {sorted(DATASETS)}")
-        return 2
+    if not local:
+        try:
+            dataset_id(year)
+        except KeyError as e:
+            print(e)
+            return 2
     if cmd == "inspect":
         inspect(year, local)
         return 0

@@ -8,6 +8,7 @@
 #   house            load any new House votes for the current session (official Clerk files)
 #   senate-voteview  reload the current Congress's Senate votes from Voteview
 #   backup           nightly database backup (scripts/backup_db.sh)
+#   survey-watch     monthly check for new survey releases; drafts them for review, never loads
 #
 # Each job holds a lock, so a slow run is never started twice at once.
 #
@@ -58,8 +59,12 @@ case "$job" in
         exec >>"$log" 2>&1
         run flock -n "$lock" scripts/backup_db.sh
         ;;
+    survey-watch)
+        exec >>"$log" 2>&1
+        run flock -n "$lock" python -m congress_congruence.ingest.watch
+        ;;
     *)
-        echo "usage: $0 members|house|senate-voteview|backup" >&2
+        echo "usage: $0 members|house|senate-voteview|backup|survey-watch" >&2
         exit 2
         ;;
 esac
