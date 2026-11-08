@@ -12,6 +12,9 @@
  *   site-base  where the site's reference pages are (Sources, Methods, Glossary); default: the folder
  *              this script was loaded from, so an embed elsewhere still links to them
  *
+ * Events
+ *   cc-member-loaded  fired once a member's record has loaded; event.detail is the member summary
+ *
  * Design notes
  *   - No party colours. Votes are told apart by shape (filled / ring / dash),
  *     so the panel reads the same to everyone and to colour-blind readers.
@@ -344,6 +347,8 @@
         this.opinion = opinion;
         this.showing = Math.min(this.listSize, this.votes.length);
         this.render();
+        // Lets the host page react (e.g. remember recently viewed members); detail = the member summary.
+        this.dispatchEvent(new CustomEvent("cc-member-loaded", { detail: member, bubbles: true }));
       } catch (err) {
         if (ticket !== this.request) return;
         this.body.replaceChildren(h("p", { class: "error", role: "alert" },

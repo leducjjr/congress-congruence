@@ -12,10 +12,6 @@ head: |
     .home .intro { color: var(--ink-soft); margin: 0 0 6px; font-size: 0.98rem; }
     .home .coverage { color: var(--ink-soft); font-size: 0.85rem; margin: 0 0 20px; }
     .home .coverage:empty { display: none; }
-    .results { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 14px 18px; margin: 0 0 20px; }
-    .results h2 { font-size: 1rem; margin: 0 0 8px; }
-    .results ul { margin: 0; padding-left: 1.2em; }
-    .results li { margin: 4px 0; }
     .status { color: var(--ink-soft); font-size: 0.9rem; min-height: 1.5em; margin: 0 0 12px; }
   </style>
 main_class: home
@@ -25,8 +21,6 @@ main_class: home
   where independent surveys asked about a bill, how their vote lines up with what people where they live said.
   <a href="methods.html">How this works</a>.</p>
 <p class="coverage" data-coverage></p>
-
-<section id="results" class="results" hidden aria-live="polite"></section>
 
 <div class="pick">
   <label>State
@@ -101,34 +95,21 @@ main_class: home
   function openFromHash() {
     const [hashState, hashId] = location.hash.slice(1).split("/");
     if (STATES[hashState]) {
-      document.getElementById("results").hidden = true;
       stateSel.value = hashState; loadState(hashState, hashId); return true;
     }
     return false;
   }
   window.addEventListener("hashchange", openFromHash);
+  openFromHash();
 
-  // index.html?q=... (the header search, submitted without picking a suggestion):
-  // one match opens it; several are listed to choose from.
-  const params = new URLSearchParams(location.search);
-  if (!openFromHash() && params.get("q")) {
-    const query = params.get("q");
-    document.getElementById("site-q").value = query;
-    getJSON(`/v1/search?q=${encodeURIComponent(query)}`).then(({ members }) => {
-      if (members.length === 1) { location.replace(`index.html#${members[0].state}/${members[0].bioguide_id}`); return; }
-      const box = document.getElementById("results");
-      const heading = document.createElement("h2");
-      heading.textContent = members.length ? `Members matching \u201c${query}\u201d` : `No member matches \u201c${query}\u201d`;
-      const ul = document.createElement("ul");
-      for (const m of members) {
-        const li = document.createElement("li");
-        const a = Object.assign(document.createElement("a"), { href: `index.html#${m.state}/${m.bioguide_id}`, textContent: m.name });
-        li.append(a, ` \u2014 ${m.chamber === "senate" ? `Senator, ${STATES[m.state] || m.state}` : `Representative, ${m.seat}`}, ${m.party}`);
-        ul.append(li);
-      }
-      box.replaceChildren(heading, ...(members.length ? [ul] : [Object.assign(document.createElement("p"),
-        { textContent: "Try a last name, a state, or a seat like TX-7, or pick a state below." })]));
-      box.hidden = false;
-    }).catch(() => {});
-  }
+  // Remember the last few members opened, in this browser only, so search results can show
+  // "how your members voted". Nothing is sent anywhere; the Search page can forget them.
+  panel.addEventListener("cc-member-loaded", e => {
+    try {
+      const m = e.detail, key = "cc-my-members";
+      const mine = (JSON.parse(localStorage.getItem(key)) || []).filter(x => x.id !== m.bioguide_id);
+      mine.unshift({ id: m.bioguide_id, name: m.name });
+      localStorage.setItem(key, JSON.stringify(mine.slice(0, 3)));
+    } catch { /* storage unavailable: nothing to remember */ }
+  });
 </script>

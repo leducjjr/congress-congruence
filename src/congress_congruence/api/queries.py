@@ -195,3 +195,112 @@ select s.survey, s.title, s.fielded, s.respondents, s.dataset_url, s.guide_url, 
   from core.survey s
  order by coalesce(s.organization, s.survey), s.survey desc
 """
+
+# ---------------------------------------------------------------- text search (votes, survey questions)
+# %(tsq)s is a to_tsquery string built by app.build_tsquery from letters and digits only.
+
+VOTE_DOC = """to_tsvector('english', coalesce(r.description, '') || ' ' || coalesce(r.question, '') || ' ' ||
+           coalesce(r.bill_type || ' ' || r.bill_number || ' ' || r.bill_type || r.bill_number, ''))"""
+
+VOTE_SEARCH = f"""
+select r.roll_call_id, r.chamber, r.congress, r.session, r.roll_number, r.vote_date, r.question,
+       r.description, r.result, r.yea_total, r.nay_total, r.present_total, r.not_voting_total,
+       r.bill_congress, r.bill_type, r.bill_number, r.amendment_number,
+       count(*) over () as total
+  from core.roll_call r
+ where {VOTE_DOC} @@ to_tsquery('english', %(tsq)s)
+   and (%(chamber)s::text is null or r.chamber = %(chamber)s)
+ order by r.vote_date desc, r.chamber, r.roll_number desc
+ limit %(limit)s
+"""
+
+# How each party voted, by the party of the term covering the vote date.
+VOTE_PARTY_SPLIT = """
+select v.roll_call_id, coalesce(t.caucus, t.party) as party, v.position, count(*) as n
+  from core.member_vote v
+  join core.roll_call r using (roll_call_id)
+  cross join lateral (select t.party, t.caucus from core.term t
+                       where t.bioguide_id = v.bioguide_id and t.chamber = r.chamber
+                         and r.vote_date between t.start_date and t.end_date
+                       order by t.start_date desc limit 1) t
+ where v.roll_call_id = any(%(ids)s)
+ group by 1, 2, 3
+"""
+
+# Which of these votes a survey question is compared with.
+VOTE_SURVEYED = """
+select siv.roll_call_id, siv.survey, siv.variable, siv.match_kind, si.question
+  from core.survey_item_vote siv join core.survey_item si using (survey, variable)
+ where siv.roll_call_id = any(%(ids)s)
+"""
+
+# How particular members voted on particular votes ("your members").
+MEMBER_POSITIONS = """
+select v.roll_call_id, v.bioguide_id, v.position,
+       coalesce(m.official_full, m.first_name || ' ' || m.last_name) as name, m.last_name
+  from core.member_vote v join core.member m using (bioguide_id)
+ where v.roll_call_id = any(%(ids)s) and v.bioguide_id = any(%(members)s)
+"""
+
+QUESTION_SEARCH = """
+select si.survey, si.variable, si.question, si.note, s.title, s.fielded,
+       coalesce(s.organization, s.survey) as organization, s.guide_url,
+       count(*) over () as total
+  from core.survey_item si join core.survey s using (survey)
+ where to_tsvector('english', si.question || ' ' || coalesce(si.survey_label, '') || ' ' || coalesce(si.note, ''))
+       @@ to_tsquery('english', %(tsq)s)
+   and exists (select 1 from core.survey_item_vote v where v.survey = si.survey and v.variable = si.variable)
+ order by si.survey desc, si.variable
+ limit %(limit)s
+"""
+
+# For each matching question and chamber: the vote it's compared with, and how many members voted
+# with or against a clear majority where they live, or where it was too close to call.
+QUESTION_TALLY = """
+with links as (
+    select siv.survey, siv.variable, siv.chamber, siv.roll_call_id, siv.support_side, siv.match_kind,
+           r.vote_date, r.question, r.result, r.yea_total, r.nay_total, r.congress, r.session, r.roll_number
+      from core.survey_item_vote siv join core.roll_call r using (roll_call_id)
+     where (siv.survey || '|' || siv.variable) = any(%(keys)s)
+),
+judged as (
+    select l.*, v.bioguide_id,
+           case when v.position not in ('yea', 'nay') then 'did_not_vote'
+                when oe.majority is null then 'not_surveyed'
+                when oe.majority = 'too_close' then 'too_close'
+                when (v.position = l.support_side) = (oe.majority = 'support') then 'with'
+                else 'against' end as agreement
+      from links l
+      join core.member_vote v using (roll_call_id)
+      cross join lateral (select t.state, t.district from core.term t
+                           where t.bioguide_id = v.bioguide_id and t.chamber = l.chamber
+                             and l.vote_date between t.start_date and t.end_date
+                           order by t.start_date desc limit 1) t
+      left join core.opinion_estimate oe
+             on oe.survey = l.survey and oe.variable = l.variable and oe.state = t.state
+            and ((l.chamber = 'senate' and oe.district is null)
+                 or (l.chamber = 'house' and oe.district = t.district))
+)
+select survey, variable, chamber, roll_call_id, support_side, match_kind, vote_date, question, result,
+       yea_total, nay_total, congress, session, roll_number,
+       count(*) filter (where agreement = 'with')         as with_majority,
+       count(*) filter (where agreement = 'against')      as against_majority,
+       count(*) filter (where agreement = 'too_close')    as too_close,
+       count(*) filter (where agreement = 'not_surveyed') as not_surveyed,
+       count(*) filter (where agreement = 'did_not_vote') as did_not_vote
+  from judged
+ group by survey, variable, chamber, roll_call_id, support_side, match_kind, vote_date, question, result,
+          yea_total, nay_total, congress, session, roll_number
+"""
+
+# Spread of estimated support across the states (and districts) surveyed, per question.
+QUESTION_SPREAD = """
+select survey, variable, district is null as statewide, count(*) as areas,
+       min(support) as lowest, max(support) as highest,
+       count(*) filter (where majority = 'support') as support_areas,
+       count(*) filter (where majority = 'oppose') as oppose_areas,
+       count(*) filter (where majority = 'too_close') as too_close_areas
+  from core.opinion_estimate
+ where (survey || '|' || variable) = any(%(keys)s)
+ group by survey, variable, district is null
+"""

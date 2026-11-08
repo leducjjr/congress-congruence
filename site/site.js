@@ -54,15 +54,20 @@
       }
     };
     const show = (members, query) => {
-      results = members;
-      list.replaceChildren(...(members.length ? members.map((m, i) => {
+      // Members first, then always a last option: search votes and survey questions for the words.
+      const option = (i, text, sub, href) => {
         const li = document.createElement("li");
         li.id = `site-q-opt-${i}`; li.setAttribute("role", "option"); li.setAttribute("aria-selected", "false");
-        li.append(m.name); const small = document.createElement("small"); small.textContent = describe(m); li.append(small);
-        li.addEventListener("mousedown", e => { e.preventDefault(); location.href = memberHref(m); });
+        li.append(text);
+        if (sub) { const small = document.createElement("small"); small.textContent = sub; li.append(small); }
+        li.addEventListener("mousedown", e => { e.preventDefault(); location.href = href; });
         return li;
-      }) : [Object.assign(document.createElement("li"), { className: "empty",
-              textContent: `No member of Congress matches “${query}”. Try a last name, a state, or a seat like TX-7.` })]));
+      };
+      const everything = `search.html?q=${encodeURIComponent(query)}`;
+      results = [...members.map(m => memberHref(m)), everything];
+      list.replaceChildren(...members.map((m, i) => option(i, m.name, describe(m), memberHref(m))),
+        option(members.length, `Search votes and survey questions for “${query}”`,
+               members.length ? null : "No member’s name matches", everything));
       list.hidden = false; input.setAttribute("aria-expanded", "true"); active = -1;
     };
     input.addEventListener("input", () => {
@@ -71,7 +76,7 @@
       if (query.length < 2) { close(); return; }
       timer = setTimeout(() => {
         lastQuery = query;
-        getJSON(`/v1/search?q=${encodeURIComponent(query)}`)
+        getJSON(`/v1/search?only=members&q=${encodeURIComponent(query)}`)
           .then(({ members }) => { if (query === lastQuery && input.value.trim() === query) show(members, query); })
           .catch(close);
       }, 180);
@@ -82,8 +87,9 @@
       else if (e.key === "ArrowUp") { e.preventDefault(); highlight(Math.max(active - 1, 0)); }
       else if (e.key === "Escape") { close(); }
       else if (e.key === "Enter") {
-        const pick = active >= 0 ? results[active] : (results.length === 1 ? results[0] : null);
-        if (pick) { e.preventDefault(); location.href = memberHref(pick); }   // else the form goes to the results list
+        // A highlighted option, or the only member found; otherwise the form opens the Search page.
+        const pick = active >= 0 ? results[active] : (results.length === 2 ? results[0] : null);
+        if (pick) { e.preventDefault(); location.href = pick; }
       }
     });
     input.addEventListener("blur", () => setTimeout(close, 100));

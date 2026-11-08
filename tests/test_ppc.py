@@ -346,3 +346,41 @@ def test_surveys_endpoint_lists_each_survey_with_its_question_count(conn, monkey
         got = client.get("/v1/surveys").json()["surveys"]
     assert [(s["survey"], s["organization"], s["items"]) for s in got] == \
         [("PPC 2026", "Program for Public Consultation", 3)]
+
+
+def test_text_search_finds_questions_and_votes(conn, monkeypatch):
+    test_load_and_compare(conn, monkeypatch, None)
+    with conn.cursor() as cur:
+        cur.execute("update core.roll_call set description = 'Lower Health Care Premiums Act', bill_type = 'hr', "
+                    "bill_number = 1834, bill_congress = 119 where roll_call_id = 'h-119-2-11'")
+        cur.execute("update core.roll_call set description = 'Amendment to prohibit assistance to Ukraine' "
+                    "where roll_call_id = 'h-119-1-255'")
+    conn.commit()
+    from fastapi.testclient import TestClient
+    from congress_congruence.api import app as api
+    monkeypatch.setenv("API_DATABASE_URL", os.environ["TEST_DATABASE_URL"])
+    with TestClient(api.app) as client:
+        res = client.get("/v1/search", params={"q": "ukrain*", "member": ["A000001", "bad"]}).json()
+        aca = client.get("/v1/search", params={"q": "ACA", "only": "text"}).json()
+        bill = client.get("/v1/search", params={"q": "H.R. 1834", "only": "text"}).json()
+        phrase = client.get("/v1/search", params={"q": '"health premiums"', "only": "text"}).json()
+        just_members = client.get("/v1/search", params={"q": "ukraine", "only": "members"}).json()
+
+    # The survey question about Ukraine aid, with its vote and how members lined up.
+    (qn,) = res["questions"]
+    assert qn["item"] == "UKR" and qn["source"]["organization"] == "Program for Public Consultation"
+    (v,) = qn["votes"]
+    assert v["support_side"] == "nay" and v["members"]["with_majority"] == 1 and v["members"]["against_majority"] == 1
+    assert v["your_members"] == [{"bioguide_id": "A000001", "name": "T A000001", "position": "nay"}]
+    assert qn["spread"]["states"]["areas"] == 1 and qn["spread"]["districts"]["areas"] == 2
+    # The vote itself, tagged as surveyed (by two questions: one same, one related), with a party split.
+    (vote,) = res["votes"]
+    assert vote["roll_call_id"] == "h-119-1-255" and res["votes_total"] == 1
+    assert {s["item"] for s in vote["surveyed"]} == {"UKR", "REL"}
+    assert vote["by_party"] == {"Republican": {"nay": 1, "yea": 1}}
+    assert "members" in res
+    # Words in survey questions; bill numbers with or without dots; phrases in order only.
+    assert [x["item"] for x in aca["questions"]] == ["ACA"] and "members" not in aca
+    assert [x["roll_call_id"] for x in bill["votes"]] == ["h-119-2-11"]
+    assert phrase["votes"] == []
+    assert set(just_members) == {"query", "members"}

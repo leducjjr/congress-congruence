@@ -14,6 +14,12 @@ advertising or tracking scripts.</p>
 - We don't sell, share or store information about what you look at.
 - If address lookup is added, the address will be used once to find your members and never stored.
 
+## What stays in your browser {#browser}
+
+So that search results can show how *your* members voted, the site remembers the last three members
+you looked at, in your browser's own storage on your device. It is never sent to us and isn't a cookie.
+The **forget** link on the Search page clears it, as does clearing your browser's site data.
+
 ## What any web server records {#server-logs}
 
 Like almost every website, our web server keeps a standard log of requests (the address of the device
