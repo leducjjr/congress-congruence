@@ -1,0 +1,98 @@
+# Program for Public Consultation (University of Maryland), "Common Ground in the Battlegrounds"
+# 2026: surveys in 11 competitive states and 28 competitive House districts. Only questions that
+# a floor vote of the 119th Congress answers are listed. Run `ppc fetch 2026`, check
+# logs/ppc_2026_review.txt, then `ppc link 2026` and `ppc load 2026`.
+#
+# Per item:
+#   pdf:   words that must all appear in the questionnaire PDF's file name on each state page
+#   find:  a regular expression that finds the question in that PDF
+#   match: same (default) or related. A related vote is shown for context and never counted.
+#   votes: as in ces_2025_items.yaml, plus roll_call (an exact vote), date, expect ("Yea-Nay",
+#          refuses a vote with any other tally) and support_side (nay when voting No is the
+#          side that supports the proposal).
+#
+# Considered and left out: Medicaid spending (the only vote, H.R. 1 in 2025, bundled many
+# other changes); war powers (the survey asked about a 60-day automatic funding cutoff, which no
+# vote addressed); the other proposals had no 119th Congress floor vote.
+
+survey: PPC 2026
+congress: 119
+
+source:
+  title: Common Ground in the Battlegrounds 2026 (Program for Public Consultation, University of Maryland)
+  organization: Program for Public Consultation
+  description: >-
+    a University of Maryland survey of adults in competitive states and House districts, from online
+    panels weighted to Census figures; each proposal comes with brief background before people answer
+  fielded: May to August 2026
+  dataset_url: https://vop.org/battlegrounds-aggregate/
+  about_url: https://publicconsultation.org/about-the-common-ground-in-the-battlegrounds-survey-series/
+
+# Each surveyed state's page (district-only states have a page too). The PDFs are found on these.
+pages:
+  - https://vop.org/battlegrounds-alaska/
+  - https://vop.org/battlegrounds-arizona/
+  - https://vop.org/battlegrounds-colorado/
+  - https://vop.org/battlegrounds-georgia/
+  - https://vop.org/battlegrounds-iowa/
+  - https://vop.org/battlegrounds-maine/
+  - https://vop.org/battlegrounds-michigan/
+  - https://vop.org/battlegrounds-minnesota/
+  - https://vop.org/battlegrounds-montana/
+  - https://vop.org/battlegrounds-nebraska/
+  - https://vop.org/battlegrounds-nevada/
+  - https://vop.org/battlegrounds-newhampshire/
+  - https://vop.org/battlegrounds-newjersey/
+  - https://vop.org/battlegrounds-newmexico/
+  - https://vop.org/battlegrounds-newyork/
+  - https://vop.org/battlegrounds-northcarolina/
+  - https://vop.org/battlegrounds-ohio/
+  - https://vop.org/battlegrounds-oregon/
+  - https://vop.org/battlegrounds-pennsylvania/
+  - https://vop.org/battlegrounds-texas/
+  - https://vop.org/battlegrounds-washington-2/
+
+items:
+  PPC26_ACA:
+    question: Renew the enhanced subsidies for ACA marketplace health insurance, which expired at the end of 2025
+    pdf: [healthcare]
+    find: renew the increased subsidies|subsidies for ACA
+    votes:
+      house:
+        date: 2026-01-08
+        questions: [On Passage]
+        expect: "230-196"
+      senate:
+        roll_call: s-119-1-644
+        expect: "51-48"
+        note: >-
+          The Senate's only vote was on cloture (whether to take up the bill). It failed: 51 voted
+          yes, short of the 60 needed.
+
+  PPC26_UKRAINE:
+    question: Continue providing U.S. military assistance to Ukraine
+    pdf: [americas, role]
+    find: military assistance to Ukraine
+    votes:
+      house:
+        roll_call: h-119-1-255
+        expect: "60-372"
+        support_side: nay
+        note: >-
+          This vote was on an amendment to the 2026 defense policy bill that would have prohibited
+          assistance to Ukraine, so voting Nay is the side that supported continuing it.
+
+  PPC26_STOCKS:
+    question: Ban members of Congress from trading individual stocks
+    pdf: [reform]
+    find: (members of Congress.{0,300}stock|stock.{0,300}members of Congress)
+    match: related
+    votes:
+      house:
+        date: 2026-07-22
+        questions: [On Passage]
+        expect: "232-198"
+        note: >-
+          Related, not the same: the House bill barred members from buying new stocks but let them
+          keep stocks they already owned, and included other provisions; many who voted against it
+          said they wanted a complete ban. Shown for context and not counted.

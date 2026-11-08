@@ -202,13 +202,30 @@ def member_votes(bioguide_id: str, response: Response, limit: int = Query(20, ge
     } for r in rows]}
 
 
-def agreement(position: str, majority: str) -> str:
-    """How a vote lines up with the estimated majority where the member represents."""
+def sided_with(position: str, support_side: str = "yea") -> str | None:
+    """Which side of the survey question the vote was on: 'support', 'oppose', or None (didn't vote)."""
     if position not in ("yea", "nay"):
+        return None
+    return "support" if position == support_side else "oppose"
+
+
+def agreement(position: str, majority: str, support_side: str = "yea") -> str:
+    """How a vote lines up with the estimated majority where the member represents."""
+    side = sided_with(position, support_side)
+    if side is None:
         return "did_not_vote"
     if majority == "too_close":
         return "too_close"
-    return "with" if (position == "yea") == (majority == "support") else "against"
+    return "with" if side == majority else "against"
+
+
+def tally(items: list[dict]) -> dict:
+    """Score only votes on the same proposal the survey asked about, where the majority was clear."""
+    same = [i for i in items if i["match"] == "same"]
+    counted = [i for i in same if i["agreement"] in ("with", "against")]
+    return {"surveyed_votes": len(same), "clear_majority": len(counted),
+            "with_majority": sum(i["agreement"] == "with" for i in counted),
+            "related_votes": len(items) - len(same)}
 
 
 @app.get("/v1/members/{bioguide_id}/opinion")
@@ -228,6 +245,13 @@ def member_opinion(bioguide_id: str, response: Response):
                                                 r["roll_number"], r["vote_date"]),
         },
         "position": r["position"],
+        "match": r["match_kind"],                       # same | related (related is never scored)
+        "support_side": r["support_side"],              # which vote (yea/nay) supported the proposal
+        "sided_with": sided_with(r["position"], r["support_side"]),
+        # Where to read the exact question: the area's own PDF if the survey publishes per area,
+        # else the survey's guide (search it for the item's variable name).
+        "wording_url": r["source_url"] or surveys.get(r["survey"], {}).get("guide_url"),
+        "wording_hint": None if r["source_url"] else r["variable"],
         "constituents": {
             "area": "state" if r["chamber"] == "senate" else "district",
             "area_label": q.seat_label(r["state"], r["seat_district"], r["chamber"]),   # seat at vote time
@@ -237,9 +261,8 @@ def member_opinion(bioguide_id: str, response: Response):
             "respondents": r["respondents"],
             "residents": r["residents"],
         },
-        "agreement": agreement(r["position"], r["majority"]),
+        "agreement": agreement(r["position"], r["majority"], r["support_side"]),
     } for r in rows]
-    counted = [i for i in items if i["agreement"] in ("with", "against")]
     samples, res = {}, {}
     for i in items:
         key = (i["survey"], i["constituents"]["area_label"])
@@ -248,17 +271,18 @@ def member_opinion(bioguide_id: str, response: Response):
     response.headers["Cache-Control"] = CACHE
     return {
         "area": q.seat_label(row["state"], row["district"], row["chamber"]),
-        "summary": {
-            "surveyed_votes": len(items),
-            "clear_majority": len(counted),
-            "with_majority": sum(i["agreement"] == "with" for i in counted),
-        },
+        "summary": tally(items),
+        # The same score per survey organization: sources are shown side by side, never blended.
+        "by_source": [{"organization": org, **tally([i for i in items
+                                                     if surveys[i["survey"]]["organization"] == org])}
+                      for org in dict.fromkeys(surveys[i["survey"]]["organization"] for i in items)],
         # People surveyed where the member represented them, per survey (largest count among its questions).
         "samples": sorted(({"survey": k[0], "area_label": k[1], "surveyed": v, "residents": res.get(k)}
                            for k, v in samples.items()), key=lambda x: x["survey"], reverse=True),
         "surveys": [{
             "name": s["survey"], "title": s["title"], "fielded": s["fielded"], "respondents": s["respondents"],
             "dataset_url": s["dataset_url"], "guide_url": s["guide_url"], "about_url": s["about_url"],
+            "organization": s["organization"], "description": s["description"],
         } for s in surveys.values() if any(i["survey"] == s["survey"] for i in items)],
         "items": items,
     }

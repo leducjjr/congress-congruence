@@ -170,8 +170,12 @@
     .op-bar { display: block; width: 100%; height: 12px; }
     .op-pin { position: absolute; top: 50%; display: inline-flex; padding: 1px; border-radius: 50%;
               background: var(--surface); transform: translate(-50%, -50%); }
-    .op-pin.yea { left: 100%; }
-    .op-pin.nay { left: 0; }
+    .op-pin.support { left: 100%; }   /* at the end of the scale the vote supported */
+    .op-pin.oppose { left: 0; }
+    .op-related { display: inline-block; margin-left: 6px; padding: 0 6px; border: 1px solid var(--rule);
+                  border-radius: 999px; font-size: 0.75rem; color: var(--ink-soft); white-space: nowrap; }
+    .op-leads { margin: 0 0 6px; }
+    .op-leads .op-lead { margin: 0 0 2px; }
     .op-est { margin: 0; font-size: 0.85rem; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
     .op-vote { margin: 2px 0 0; font-size: 0.9rem; display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
     .op-vote svg { align-self: center; }
@@ -478,8 +482,10 @@
       if (!item) return null;
       const where = item.constituents.area_label.replace("-", "\u2011");
       const whose = item.constituents.area === "state" ? "state's" : "district's";
-      const tail = { with: `, with the ${whose} majority`, against: `, against the ${whose} majority`,
-                     too_close: ", too close to call" }[item.agreement] || "";
+      const related = item.match === "related";
+      const tail = related ? ", related question (not counted)"
+        : { with: `, with the ${whose} majority`, against: `, against the ${whose} majority`,
+            too_close: ", too close to call" }[item.agreement] || "";
       const tag = h("button", { type: "button", class: "op-tag" },
         `Surveyed: ${where} ${Math.round(item.constituents.support_pct)}% support${tail}`);
       tag.addEventListener("click", () => this.flash(this.root.querySelector(`li[data-op="${CSS.escape(v.roll_call_id)}"]`)));
@@ -497,19 +503,29 @@
       const areas = [...new Set(o.items.map(areaOf))];
       const where = areas.length === 1 ? areas[0] : null;
       const whose = i => i.constituents.area === "state" ? "state's" : "district's";
-      const verdictFor = i => ({
+      const verdictFor = i => i.match === "related" ? "related bill, not counted" : ({
         with: `with the ${whose(i)} majority`,
         against: `against the ${whose(i)} majority`,
         too_close: `${areaOf(i)} too close to call`,
         did_not_vote: "",
       })[i.agreement];
 
-      const s = o.summary;
       const theirs = where ? `${where}'s` : "their constituents'";
-      const lead = s.clear_majority
-        ? h("p", { class: "op-lead" }, "Voted with ", h("strong", {}, `${s.with_majority} of ${s.clear_majority}`),
-            ` surveyed votes where ${theirs} estimated majority was clear.`)
-        : h("p", { class: "op-lead" }, `On these votes, ${theirs} estimated opinion was too close to call.`);
+      // One line per survey organization: sources are shown side by side, never combined into one score.
+      const leadFor = (s, org) => {
+        const by = org ? [h("strong", {}, org), ": "] : [];
+        if (s.clear_majority)
+          return h("p", { class: "op-lead" }, ...by, org ? "voted with " : "Voted with ",
+            h("strong", {}, `${s.with_majority} of ${s.clear_majority}`),
+            ` surveyed votes where ${theirs} estimated majority was clear.`);
+        if (s.surveyed_votes)
+          return h("p", { class: "op-lead" }, ...by, `${org ? "on" : "On"} these votes, ${theirs} estimated opinion was too close to call.`);
+        return h("p", { class: "op-lead" }, ...by, `${org ? "only" : "Only"} related votes, which aren't counted.`);
+      };
+      const bySource = o.by_source || [];
+      const lead = bySource.length > 1
+        ? h("div", { class: "op-leads" }, bySource.map(b => leadFor(b, b.organization)))
+        : leadFor(o.summary, null);
 
       const surveys = new Map((o.surveys || []).map(sv => [sv.name, sv]));
       const several = surveys.size > 1;
@@ -520,11 +536,14 @@
         const sv = surveys.get(i.survey);
         const voted = i.position === "yea" || i.position === "nay" ? `Voted ${POSITION_TEXT[i.position]}` : "Did not vote";
         const verdict = verdictFor(i);
+        const related = i.match === "related";
         return h("li", { "data-op": i.vote.roll_call_id },
-          h("p", { class: "op-q" }, i.question),
+          h("p", { class: "op-q" }, i.question,
+            related ? h("span", { class: "op-related", title: "The vote was on a related bill, not exactly this proposal" },
+              "Related vote") : null),
           this.rangeBar(c.support_pct, lo, hi,
             `${here}: about ${Math.round(c.support_pct)}% support, likely between ${Math.round(lo)}% and ${Math.round(hi)}%. ${voted}${verdict ? ", " + verdict : ""}.`,
-            i.position, i.agreement),
+            i.sided_with, related ? "related" : i.agreement, i.position),
           h("p", { class: "op-est" },
             `${here}: ${Math.round(c.support_pct)}% support (likely ${Math.round(lo)}–${Math.round(hi)}%), `,
             `from ${c.respondents.toLocaleString()} ${c.respondents === 1 ? "person" : "people"} surveyed in ${here}`,
@@ -535,10 +554,12 @@
             h("span", {}, h("strong", {}, voted), verdict ? `, ${verdict}` : "", ". "),
             h("a", { href: i.vote.official_url, target: "_blank", rel: "noopener" }, fmtDate(i.vote.date))),
           i.note ? h("p", { class: "op-note" }, i.note) : null,
-          sv?.guide_url ? h("p", { class: "op-note" },
-            h("a", { href: sv.guide_url, target: "_blank", rel: "noopener",
-                     title: `Opens the ${sv.title} guide; search it for ${i.item}` },
-              "See the exact question"), ` (in the survey guide, search for ${i.item})`) : null);
+          i.wording_url ? h("p", { class: "op-note" },
+            h("a", { href: i.wording_url, target: "_blank", rel: "noopener",
+                     title: i.wording_hint ? `Opens the ${sv?.title || "survey"} guide; search it for ${i.wording_hint}`
+                                           : `Opens the questionnaire with ${here}'s results` },
+              "See the exact question"),
+            i.wording_hint ? ` (in the survey guide, search for ${i.wording_hint})` : ` (questionnaire with ${here}'s results, PDF)`) : null);
       });
 
       const link = (href, text) => href ? h("a", { href, target: "_blank", rel: "noopener" }, text) : null;
@@ -547,9 +568,9 @@
         `${sv.title}`,
         sv.fielded || sv.respondents
           ? ` (${[sv.fielded && `interviewed ${sv.fielded}`,
-                 sv.respondents && `${sv.respondents.toLocaleString()} adults nationwide`].filter(Boolean).join(", ")})`
+                 sv.respondents && `${sv.respondents.toLocaleString()} adults surveyed`].filter(Boolean).join(", ")})`
           : "",
-        ", a large academic survey of U.S. adults. ",
+        `, ${sv.description || "a survey of U.S. adults"}. `,
         [link(sv.about_url, "About the survey"), link(sv.guide_url, "Questions asked (PDF)"),
          link(sv.dataset_url, "Survey data")].filter(Boolean).flatMap((a, j) => j ? [" | ", a] : [a])));
 
@@ -557,7 +578,7 @@
         h("h3", { id: "compared", tabindex: "-1" }, "Compared with constituents"),
         h("p", { class: "intro" },
           `Did this member vote the way most people ${where ? `in ${where}` : "they represented"} wanted? `,
-          `${several ? "National surveys" : "A national survey"} asked people about a few major bills; this section `,
+          `${several ? "Surveys" : "A survey"} asked people about a few major bills; this section `,
           "compares the member's vote on each with what people where they live said. ",
           "Only bills a survey asked about can be compared."),
         h("p", { class: "intro" },
@@ -575,8 +596,9 @@
             x.residents ? `, out of about ${people(x.residents)} residents` : ""]).flat(),
           ".") : null,
         h("div", { class: "op-key", "aria-hidden": "true" },
-          h("span", {}, mark("yea", 12), "Voted Yea (support end)"),
-          h("span", {}, mark("nay", 12), "Voted Nay (oppose end)"),
+          h("span", {}, mark("yea", 12), "Voted Yea"),
+          h("span", {}, mark("nay", 12), "Voted Nay"),
+          h("span", {}, "(at the end their vote supported)"),
           h("span", {}, h("i", { class: "sw with" }), "With the majority"),
           h("span", {}, h("i", { class: "sw against" }), "Against the majority"),
           h("span", {}, h("i", { class: "sw unclear" }), "Too close to call")),
@@ -586,7 +608,7 @@
         sourceLines.length ? h("div", { id: "sources", class: "op-sources", tabindex: "-1" }, sourceLines) : null);
     }
 
-    rangeBar(est, lo, hi, label, position, agreement) {
+    rangeBar(est, lo, hi, label, side, agreement, position) {
       const ns = "http://www.w3.org/2000/svg";
       const svg = document.createElementNS(ns, "svg");
       svg.setAttribute("class", "op-bar");
@@ -605,11 +627,12 @@
       add("rect", { x: 49.8, y: 0, width: 0.4, height: 10, fill: "var(--ink-soft)" });               // 50% line
       add("rect", { x: Math.min(99, Math.max(0, est - 0.6)), y: 1, width: 1.2, height: 8, fill: tone[1] });
 
-      // The member's vote sits at the end of the scale it chose: Yea at "All support", Nay at "All oppose".
+      // The member's vote sits at the end of the scale it supported: usually Yea at "All support",
+      // but on a vote to block the proposal (support_side nay) a Nay sits there instead.
       // Drawn as HTML so the marker keeps its shape however wide the bar is stretched.
       const wrap = h("div", { class: "op-barwrap", role: "img", "aria-label": label }, svg);
-      if (position === "yea" || position === "nay") {
-        const pin = h("span", { class: `op-pin ${position}` }, mark(position, 14));
+      if (side && (position === "yea" || position === "nay")) {
+        const pin = h("span", { class: `op-pin ${side}` }, mark(position, 14));
         wrap.appendChild(pin);
       }
       return wrap;

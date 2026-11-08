@@ -126,9 +126,10 @@ OPINION = """
 select si.survey, si.variable, si.question, coalesce(siv.reader_note, si.note) as note,
        r.roll_call_id, r.chamber, r.congress, r.session, r.roll_number, r.vote_date,
        r.question as vote_question, r.result, r.yea_total, r.nay_total,
-       mv.position,
+       mv.position, siv.support_side, siv.match_kind,
        t.state, t.district as seat_district,
        oe.support, oe.support_low, oe.support_high, oe.majority, oe.respondents, oe.district,
+       oe.source_url,
        ap.population as residents
   from core.member_vote mv
   join core.survey_item_vote siv on siv.roll_call_id = mv.roll_call_id
@@ -152,7 +153,8 @@ select si.survey, si.variable, si.question, coalesce(siv.reader_note, si.note) a
 
 # Where each survey comes from (title, when, size, links).
 SURVEYS = """
-select survey, title, fielded, respondents, dataset_url, guide_url, about_url
+select survey, title, fielded, respondents, dataset_url, guide_url, about_url,
+       coalesce(organization, survey) as organization, description
   from core.survey order by survey
 """
 

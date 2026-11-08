@@ -162,6 +162,39 @@ The panel's **Compared with constituents** section lists each surveyed vote,
 the area's estimated support with its range, how the member voted, and whether
 that was with or against a clear majority.
 
+## Constituent opinion (Program for Public Consultation)
+
+A second, independent survey source, shown next to CES and never blended with it. The
+University of Maryland's Program for Public Consultation (PPC) surveyed 11 competitive states
+and 28 competitive House districts in 2026 ("Common Ground in the Battlegrounds"). It
+publishes results per state and district in questionnaire PDFs rather than as respondent
+data, so the loader reads those PDFs.
+
+```bash
+python -m congress_congruence.ingest.ppc fetch 2026   # download + read the PDFs; check logs/ppc_2026_review.txt
+python -m congress_congruence.ingest.ppc link 2026    # review which vote each item matched
+python -m congress_congruence.ingest.ppc load 2026
+```
+
+`config/ppc_2026_items.yaml` lists the items a 119th Congress floor vote answers, which PDF
+and question each comes from, and the vote. Differences from CES:
+
+- **No pooling.** Each area has its own sample of roughly 400 to 2,000 people, so the panel shows
+  that area's published share, with PPC's published confidence interval converted to the same
+  90% level used for CES. Support = Favor ÷ (Favor + Oppose).
+- **Method.** Online opt-in panels weighted to Census figures, and each proposal comes with a
+  short background paragraph. The panel says so in the source line.
+- **Votes on the other side.** `support_side: nay` marks a vote where No supports the
+  proposal (e.g. an amendment to block Ukraine aid); the member's mark is placed at the
+  end of the scale their vote supported.
+- **Related votes.** `match: related` marks a vote on a close but different bill (e.g. the
+  2026 partial stock-trading restriction against a full ban). It's shown, labelled
+  "Related vote", and never counted in the with/against score.
+- **Coverage.** Only senators from surveyed states and representatives from surveyed
+  districts get PPC comparisons.
+
+The panel shows one with/against line per survey organization (`by_source` in the API).
+
 ## Residents per area (Census)
 
 ```bash

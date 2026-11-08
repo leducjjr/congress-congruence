@@ -178,3 +178,17 @@ American Community Survey 1-year release (usually September), the watcher loads
 it automatically, since population figures need no judgment, and reports it in
 the same log and notification. It needs `CENSUS_API_KEY` in `.env`; a missing or
 expired key shows up as a failed run (and an alert, if alerts are set up).
+
+## Loading the Program for Public Consultation surveys
+
+```bash
+git pull && pip install -r requirements.txt     # adds pypdf, for reading the PDFs
+python -m congress_congruence.db migrate         # 006: survey organization, vote side, related votes
+sudo systemctl restart congress-api && scripts/publish_web.sh
+python -m congress_congruence.ingest.ppc fetch 2026
+less logs/ppc_2026_review.txt                    # check PROBLEMS first, then the numbers
+python -m congress_congruence.ingest.ppc link 2026
+python -m congress_congruence.ingest.ppc load 2026
+```
+
+`fetch` reads only public PDFs; nothing reaches the panel until `load`.

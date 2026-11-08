@@ -133,7 +133,7 @@ def survey_file(tmp_path):
 
 def test_link_picks_the_final_decisive_vote(conn):
     from congress_congruence.ingest import ces
-    links = {(v, ch): rid for _, v, ch, rid, _, _ in ces.link(conn, 2025, ces.load_config(2025))}
+    links = {(v, ch): rid for _, v, ch, rid, *_ in ces.link(conn, 2025, ces.load_config(2025))}
     assert links[("CC25_340f", "house")] == "h-119-1-190"      # concurrence, not first passage or procedure
     assert links[("CC25_340a", "senate")] == "s-119-1-25"      # confirmation, not cloture
     assert links[("CC25_340b", "senate")] == "s-119-1-80"
@@ -180,7 +180,7 @@ def client(conn, survey_file, monkeypatch):
 def test_api_house_member_compared_with_district(client):
     with_tx1 = client.get("/v1/members/H000001/opinion").json()
     assert with_tx1["area"] == "TX-1"
-    assert with_tx1["summary"] == {"surveyed_votes": 5, "clear_majority": 5, "with_majority": 5}
+    assert with_tx1["summary"] == {"surveyed_votes": 5, "clear_majority": 5, "with_majority": 5, "related_votes": 0}
     first = with_tx1["items"][0]
     assert first["constituents"]["area"] == "district" and first["agreement"] == "with"
 

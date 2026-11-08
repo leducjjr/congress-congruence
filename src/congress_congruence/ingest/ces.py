@@ -287,8 +287,23 @@ def survey_congress(year: int) -> int:
 
 
 def match_vote(conn, chamber: str, congress: int, rule: dict) -> tuple[dict | None, int]:
-    """The last vote matching a rule, and how many matched in all."""
+    """The last vote matching a rule, and how many matched in all.
+
+    Rule keys (all optional, combined with AND): roll_call (an exact ID), bill [type, number],
+    find (text in the description), questions (any of these in the question), date (YYYY-MM-DD).
+    expect "Yea-Nay" (e.g. "230-196") only accepts a vote with that tally, so a rule can't quietly
+    pick up a different vote (a wrong guess finds nothing and is reported as NO MATCH)."""
     where, params = ["chamber = %s", "congress = %s"], [chamber, congress]
+    if "roll_call" in rule:
+        where.append("roll_call_id = %s")
+        params.append(rule["roll_call"])
+    if "date" in rule:
+        where.append("vote_date = %s")
+        params.append(str(rule["date"]))
+    if "expect" in rule:
+        yea, nay = (int(x) for x in str(rule["expect"]).split("-"))
+        where.append("yea_total = %s and nay_total = %s")
+        params += [yea, nay]
     if "bill" in rule:
         where.append("bill_type = %s and bill_number = %s")
         params += [rule["bill"][0], int(rule["bill"][1])]
@@ -308,9 +323,17 @@ def match_vote(conn, chamber: str, congress: int, rule: dict) -> tuple[dict | No
     return (rows[0] if rows else None), len(rows)
 
 
+LINK_COLUMNS = ("survey", "variable", "chamber", "roll_call_id", "match_note", "reader_note",
+                "support_side", "match_kind")
+
+
 def link(conn, year: int, cfg: dict) -> list[tuple]:
-    """Resolve each item's vote per chamber. Returns rows for survey_item_vote and prints a review list."""
-    congress = survey_congress(year)
+    """Resolve each item's vote per chamber. Returns rows for survey_item_vote (LINK_COLUMNS)
+    and prints a review list.
+
+    Per item: match: same (default) or related (a close but different bill: shown, never scored).
+    Per chamber rule: support_side: yea (default) or nay (e.g. an amendment to block the proposal)."""
+    congress = cfg.get("congress") or survey_congress(year)
     out = []
     print(f"Linking {cfg['survey']} items to votes of the {congress}th Congress")
     for var, item in cfg["items"].items():
@@ -323,10 +346,38 @@ def link(conn, year: int, cfg: dict) -> list[tuple]:
             print(f"  {chamber:6} {vote['roll_call_id']}  {vote['vote_date']}  {vote['question']}  "
                   f"{vote['result']} {vote['yea_total']}-{vote['nay_total']}  ({n} matched; using the latest)")
             print(f"         {(vote['description'] or '')[:110]}")
-            criteria = {k: v for k, v in rule.items() if k != "note"}
+            side, kind = rule.get("support_side", "yea"), item.get("match", "same")
+            if side not in ("yea", "nay") or kind not in ("same", "related"):
+                raise ValueError(f"{var}: support_side must be yea/nay and match same/related")
+            if side == "nay" or kind == "related":
+                print(f"         support side: {side.title()}   match: {kind}")
+            criteria = {k: v for k, v in rule.items() if k not in ("note", "support_side")}
             out.append((cfg["survey"], var, chamber, vote["roll_call_id"],
-                        f"latest of {n} votes matching {json.dumps(criteria)}", rule.get("note")))
+                        f"latest of {n} votes matching {json.dumps(criteria, default=str)}", rule.get("note"),
+                        side, kind))
     return out
+
+
+def save_items(cur, survey: str, src: dict, respondents: int | None,
+               items: list[tuple[str, dict, str | None]], links: list[tuple]) -> None:
+    """Record the survey's source, replace its items (which cascades to links and estimates),
+    and write the item-to-vote links. items: (variable, config entry, label in the data file)."""
+    cur.execute(
+        """insert into core.survey (survey, title, fielded, respondents, dataset_url, guide_url, about_url,
+                                    organization, description)
+           values (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+           on conflict (survey) do update set title = excluded.title, fielded = excluded.fielded,
+               respondents = excluded.respondents, dataset_url = excluded.dataset_url,
+               guide_url = excluded.guide_url, about_url = excluded.about_url,
+               organization = excluded.organization, description = excluded.description""",
+        (survey, src.get("title", survey), src.get("fielded"), respondents, src.get("dataset_url"),
+         src.get("guide_url"), src.get("about_url"), src.get("organization"), src.get("description")))
+    cur.execute("delete from core.survey_item where survey = %s", (survey,))   # cascades
+    for var, item, label in items:
+        cur.execute("insert into core.survey_item (survey, variable, question, survey_label, note) "
+                    "values (%s, %s, %s, %s, %s)", (survey, var, item["question"], label, item.get("note")))
+    cur.executemany(f"insert into core.survey_item_vote ({', '.join(LINK_COLUMNS)}) "
+                    f"values ({', '.join(['%s'] * len(LINK_COLUMNS))})", links)
 
 
 def house_seats(conn, year: int) -> dict[str, list[int]]:
@@ -386,25 +437,12 @@ def load(conn, year: int, local_file: Path | None = None) -> dict:
     survey = cfg["survey"]
     summary = {"respondents": nrows, "weight": weight_col, "items": len(items), "votes_linked": len(links)}
     with conn.transaction(), conn.cursor() as cur:
-        src = dict(cfg.get("source", {}))
+        src = {"organization": "Cooperative Election Study",
+               "description": "a large academic survey of U.S. adults", **cfg.get("source", {})}
         if not src.get("guide_url"):
             src["guide_url"] = guide_url_for(year)
-        cur.execute(
-            """insert into core.survey (survey, title, fielded, respondents, dataset_url, guide_url, about_url)
-               values (%s, %s, %s, %s, %s, %s, %s)
-               on conflict (survey) do update set title = excluded.title, fielded = excluded.fielded,
-                   respondents = excluded.respondents, dataset_url = excluded.dataset_url,
-                   guide_url = excluded.guide_url, about_url = excluded.about_url""",
-            (survey, src.get("title", survey), src.get("fielded"), src.get("respondents") or nrows,
-             src.get("dataset_url"), src.get("guide_url"), src.get("about_url")))
-        cur.execute("delete from core.survey_item where survey = %s", (survey,))   # cascades
-        for var in items:
-            item = cfg["items"][var]
-            cur.execute("insert into core.survey_item (survey, variable, question, survey_label, note) "
-                        "values (%s, %s, %s, %s, %s)",
-                        (survey, var, item["question"], labels.get(var), item.get("note")))
-        cur.executemany("insert into core.survey_item_vote (survey, variable, chamber, roll_call_id, match_note, "
-                        "reader_note) values (%s, %s, %s, %s, %s, %s)", links)
+        save_items(cur, survey, src, src.get("respondents") or nrows,
+                   [(var, cfg["items"][var], labels.get(var)) for var in items], links)
         counts = {"support": 0, "oppose": 0, "too_close": 0}
         for var in items:
             resp = responses_for(df, var, cfg["state_column"], cfg["district_column"], weight_col, seats)
