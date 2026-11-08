@@ -1,0 +1,67 @@
+"""Tests for the CES inspection tool, using a tiny made-up Stata file shaped like CES."""
+
+import pandas as pd
+import pytest
+
+from congress_congruence.ingest import ces
+
+pyreadstat = pytest.importorskip("pyreadstat")
+
+DATAVERSE_JSON = {"data": {"latestVersion": {
+    "versionNumber": 1, "versionMinorNumber": 0, "releaseTime": "2026-03-20T12:00:00Z",
+    "files": [
+        {"restricted": False, "dataFile": {"id": 11, "filename": "CES25_Common.tab",
+         "originalFileName": "CES25_Common.dta", "originalFileSize": 900, "filesize": 500,
+         "originalFileFormat": "application/x-stata-14"}},
+        {"restricted": False, "dataFile": {"id": 12, "filename": "CES25_Guide.pdf", "filesize": 4000,
+         "contentType": "application/pdf"}},
+        {"restricted": False, "dataFile": {"id": 13, "filename": "small.csv", "filesize": 10,
+         "contentType": "text/csv"}},
+    ]}}}
+
+
+def test_summarize_and_pick_main_file():
+    info = ces.summarize_dataset(DATAVERSE_JSON)
+    assert info["version"] == "1.0" and len(info["files"]) == 3
+    chosen = ces.pick_data_file(info["files"])
+    assert (chosen["id"], chosen["name"], chosen["bytes"]) == (11, "CES25_Common.dta", 900)
+
+
+@pytest.fixture
+def stata_file(tmp_path):
+    df = pd.DataFrame({
+        "caseid": [1, 2, 3, 4],
+        "inputstate": [48, 48, 6, 6],
+        "cdid119": [8, 2, 12, 12],
+        "commonweight": [1.0, 2.0, 1.0, 0.0],
+        "CC25_330a": [1, 2, 1, 1],      # a bill item
+        "CC25_401": [3, 2, 1, 4],       # unrelated item
+    })
+    path = tmp_path / "CES25_Common.dta"
+    pyreadstat.write_dta(df, str(path),
+        column_labels=["Case ID", "State", "Congressional district (119th)", "Common weight",
+                       "Laken Riley Act: support or oppose", "How interested are you in politics"],
+        variable_value_labels={"CC25_330a": {1: "Support", 2: "Oppose"}})
+    return path
+
+
+def test_finds_geography_weights_and_bill_items(stata_file):
+    cols, labels, values, n = ces.read_metadata(stata_file)
+    assert n == 4
+    assert ces.find_items(cols, labels, values) == ["CC25_330a"]
+    assert [c for c in cols if ces.matches(c, ces.GEO_PATTERNS)] == ["inputstate", "cdid119"]
+
+
+def test_weighted_split(stata_file):
+    df = ces.read_columns(stata_file, ["CC25_330a", "commonweight"])
+    # Support: weights 1 + 1 + 0 = 2 of 4; Oppose: 2 of 4
+    assert ces.weighted_split(df["CC25_330a"], df["commonweight"]) == {"1.0": 50.0, "2.0": 50.0}
+
+
+def test_inspect_local_file_writes_report(stata_file, monkeypatch, tmp_path):
+    monkeypatch.setattr(ces.config, "PROJECT_ROOT", tmp_path)
+    report = ces.inspect(2025, stata_file).read_text()
+    assert "Rows: 4" in report
+    assert "CC25_330a: Laken Riley Act: support or oppose" in report
+    assert "answers: 1.0=Support; 2.0=Oppose" in report or "answers: 1=Support; 2=Oppose" in report
+    assert "CC25_401" not in report
