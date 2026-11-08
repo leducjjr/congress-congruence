@@ -133,7 +133,7 @@ def survey_file(tmp_path):
 
 def test_link_picks_the_final_decisive_vote(conn):
     from congress_congruence.ingest import ces
-    links = {(v, ch): rid for _, v, ch, rid, _ in ces.link(conn, 2025, ces.load_config(2025))}
+    links = {(v, ch): rid for _, v, ch, rid, _, _ in ces.link(conn, 2025, ces.load_config(2025))}
     assert links[("CC25_340f", "house")] == "h-119-1-190"      # concurrence, not first passage or procedure
     assert links[("CC25_340a", "senate")] == "s-119-1-25"      # confirmation, not cloture
     assert links[("CC25_340b", "senate")] == "s-119-1-80"
@@ -210,3 +210,11 @@ def test_agreement_rules():
     assert agreement("nay", "oppose") == "with"
     assert agreement("yea", "too_close") == "too_close"
     assert agreement("not_voting", "support") == "did_not_vote"
+
+
+def test_chamber_notes_only_show_on_that_chambers_panels(client):
+    house = {i["item"]: i["note"] for i in client.get("/v1/members/H000001/opinion").json()["items"]}
+    senate = {i["item"]: i["note"] for i in client.get("/v1/members/S000001/opinion").json()["items"]}
+    assert house["CC25_340e"] is None and "cloture" in senate["CC25_340e"]       # Senate-only note
+    assert "H.Res. 590" in house["CC25_340g"] and senate["CC25_340g"] is None     # House-only note
+    assert "full wording" in house["CC25_340f"] and "full wording" in senate["CC25_340f"]  # item-level note

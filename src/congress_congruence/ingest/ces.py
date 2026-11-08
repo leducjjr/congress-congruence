@@ -293,8 +293,9 @@ def link(conn, year: int, cfg: dict) -> list[tuple]:
             print(f"  {chamber:6} {vote['roll_call_id']}  {vote['vote_date']}  {vote['question']}  "
                   f"{vote['result']} {vote['yea_total']}-{vote['nay_total']}  ({n} matched; using the latest)")
             print(f"         {(vote['description'] or '')[:110]}")
+            criteria = {k: v for k, v in rule.items() if k != "note"}
             out.append((cfg["survey"], var, chamber, vote["roll_call_id"],
-                        f"latest of {n} votes matching {json.dumps(rule)}"))
+                        f"latest of {n} votes matching {json.dumps(criteria)}", rule.get("note")))
     return out
 
 
@@ -361,8 +362,8 @@ def load(conn, year: int, local_file: Path | None = None) -> dict:
             cur.execute("insert into core.survey_item (survey, variable, question, survey_label, note) "
                         "values (%s, %s, %s, %s, %s)",
                         (survey, var, item["question"], labels.get(var), item.get("note")))
-        cur.executemany("insert into core.survey_item_vote (survey, variable, chamber, roll_call_id, match_note) "
-                        "values (%s, %s, %s, %s, %s)", links)
+        cur.executemany("insert into core.survey_item_vote (survey, variable, chamber, roll_call_id, match_note, "
+                        "reader_note) values (%s, %s, %s, %s, %s, %s)", links)
         counts = {"support": 0, "oppose": 0, "too_close": 0}
         for var in items:
             resp = responses_for(df, var, cfg["state_column"], cfg["district_column"], weight_col, seats)

@@ -7,6 +7,7 @@
 #   bill:      bill type and number as stored (hr 1, s 5, ...)
 #   find:      text that must appear in the vote's description (nominations have no bill number)
 #   questions: the vote question must contain one of these phrases
+#   note:      shown to readers on that chamber's panels only (an item-level note shows on both)
 # Run `python -m congress_congruence.ingest.ces link 2025` to see what each rule matched.
 #
 # Voting Yea is the "support" side of every item below.
@@ -47,10 +48,12 @@ items:
 
   CC25_340e:
     question: Require medical care for infants born alive after an attempted abortion
-    note: The Senate's only floor vote was on cloture (whether to proceed), which failed.
     votes:
       house:  {bill: [hr, 21], questions: *final}
-      senate: {bill: [s, 6], questions: [Cloture]}
+      senate:
+        bill: [s, 6]
+        questions: [Cloture]
+        note: The Senate's only floor vote was on cloture (whether to proceed), which failed.
 
   CC25_340f:
     question: A tax bill extending the 2017 tax cuts, among other provisions (H.R. 1)
@@ -61,11 +64,14 @@ items:
 
   CC25_340g:
     question: Cut $9.4 billion from previously approved federal spending (Rescissions Act)
-    note: >-
-      The House gave final approval by adopting a rule (H.Res. 590) that also accepted the
-      Senate's version, so that 216-213 vote on July 18, 2025 is the one compared.
     votes:
       # Self-executing rule: no separate concurrence vote exists. Found Nov 2026 by listing
       # House votes of July 16-19, 2025 (vote h-119-1-203).
-      house:  {bill: [hres, 590], find: "(H.R. 4)", questions: [Agreeing to the Resolution]}
+      house:
+        bill: [hres, 590]
+        find: "(H.R. 4)"
+        questions: [Agreeing to the Resolution]
+        note: >-
+          The House gave final approval by adopting a rule (H.Res. 590) that also accepted
+          the Senate's version, so that 216-213 vote on July 18, 2025 is the one compared.
       senate: {bill: [hr, 4], questions: *final}

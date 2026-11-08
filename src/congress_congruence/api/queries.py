@@ -121,7 +121,7 @@ select distinct on (job) job, status, finished_at
 # Each surveyed item the member's chamber voted on, the member's vote, and the
 # estimated opinion where they represent: their state (senators) or district.
 OPINION = """
-select si.survey, si.variable, si.question, si.note,
+select si.survey, si.variable, si.question, coalesce(siv.reader_note, si.note) as note,
        r.roll_call_id, r.chamber, r.congress, r.session, r.roll_number, r.vote_date,
        r.question as vote_question, r.result, r.yea_total, r.nay_total,
        mv.position,
