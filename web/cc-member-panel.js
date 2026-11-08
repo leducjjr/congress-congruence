@@ -79,6 +79,16 @@
     .dot:hover svg { transform: scale(1.35); }
     @media (prefers-reduced-motion: no-preference) { .dot svg { transition: transform 0.1s; } }
     ol.votes li.found, .op-list li.found { background: var(--mark-soft); border-radius: 6px; }
+    .jumps { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: -8px 0 18px;
+             font-size: 0.85rem; color: var(--ink-soft); }
+    .jumps button {
+      font: inherit; color: var(--ink); background: var(--surface-sunk); cursor: pointer;
+      border: 1px solid var(--rule); border-radius: 999px; padding: 2px 12px;
+    }
+    .jumps button:hover { border-color: var(--mark); }
+    h3[tabindex]:focus { outline: none; }
+    h3[tabindex]:focus-visible { outline: 2px solid var(--mark); outline-offset: 4px; }
+    h3 { scroll-margin-top: 12px; }
     .intro { margin: -4px 0 10px; font-size: 0.85rem; color: var(--ink-soft); max-width: 70ch; }
     .op-tag {
       grid-column: 2; justify-self: start; margin-top: 4px; font: inherit; font-size: 0.8rem; color: var(--ink);
@@ -285,6 +295,18 @@
         h("h2", {}, m.name),
         h("p", { class: "seat" }, seatSentence(m)),
       ];
+      const jumps = [];
+      if (this.opinion?.items?.length) jumps.push(["compared", "Compared with constituents"]);
+      if (votes.length) jumps.push(["recent", "Recent votes"]);
+      if (jumps.length) {
+        // Buttons, not #links: the host page may use the address's # part (the dev page stores the member there).
+        parts.push(h("nav", { class: "jumps", "aria-label": "Sections" }, h("span", {}, "Go to:"),
+          jumps.map(([id, label]) => {
+            const b = h("button", { type: "button" }, label);
+            b.addEventListener("click", () => this.goToSection(id));
+            return b;
+          })));
+      }
 
       if (votes.length) {
         // Strip: oldest on the left so it reads like a timeline.
@@ -322,7 +344,7 @@
       if (opinionSection) parts.push(opinionSection);
 
       if (votes.length) {
-        parts.push(h("h3", {}, "Recent votes"));
+        parts.push(h("h3", { id: "recent", tabindex: "-1" }, "Recent votes"));
         parts.push(h("p", { class: "intro" },
           "Every recorded floor vote, newest first: what the member did, and the result. ",
           this.opinion?.items?.length
@@ -342,6 +364,14 @@
 
       parts.push(this.sourceNote());
       this.body.replaceChildren(...parts);
+    }
+
+    goToSection(id) {
+      const heading = this.root.getElementById(id);
+      if (!heading) return;
+      const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
+      heading.scrollIntoView({ behavior: calm ? "auto" : "smooth", block: "start" });
+      heading.focus({ preventScroll: true });
     }
 
     jumpTo(rollCallId) {
@@ -443,7 +473,7 @@
         ? `Estimates from the Cooperative Election Study (${survey.name}); about ${survey.respondents.toLocaleString()} people answered each question nationwide. `
         : "";
       return h("section", { class: "opinion" },
-        h("h3", {}, "Compared with constituents"),
+        h("h3", { id: "compared", tabindex: "-1" }, "Compared with constituents"),
         h("p", { class: "intro" },
           `Did this member vote the way most people in ${where} wanted? A national survey asked people `,
           "about a few major bills; this section compares the member's vote on each with what people where they ",
