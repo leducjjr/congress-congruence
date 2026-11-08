@@ -75,6 +75,14 @@
     .strip { display: flex; gap: 3px; flex-wrap: nowrap; overflow: hidden; height: 18px;
              align-items: center; justify-content: flex-end; }
     .strip svg { flex: 0 0 auto; }
+    .dot { all: unset; flex: 0 0 auto; display: inline-flex; cursor: pointer; padding: 2px 0; border-radius: 3px; }
+    .dot:hover svg { transform: scale(1.35); }
+    @media (prefers-reduced-motion: no-preference) { .dot svg { transition: transform 0.1s; } }
+    ol.votes li.found { background: var(--mark-soft); border-radius: 6px; }
+    @media (prefers-reduced-motion: no-preference) {
+      ol.votes li.found { animation: found 2.4s ease-out forwards; }
+      @keyframes found { 0%, 60% { background: var(--mark-soft); } 100% { background: transparent; } }
+    }
     .legend {
       display: flex; gap: 14px; flex-wrap: wrap;
       font-size: 0.8rem; color: var(--ink-soft); margin: 6px 0 18px;
@@ -182,6 +190,15 @@
     return el;
   }
 
+  // "Sep 15, 2026 · H.Con.Res. 93: Directing the President… · Voted Nay"
+  function voteSummary(v) {
+    const title = v.description || v.question || "Recorded vote";
+    const short = title.length > 90 ? title.slice(0, 88).trimEnd() + "…" : title;
+    const what = v.bill ? `${v.bill.label}: ${short}` : short;
+    const how = v.position === "not_voting" ? "Did not vote" : `Voted ${POSITION_TEXT[v.position] || v.position_detail}`;
+    return `${fmtDate(v.date)} · ${what} · ${how}`;
+  }
+
   const fmtDate = (iso, opts = { month: "short", day: "numeric", year: "numeric" }) =>
     new Date(iso + "T12:00:00").toLocaleDateString("en-US", opts);
 
@@ -272,12 +289,11 @@
           h("div", { class: "strip-wrap" },
             h("p", { class: "caption", "aria-hidden": "true" }, "Recent votes, newest at the right"),
             h("p", { class: "sr" }, `Last ${ordered.length} votes, oldest first: ${summary}.`),
+            // Mouse and touch shortcut into the list below; the list itself is the accessible version.
             h("div", { class: "strip", "aria-hidden": "true" }, ordered.map(v => {
-              const svg = mark(v.position);
-              const t = document.createElementNS("http://www.w3.org/2000/svg", "title");
-              t.textContent = `${fmtDate(v.date)}: ${POSITION_TEXT[v.position] || v.position_detail}`;
-              svg.prepend(t);
-              return svg;
+              const btn = h("button", { type: "button", class: "dot", tabindex: "-1", title: voteSummary(v) }, mark(v.position));
+              btn.addEventListener("click", () => this.jumpTo(v.roll_call_id));
+              return btn;
             }))),
           h("div", { class: "legend", "aria-hidden": "true" },
             ["yea", "nay", "present", "not_voting"].map(p => h("span", {}, mark(p, 10), POSITION_TEXT[p]))),
@@ -317,13 +333,32 @@
       this.body.replaceChildren(...parts);
     }
 
+    jumpTo(rollCallId) {
+      const index = this.votes.findIndex(v => v.roll_call_id === rollCallId);
+      if (index < 0) return;
+      if (index >= this.showing) {               // open the list far enough to include it
+        this.showing = Math.min(this.votes.length, Math.ceil((index + 1) / this.listSize) * this.listSize);
+        this.render();
+      }
+      const row = this.root.querySelector(`li[data-roll="${CSS.escape(rollCallId)}"]`);
+      if (!row) return;
+      const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
+      row.scrollIntoView({ behavior: calm ? "auto" : "smooth", block: "center" });
+      row.classList.remove("found");
+      void row.offsetWidth;                      // restart the highlight if clicked twice
+      row.classList.add("found");
+      clearTimeout(this.foundTimer);
+      this.foundTimer = setTimeout(() => row.classList.remove("found"), 2400);   // also ends it without animation
+      row.querySelector("a")?.focus({ preventScroll: true });
+    }
+
     voteRow(v) {
       const title = v.description || v.question || "Recorded vote";
       const what = v.bill
         ? h("span", { class: "what" }, h("a", { href: v.bill.url, target: "_blank", rel: "noopener" }, v.bill.label), `: ${title}`)
         : h("span", { class: "what" }, title);
       const tally = (v.yea_total != null && v.nay_total != null) ? `, ${v.yea_total}–${v.nay_total}` : "";
-      return h("li", {},
+      return h("li", { "data-roll": v.roll_call_id },
         mark(v.position),
         what,
         h("span", { class: "detail" },
