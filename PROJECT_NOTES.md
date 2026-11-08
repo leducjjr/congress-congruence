@@ -33,7 +33,9 @@ Full details of every source and its special handling: `docs/DATA_SOURCES.md`
 ## Email
 Bluehost Professional Email Plus (Titan) on uscongressvsvoters.org: `contact@` (public; aliases
 corrections@, press@, privacy@, security@) and `admin@` (never published; login/recovery address for
-Bluehost, GitHub, api.data.gov, Census, healthchecks). .com/.online mail should forward to .org, and
+Bluehost, GitHub, api.data.gov, Census, healthchecks). Catch-all: any other @.org address goes to
+contact@. `feedback@` is send-only: the server uses it to email feedback-form messages to contact@
+(its password is in the server's .env; nothing from the form is stored). .com/.online mail should forward to .org, and
 those two domains get SPF `v=spf1 -all` + DMARC `p=reject`.
 .org DMARC (`_dmarc`) set 2026-11-08 to `p=none` with reports to admin@; switch to `p=quarantine` once
 a week or two of reports show only Titan sending. Addresses appear on the Contact page via

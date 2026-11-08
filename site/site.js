@@ -106,6 +106,44 @@
     span.replaceWith(a);
   }
 
+  // Contact page feedback form. contact.html?member=C001098&name=Ted%20Cruz&from=<page> pre-fills
+  // what it's about (the member panel's "Report an error" link does this).
+  const form = $("feedback-form");
+  if (form) {
+    form.hidden = false;
+    const opened = Date.now();
+    const p = new URLSearchParams(location.search);
+    const context = { member: p.get("member") || "", member_name: p.get("name") || "",
+                      page: p.get("from") || document.referrer || "" };
+    if (context.member) {
+      form.kind.value = "error";
+      const about = $("feedback-about");
+      about.textContent = `About: ${context.member_name || context.member}` +
+        (context.page ? ` (sent with a link to the page you were on)` : "");
+      about.hidden = false;
+    }
+    const status = form.querySelector(".form-status"), button = form.querySelector("button");
+    form.addEventListener("submit", async e => {
+      e.preventDefault();
+      status.className = "form-status";
+      if (form.message.value.trim().length < 5) { status.textContent = "Please write a little more."; status.classList.add("bad"); form.message.focus(); return; }
+      button.disabled = true; status.textContent = "Sending…";
+      try {
+        const res = await fetch(`${API}/v1/feedback`, { method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ kind: form.kind.value, message: form.message.value, reply_to: form.reply_to.value.trim(),
+            website: form.website.value, seconds_open: (Date.now() - opened) / 1000, ...context }) });
+        const out = await res.json().catch(() => ({}));
+        if (!res.ok || !out.ok) throw new Error(out.message || "Your message couldn't be sent just now. Please use email instead.");
+        const replying = form.reply_to.value.trim();
+        form.reset();
+        status.textContent = "Thank you. Your message was sent to our inbox." +
+          (replying ? " We'll reply to the address you gave." : "");
+      } catch (err) {
+        status.textContent = err.message; status.classList.add("bad");
+      } finally { button.disabled = false; }
+    });
+  }
+
   // Sources page: one row per survey loaded, under its organization's section.
   const lists = document.querySelectorAll("[data-surveys]");
   if (lists.length) {

@@ -194,3 +194,16 @@ python -m congress_congruence.ingest.ppc load 2026
 ```
 
 `fetch` reads only public PDFs; nothing reaches the panel until `load`.
+
+## Feedback form
+
+The Contact page's form posts to `/api/v1/feedback`, which emails the message from a send-only
+mailbox (`feedback@`) to the project inbox and keeps nothing. Add to `.env` (see `.env.example`):
+
+```
+FEEDBACK_SMTP_USER=feedback@uscongressvsvoters.org
+FEEDBACK_SMTP_PASSWORD=...
+FEEDBACK_TO=contact@uscongressvsvoters.org
+```
+
+then `sudo systemctl restart congress-api`. Without these the form tells visitors to use email.

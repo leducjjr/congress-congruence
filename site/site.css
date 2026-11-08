@@ -71,6 +71,21 @@ main.prose { max-width: none; }
 .prose-body .coverage:empty { display: none; }
 .survey-table td:first-child { white-space: nowrap; }
 
+/* Feedback form */
+.feedback { display: grid; gap: 12px; margin: 8px 0 24px; }
+.feedback label { display: grid; gap: 4px; font-weight: 600; font-size: 0.95rem; }
+.feedback .optional { font-weight: 400; color: var(--ink-soft); }
+.feedback select, .feedback textarea, .feedback input { font: inherit; font-weight: 400; color: var(--ink);
+  background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: 8px 10px; width: 100%; }
+.feedback textarea { resize: vertical; min-height: 7rem; }
+.feedback button { justify-self: start; font: inherit; font-weight: 600; color: #fff; background: var(--mark);
+  border: 0; border-radius: 8px; padding: 9px 22px; cursor: pointer; }
+.feedback button[disabled] { opacity: 0.6; cursor: default; }
+.feedback .about-line { margin: 0; padding: 8px 12px; background: var(--page); border-radius: 8px; font-size: 0.92rem; }
+.feedback .hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+.feedback .form-status { margin: 0; font-weight: 600; }
+.feedback .form-status.bad { color: var(--against, #b45309); }
+
 /* Footer */
 .site-footer { border-top: 1px solid var(--rule); background: var(--surface); color: var(--ink-soft); font-size: 0.85rem; }
 .site-footer .wrap { padding-top: 20px; padding-bottom: 28px; }

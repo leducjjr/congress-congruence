@@ -4,8 +4,36 @@ description: How to reach the people behind US Congress vs Voters, report an err
 ---
 # Contact
 
-<p class="lede">Questions, corrections and suggestions are welcome. We read everything, and reply
-from the address you wrote to.</p>
+<p class="lede">Questions, corrections and suggestions are welcome. Use the form, or email us at
+one of the addresses below. We read everything.</p>
+
+## Send a message {#feedback}
+
+<form class="feedback" id="feedback-form" novalidate hidden>
+  <p class="about-line" id="feedback-about" hidden></p>
+  <label>What's it about?
+    <select name="kind">
+      <option value="error">Something looks wrong</option>
+      <option value="question">A question</option>
+      <option value="suggestion">A suggestion</option>
+      <option value="other">Something else</option>
+    </select>
+  </label>
+  <label>Your message
+    <textarea name="message" rows="6" maxlength="4000" required></textarea>
+  </label>
+  <label>Your email, if you'd like a reply <span class="optional">(optional)</span>
+    <input name="reply_to" type="email" autocomplete="email" maxlength="254">
+  </label>
+  <p class="note">Leave the email blank to stay anonymous. Your message is emailed to our inbox and
+    isn't stored on this site. See <a href="privacy.html#feedback">Privacy</a>.</p>
+  <div class="hp" aria-hidden="true"><label>Leave this empty <input name="website" tabindex="-1" autocomplete="off"></label></div>
+  <button type="submit">Send</button>
+  <p class="form-status" role="status" aria-live="polite"></p>
+</form>
+<noscript><p>The form needs JavaScript. You can email us at the addresses below instead.</p></noscript>
+
+## Email {#email}
 
 | For | Write to |
 | --- | --- |

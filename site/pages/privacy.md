@@ -16,6 +16,15 @@ Questions about privacy: <span data-email="privacy">privacy (at) {{email_domain}
 - We don't sell, share or store information about what you look at.
 - If address lookup is added, the address will be used once to find your members and never stored.
 
+## The feedback form {#feedback}
+
+When you use the form on the [Contact](contact.html) page, your message, the kind of message, the page
+you came from and, only if you give it, your email address are sent by email to our inbox. Nothing is
+saved on this site's server or in its database. To stop the form being flooded, the server counts how
+many messages come from each connection in the last hour; that count is kept in memory only, never
+written down, and forgotten after an hour. Messages stay in our inbox only as long as we need them to
+reply or fix what you reported; ask us at the privacy address above to delete yours.
+
 ## What stays in your browser {#browser}
 
 So that search results can show how *your* members voted, the site remembers the last three members

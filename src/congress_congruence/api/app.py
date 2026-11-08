@@ -3,9 +3,10 @@
 Run locally:
     uvicorn congress_congruence.api.app:app --port 8000
 
-Endpoints (all GET):
+Endpoints (GET unless marked):
     /v1/health                         is the database reachable; how fresh is the data
     /v1/surveys                        every survey loaded, with links (Sources page)
+    POST /v1/feedback                  the feedback form: emailed to the project inbox, never stored
     /v1/search?q=abort*                members (name, state, seat), survey questions and votes
     /v1/members?state=TX&chamber=house members serving today
     /v1/members/{bioguide_id}          profile, attendance, votes with party majority
@@ -26,7 +27,8 @@ import unicodedata
 from contextlib import asynccontextmanager
 from datetime import date
 
-from fastapi import FastAPI, HTTPException, Query, Response
+from fastapi import Body, FastAPI, HTTPException, Query, Request, Response
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from psycopg.rows import dict_row
 from psycopg_pool import ConnectionPool
@@ -34,6 +36,7 @@ from psycopg_pool import ConnectionPool
 from .. import config  # noqa: F401  (loads .env)
 from ..ingest.ppc import STATE_NAMES as ppc_states
 from ..ingest.votes import current_session
+from . import feedback as fb
 from . import queries as q
 
 BIOGUIDE_RE = re.compile(r"^[A-Z]\d{6}$")
@@ -279,6 +282,19 @@ def search(response: Response,
         out.update(search_text(text, chamber, members, limit))
     response.headers["Cache-Control"] = CACHE
     return out
+
+
+@app.post("/v1/feedback")
+def feedback(request: Request, data: dict = Body(...)):
+    """The site's feedback form: emailed to the project inbox, never stored (see api/feedback.py)."""
+    if not isinstance(data, dict) or len(str(data)) > 6000:
+        return JSONResponse({"ok": False, "message": "Your message couldn't be sent."}, status_code=400)
+    try:
+        fb.submit(data, request.client.host if request.client else "")
+    except fb.Rejected as e:
+        return JSONResponse({"ok": False, "message": str(e)}, status_code=e.status,
+                            headers={"Cache-Control": "no-store"})
+    return JSONResponse({"ok": True}, headers={"Cache-Control": "no-store"})
 
 
 @app.get("/v1/members")

@@ -612,7 +612,8 @@
         orgLinks.flatMap((x, j) => j ? ["; ", ...x] : x), ". ",
         h("a", { href: page("sources.html", "surveys") }, "How each survey was done"), " · ",
         h("a", { href: page("methods.html") }, "How the comparison works"), " · ",
-        h("a", { href: page("contact.html", "errors") }, "Report an error"), ".")] : [];
+        h("a", { href: `${base}contact.html?${new URLSearchParams({ member: m.bioguide_id, name: m.name,
+          from: location.href })}#feedback` }, "Report an error"), ".")] : [];
 
       return h("section", { class: "opinion" },
         h("h3", { id: "compared", tabindex: "-1" }, "Compared with constituents"),
