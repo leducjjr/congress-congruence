@@ -7,6 +7,13 @@ head: |
     .surveyed-page h1 { font-size: 1.35rem; margin: 0 0 4px; }
     .surveyed-page .lede { color: var(--ink-soft); margin: 0 0 18px; }
     .back { font-size: 0.9rem; margin: 0 0 10px; }
+    .jump { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 0 0 20px; padding: 0; list-style: none; }
+    .jump .label { color: var(--ink-soft); font-size: 0.9rem; margin-right: 2px; }
+    .jump a { display: inline-block; font-size: 0.92rem; color: var(--ink); text-decoration: none; background: var(--surface);
+      border: 1px solid var(--rule); border-radius: 999px; padding: 5px 12px; }
+    .jump a:hover, .jump a:focus-visible { border-color: var(--mark); color: var(--mark); }
+    .jump a small { color: var(--ink-soft); margin-left: 4px; }
+    .org-group { scroll-margin-top: 16px; }
     .org-group > h2 { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
     .org-group > h2 small { font-weight: 400; color: var(--ink-soft); font-size: 0.85rem; }
     /* Detail chart: members placed by their area's support (x), voting for (top) or against (bottom). */
@@ -78,11 +85,18 @@ addEventListener("DOMContentLoaded", () => {
         "compared with what people where they live said. State ballot measures, where voters decided a similar question ",
         "themselves, are shown too. Each source is shown separately. ",
         el("a", { href: "methods.html" }, "How the comparison works"), "."),
+      // Jump links to each source's section (the page is long once several sources are loaded).
+      byOrg.size > 1 ? el("nav", { "aria-label": "Sources on this page" }, el("ul", { class: "jump" },
+        el("li", { class: "label" }, "Go to:"),
+        [...byOrg].map(([org, qs]) => el("li", {}, el("a", { href: `#${window.CC.slug(org)}` },
+          org, el("small", {}, `(${qs.length})`)))))) : null,
       ...(questions.length ? [...byOrg].map(([org, qs]) => el("section", { class: "group org-group", id: window.CC.slug(org) },
         el("h2", {}, org, el("small", {}, `${plural(qs.length, "question", "questions")} · `,
           el("a", { href: `sources.html#${window.CC.slug(org)}` }, "about this source"))),
         qs.map(q => window.CC.questionCard(q, { link: true }))))
         : [el("p", { class: "empty" }, "No survey questions have been compared with votes yet.")]));
+    // Opened with #<source> (a jump link, or a link from elsewhere): the sections are drawn after load.
+    if (location.hash) document.getElementById(decodeURIComponent(location.hash.slice(1)))?.scrollIntoView();
   }
 
   // ---------------------------------------------------------------- one question
