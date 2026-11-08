@@ -140,7 +140,20 @@ STATE_NAMES = {fold(name): code for name, code in {
 SEAT_RE = re.compile(r"^([a-z]{2})\s*-?\s*(\d{1,2}|al|at-large)$")
 
 
+def latest_first(former: list[dict]) -> list[dict]:
+    """Former members, most recently in office first (like the votes, newest first)."""
+    return sorted(former, key=lambda r: (-(r["end_date"].toordinal() if r.get("end_date") else 0),
+                                         r.get("last_name") or "", r.get("name") or ""))
+
+
 def search_members(query: str, rows: list[dict], limit: int = 12) -> list[dict]:
+    """Members matching a name, a state, or a seat; current members before former ones, who are
+    listed most recently in office first."""
+    found = match_members(query, rows)
+    return ([r for r in found if not r.get("former")] + latest_first([r for r in found if r.get("former")]))[:limit]
+
+
+def match_members(query: str, rows: list[dict], limit: int | None = None) -> list[dict]:
     """Members matching a name, a state, or a seat; current members before former ones. Examples:
     'cruz', 'ted c', 'velazquez', 'Texas', 'TX', 'TX-7', 'tx 7', 'ak-al'. A trailing * is ignored."""
     q = fold(query).replace("*", " ").strip()
@@ -371,8 +384,7 @@ def members(response: Response,
     if include == "former":     # members who have left office but have votes in the data loaded
         former = [r for r in fetch(q.FORMER_MEMBERS, {"on": date.today(), "state": state})
                   if chamber is None or r["chamber"] == chamber]
-        former.sort(key=lambda r: (r["last_name"] or "", r["name"]))
-        out += [{**member_summary(r), "former": True, "left_office": r["end_date"]} for r in former]
+        out += [{**member_summary(r), "former": True, "left_office": r["end_date"]} for r in latest_first(former)]
     response.headers["Cache-Control"] = CACHE
     return {"members": out}
 

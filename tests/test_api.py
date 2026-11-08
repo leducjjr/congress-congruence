@@ -171,6 +171,12 @@ def test_member_search_by_name_state_and_seat():
     found = search_members("Ohio", big, 120)
     assert len(found) == 16 and found[-1]["name"] == "Gone"
 
+    # Former members: most recently in office first.
+    from datetime import date
+    gone = [{"name": n, "last_name": n, "chamber": "house", "state": "OH", "district": 1, "former": True,
+             "end_date": date.fromisoformat(d)} for n, d in [("Aaa", "2021-03-10"), ("Bbb", "2025-01-03"), ("Ccc", "2023-01-03")]]
+    assert [r["name"] for r in search_members("Ohio", gone)] == ["Bbb", "Ccc", "Aaa"]
+
 
 def test_search_endpoint(client):
     r = client.get("/v1/search", params={"q": "zz"})
