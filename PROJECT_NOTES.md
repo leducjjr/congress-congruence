@@ -14,6 +14,9 @@ compared with what their constituents say in public surveys, now and historicall
 - Senate votes come from Voteview (senate.gov returns 403 to the server); official files win if loaded later.
 - Visual rule: the picture should tell the story before the text (vote shapes, not party colors).
 
+Full details of every source and its special handling: `docs/DATA_SOURCES.md`
+(keep it updated in the same commit as any change to how a source is handled).
+
 ## Sources loaded
 - Votes: House Clerk (every 2 hours), Senate via Voteview (daily), members from congress-legislators.
 - Opinion: CES 2024 and 2025 (respondent data, partial pooling, `opinion.py`);

@@ -12,6 +12,9 @@ See the systems inventory doc for the full design. This repo implements it in ph
 | 3 | CES opinion data, item-to-vote linking, district/state estimates, comparison | First version built (CES 2025) |
 | 4 | API, dashboard, address-to-district lookup | First member panel and API built |
 
+For where every dataset comes from and every special case in handling it, see
+[docs/DATA_SOURCES.md](docs/DATA_SOURCES.md).
+
 ## Layout
 
 ```
