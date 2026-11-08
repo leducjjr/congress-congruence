@@ -36,6 +36,9 @@
       --surface-sunk: #f2f5f7;
       --mark: #2f6f66;          /* verdigris, the panel's one accent */
       --mark-soft: #cfe3de;
+      --against: #b45309;      /* amber: vote went against a clear majority */
+      --against-soft: #f6dfc6;
+      --unclear-soft: #e3e8ec; /* grey: too close to call */
       display: block;          /* fills the width the host page gives it */
       font-family: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
       font-size: 15px;
@@ -51,6 +54,9 @@
         --surface-sunk: #1f2932;
         --mark: #7cc2b5;
         --mark-soft: #2c4d48;
+        --against: #e8a35c;
+        --against-soft: #4d3622;
+        --unclear-soft: #2c363f;
       }
     }
     * { box-sizing: border-box; }
@@ -144,13 +150,24 @@
     .op-lead { margin: 0 0 6px; }
     .op-lead strong { font-variant-numeric: tabular-nums; }
     .op-scale { display: grid; grid-template-columns: 1fr auto 1fr; font-size: 0.75rem;
-                color: var(--ink-soft); margin: 10px 0 2px; }
+                color: var(--ink-soft); margin: 10px 0 2px; padding: 0 2px; }
     .op-scale span:nth-child(2) { text-align: center; }
     .op-scale span:last-child { text-align: right; }
     .op-list { list-style: none; margin: 0; padding: 0; }
     .op-list li { padding: 10px 0; border-top: 1px solid var(--rule); }
     .op-q { margin: 0 0 6px; font-weight: 600; }
-    .op-bar { display: block; width: 100%; height: 12px; margin: 0 0 4px; }
+    .op-key { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 0.8rem; color: var(--ink-soft); margin: 8px 0 0; }
+    .op-key span { display: inline-flex; align-items: center; gap: 6px; }
+    .op-key .sw { display: inline-block; width: 18px; height: 8px; border-radius: 2px; }
+    .op-key .sw.with { background: var(--mark-soft); box-shadow: inset 0 0 0 1px var(--mark); }
+    .op-key .sw.against { background: var(--against-soft); box-shadow: inset 0 0 0 1px var(--against); }
+    .op-key .sw.unclear { background: var(--unclear-soft); box-shadow: inset 0 0 0 1px var(--ink-soft); }
+    .op-barwrap { position: relative; margin: 0 9px 4px; }   /* side room so end markers aren't clipped */
+    .op-bar { display: block; width: 100%; height: 12px; }
+    .op-pin { position: absolute; top: 50%; display: inline-flex; padding: 1px; border-radius: 50%;
+              background: var(--surface); transform: translate(-50%, -50%); }
+    .op-pin.yea { left: 100%; }
+    .op-pin.nay { left: 0; }
     .op-est { margin: 0; font-size: 0.85rem; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
     .op-vote { margin: 2px 0 0; font-size: 0.9rem; display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
     .op-vote svg { align-self: center; }
@@ -472,7 +489,9 @@
         const verdict = verdictFor(i);
         return h("li", { "data-op": i.vote.roll_call_id },
           h("p", { class: "op-q" }, i.question),
-          this.rangeBar(c.support_pct, lo, hi, `${here}: about ${Math.round(c.support_pct)}% support, likely between ${Math.round(lo)}% and ${Math.round(hi)}%`),
+          this.rangeBar(c.support_pct, lo, hi,
+            `${here}: about ${Math.round(c.support_pct)}% support, likely between ${Math.round(lo)}% and ${Math.round(hi)}%. ${voted}${verdict ? ", " + verdict : ""}.`,
+            i.position, i.agreement),
           h("p", { class: "op-est" },
             `${here}: ${Math.round(c.support_pct)}% support (likely ${Math.round(lo)}–${Math.round(hi)}%), `,
             `from ${c.respondents.toLocaleString()} ${c.respondents === 1 ? "person" : "people"} surveyed in ${here}`,
@@ -511,35 +530,51 @@
         h("p", { class: "intro" },
           "How to read the bars: the dark mark is the estimated share who support the bill, and the shaded band is ",
           "where support likely falls. The tick in the middle is an even split; if the band crosses it, the area is ",
-          "too close to call. ",
+          "too close to call. The member's vote sits at the end it chose, so when vote and band are on the same side, ",
+          "they agree. ",
           m.chamber === "senate"
             ? "Senators are compared with their whole state."
             : "House districts have few respondents each, so estimates lean on statewide answers and many are too close to call."),
         lead,
+        h("div", { class: "op-key", "aria-hidden": "true" },
+          h("span", {}, mark("yea", 12), "Voted Yea (support end)"),
+          h("span", {}, mark("nay", 12), "Voted Nay (oppose end)"),
+          h("span", {}, h("i", { class: "sw with" }), "With the majority"),
+          h("span", {}, h("i", { class: "sw against" }), "Against the majority"),
+          h("span", {}, h("i", { class: "sw unclear" }), "Too close to call")),
         h("div", { class: "op-scale", "aria-hidden": "true" },
           h("span", {}, "All oppose"), h("span", {}, "Even split"), h("span", {}, "All support")),
         h("ol", { class: "op-list" }, rows),
         sourceLines.length ? h("div", { id: "sources", class: "op-sources", tabindex: "-1" }, sourceLines) : null);
     }
 
-    rangeBar(est, lo, hi, label) {
+    rangeBar(est, lo, hi, label, position, agreement) {
       const ns = "http://www.w3.org/2000/svg";
       const svg = document.createElementNS(ns, "svg");
       svg.setAttribute("class", "op-bar");
       svg.setAttribute("viewBox", "0 0 100 10");
       svg.setAttribute("preserveAspectRatio", "none");
-      svg.setAttribute("role", "img");
-      svg.setAttribute("aria-label", label);
+      svg.setAttribute("aria-hidden", "true");
       const add = (tag, attrs) => {
         const el = document.createElementNS(ns, tag);
         for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
         svg.appendChild(el);
       };
+      const tone = { with: ["var(--mark-soft)", "var(--mark)"], against: ["var(--against-soft)", "var(--against)"] }[agreement]
+        || ["var(--unclear-soft)", "var(--ink-soft)"];
       add("rect", { x: 0, y: 4, width: 100, height: 2, fill: "var(--rule)" });                       // 0..100% track
-      add("rect", { x: lo, y: 1.5, width: Math.max(0.8, hi - lo), height: 7, rx: 1, fill: "var(--mark-soft)" });
+      add("rect", { x: lo, y: 1.5, width: Math.max(0.8, hi - lo), height: 7, rx: 1, fill: tone[0] });
       add("rect", { x: 49.8, y: 0, width: 0.4, height: 10, fill: "var(--ink-soft)" });               // 50% line
-      add("rect", { x: Math.min(99, Math.max(0, est - 0.6)), y: 1, width: 1.2, height: 8, fill: "var(--mark)" });
-      return svg;
+      add("rect", { x: Math.min(99, Math.max(0, est - 0.6)), y: 1, width: 1.2, height: 8, fill: tone[1] });
+
+      // The member's vote sits at the end of the scale it chose: Yea at "All support", Nay at "All oppose".
+      // Drawn as HTML so the marker keeps its shape however wide the bar is stretched.
+      const wrap = h("div", { class: "op-barwrap", role: "img", "aria-label": label }, svg);
+      if (position === "yea" || position === "nay") {
+        const pin = h("span", { class: `op-pin ${position}` }, mark(position, 14));
+        wrap.appendChild(pin);
+      }
+      return wrap;
     }
 
     sourceNote() {
