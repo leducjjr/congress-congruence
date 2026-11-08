@@ -207,3 +207,27 @@ FEEDBACK_TO=contact@uscongressvsvoters.org
 ```
 
 then `sudo systemctl restart congress-api`. Without these the form tells visitors to use email.
+
+**Titan (Bluehost Professional Email) refuses logins from programs by default** (SMTP error 535 even
+with the right password). In webmail, signed in as `feedback@`: Settings (gear) → **Enable Titan on
+other apps**. Two-factor authentication must also be off for `feedback@` (it blocks other apps); keep
+it on for `admin@` and `contact@`. To test the login without sending anything:
+
+```bash
+python -c "from congress_congruence import config; import os, smtplib, ssl; s = smtplib.SMTP_SSL('smtp.titan.email', 465, context=ssl.create_default_context(), timeout=20); s.login(os.environ['FEEDBACK_SMTP_USER'], os.environ['FEEDBACK_SMTP_PASSWORD']); print('login OK'); s.quit()"
+```
+
+Save the password with a prompt (not in shell history), quoted so any character works:
+
+```bash
+python - <<'PY'
+import getpass, re
+from pathlib import Path
+p = Path('.env')
+keep = [l for l in p.read_text().splitlines() if not re.match(r'(FEEDBACK_SMTP_USER|FEEDBACK_SMTP_PASSWORD|FEEDBACK_TO)=', l)]
+pw = getpass.getpass('feedback@ password: ').replace('\\', '\\\\').replace("'", "\\'")
+keep += ['FEEDBACK_SMTP_USER=feedback@uscongressvsvoters.org', f"FEEDBACK_SMTP_PASSWORD='{pw}'", 'FEEDBACK_TO=contact@uscongressvsvoters.org']
+p.write_text('\n'.join(keep) + '\n')
+print('saved')
+PY
+```
