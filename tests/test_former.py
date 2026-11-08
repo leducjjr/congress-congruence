@@ -55,3 +55,6 @@ def test_former_members_listed_found_and_given_figures_per_period(conn, monkeypa
 
     assert [m["bioguide_id"] for m in found] == ["C000001"] and found[0]["former"]
     assert iowa[-1]["bioguide_id"] == "C000001"                      # current members first
+    # Seat history comes from the member list, newest first, with the Congresses each spell covers.
+    assert [(s["seat"], s["start"], s["end"], s["first_congress"], s["last_congress"]) for s in profile["seats"]] == [
+        ("IA", "2025-01-03", "2026-06-01", 119, 119), ("IA-3", "2023-01-03", "2025-01-03", 118, 118)]

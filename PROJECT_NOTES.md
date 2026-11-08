@@ -62,7 +62,8 @@ See `docs/SITE_PLAN.md`: header, footer and reference pages, leading with the vo
 1. Done: state ballot-measure results, 2024 (docs/DATA_SOURCES.md 5a). Add 2026 once states certify.
 2. AP VoteCast (check reuse terms first).
 Also open: make the repo public + send the Senate access email; healthchecks.io and NOTIFY_URL;
-an "About this data" page; separate production server; earlier years; stock-trading overlay.
+an "About this data" page; separate production server; stock-trading overlay.
+Earlier Congresses: built (ingest/backfill.py, seat history on the panel); load with the deploy steps.
 
 ## Working conventions
 - Tests: `pytest` (database tests need TEST_DATABASE_URL). Commit only when all tests pass.

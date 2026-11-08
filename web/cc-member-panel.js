@@ -136,6 +136,9 @@
     .facts { margin: 0 0 18px; padding: 0; list-style: none; }
     .facts li { padding: 8px 0; border-top: 1px solid var(--rule); }
     .facts li:last-child { border-bottom: 1px solid var(--rule); }
+    .facts li.folded { padding: 6px 0; }
+    .facts li.folded .facts { margin: 6px 0 0; }
+    .facts li.folded .facts li:last-child { border-bottom: 0; }
     .facts strong { font-variant-numeric: tabular-nums; font-weight: 700; }
 
     h3 { font-size: 0.95rem; font-weight: 600; margin: 0 0 8px; }
@@ -177,6 +180,8 @@
     .op-q { margin: 0 0 6px; font-weight: 600; }
     .people { margin: -14px 0 18px; color: var(--ink-soft); font-size: 0.9rem; }
     .people-src { font-size: 0.8rem; }
+    .history { margin: -14px 0 18px; color: var(--ink-soft); font-size: 0.9rem; }
+    .history .spell { white-space: nowrap; }
     .op-sample { margin: 2px 0 0; font-size: 0.85rem; color: var(--ink-soft); }
     .op-sample strong { color: var(--ink); font-variant-numeric: tabular-nums; }
     .op-key { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 0.8rem; color: var(--ink-soft); margin: 8px 0 0; }
@@ -362,6 +367,24 @@
     }
 
     // A folded explanation. Its open/closed state survives re-renders (e.g. "Show more votes").
+    // "Seats held: Senator for OH, 2025–now · Representative for OH-3, 2023–2025 · ...", from the
+    // member list (whole career), with a note when the votes loaded here start later than that.
+    historyLine(m) {
+      const seats = m.seats || [];
+      if (seats.length < 2 && !(seats.length === 1 && seats[0].first_congress < seats[0].last_congress)) return null;
+      const year = d => d.slice(0, 4);
+      const parties = new Set(seats.map(x => x.party));
+      const spells = seats.map((x, i) => h("span", { class: "spell" },
+        `${x.chamber === "senate" ? "Senator for" : "Representative for"} ${x.seat.replace("-", "\u2011")}`,
+        parties.size > 1 ? ` (${x.party})` : "",
+        `, ${year(x.start)}\u2013${x.end ? year(x.end) : "now"}`, i < seats.length - 1 ? " · " : ""));
+      const loaded = (m.service || []).map(p => p.congress);
+      const earliest = Math.min(...seats.map(x => x.first_congress));
+      const note = loaded.length && earliest < Math.min(...loaded)
+        ? ` Votes on this site start with the ${ordinal(Math.min(...loaded))} Congress.` : "";
+      return h("p", { class: "history" }, h("strong", {}, "Seats held: "), spells, ".", note);
+    }
+
     foldable(key, summary, ...body) {
       this.folds = this.folds || {};
       const d = h("details", { class: "more", open: !!this.folds[key] }, h("summary", {}, summary), ...body);
@@ -375,6 +398,8 @@
         h("h2", {}, m.name),
         h("p", { class: "seat" }, seatSentence(m)),
       ];
+      const history = this.historyLine(m);
+      if (history) parts.push(history);
       const pop = m.population;
       if (pop) {
         const where = pop.area.replace("-", "\u2011");
@@ -427,13 +452,20 @@
       const facts = [];
       const periods = (m.service || []).filter(p => p.votes_total);
       if (periods.length > 1) {
-        // Served in more than one Congress or chamber: one line for each, newest first.
-        for (const p of periods) {
-          facts.push(h("li", {},
+        // Served in more than one Congress or chamber: one line for each, newest first. A long
+        // career keeps the latest two in view and folds the rest.
+        const line = p => h("li", {},
             h("strong", {}, `${p.chamber === "senate" ? "Senate" : "House"}${p.seat ? ` (${p.seat})` : ""}, ${ordinal(p.congress)} Congress`),
             `: missed ${p.missed_pct}% of ${p.votes_total.toLocaleString()} ${p.votes_total === 1 ? "vote" : "votes"}`,
             p.party_votes ? `; voted with their party's majority on ${p.with_party_pct}% of ${p.party_votes.toLocaleString()}` : "",
-            p.first_vote && p.last_vote ? ` (${fmtDate(p.first_vote)} to ${fmtDate(p.last_vote)})` : "", "."));
+            p.first_vote && p.last_vote ? ` (${fmtDate(p.first_vote)} to ${fmtDate(p.last_vote)})` : "", ".");
+        const shown = periods.length > 3 ? periods.slice(0, 2) : periods;
+        facts.push(...shown.map(line));
+        if (shown.length < periods.length) {
+          const rest = periods.slice(shown.length);
+          facts.push(h("li", { class: "folded" }, this.foldable("earlier-congresses",
+            `Earlier Congresses (${rest.length}, back to the ${ordinal(rest.at(-1).congress)})`,
+            h("ul", { class: "facts" }, rest.map(line)))));
         }
       } else if (s.votes_total) {
         facts.push(h("li", {}, "Missed ", h("strong", {}, `${s.missed_pct}%`),

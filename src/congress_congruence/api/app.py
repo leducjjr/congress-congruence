@@ -27,7 +27,7 @@ import os
 import re
 import unicodedata
 from contextlib import asynccontextmanager
-from datetime import date
+from datetime import date, timedelta
 
 from fastapi import Body, FastAPI, HTTPException, Query, Request, Response
 from fastapi.responses import JSONResponse
@@ -409,6 +409,34 @@ def seat_population(row: dict) -> dict | None:
     }
 
 
+def seat_history(terms: list[dict], today: date) -> list[dict]:
+    """Terms merged into unbroken spells in one seat with one party, newest first.
+    A new spell starts with a change of chamber, state, district (e.g. after redistricting) or
+    party, or a gap of more than a month between terms."""
+    spells: list[dict] = []
+    for t in terms:
+        party = t["caucus"] if t["caucus"] and t["caucus"] != t["party"] else t["party"]
+        district = t["district"] if t["chamber"] == "house" else None
+        last = spells[-1] if spells else None
+        if (last and (last["chamber"], last["state"], last["district"], last["party"]) ==
+                (t["chamber"], t["state"], district, party)
+                and (t["start_date"] - last["end"]).days <= 31):
+            last["end"] = max(last["end"], t["end_date"])
+            continue
+        spells.append({"chamber": t["chamber"], "state": t["state"], "district": district, "party": party,
+                       "start": t["start_date"], "end": t["end_date"]})
+    return [{"chamber": s["chamber"], "state": s["state"], "seat": q.seat_label(s["state"], s["district"], s["chamber"]),
+             "party": s["party"], "start": s["start"], "end": None if s["end"] >= today else s["end"],
+             "first_congress": congress_on(s["start"]), "last_congress": congress_on(min(s["end"], today) - timedelta(days=1))}
+            for s in reversed(spells)]
+
+
+def congress_on(day: date) -> int:
+    """The Congress in session on a day (a new one begins January 3 of odd years)."""
+    year = day.year - (1 if day.year % 2 == 1 and (day.month, day.day) < (1, 3) else 0)
+    return (year - 1787) // 2
+
+
 def period_stats(bioguide_id: str, congress: int, chamber: str) -> dict:
     st = fetch(q.STATS, {"id": bioguide_id, "congress": congress, "chamber": chamber})[0]
     return {
@@ -442,6 +470,7 @@ def member(bioguide_id: str, response: Response):
         "population": seat_population(row),
         "stats": stats,
         "service": service,
+        "seats": seat_history(fetch(q.TERMS, {"id": bioguide_id}), date.today()),
     }
 
 

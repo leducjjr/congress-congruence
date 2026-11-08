@@ -91,6 +91,35 @@ Principles that apply to every source:
   totals may or may not include pairs; validation accepts either convention and nothing else.
 - **No times.** Voteview has dates but no times of day.
 
+## 3b. Earlier Congresses
+
+| | |
+|---|---|
+| Sources | The same as the current Congress: the House Clerk's files and Voteview's Senate files |
+| Loaded by | `python -m congress_congruence.ingest.backfill <first> <last> [house\|senate]`, run by hand, newest Congress first |
+| Code | `ingest/backfill.py` (a loop over `votes.sync` and `voteview.run`) |
+
+- **How far back.** The Clerk's XML files start with the 2nd session of the 101st Congress
+  (1990), so the House can't go further back from this source. Voteview goes back to 1789 for
+  the Senate, but the site only loads what it can also load for the House.
+- **Resumable.** House votes already loaded are skipped and Voteview reloads are idempotent, so
+  a stopped run is simply started again. Each chamber, Congress and session is its own
+  `core.ingest_run` row (`backfill_house_<congress>_<session>`, `backfill_senate_<congress>`).
+- **Members.** No extra step: the member list already includes `legislators-historical.yaml`,
+  so every former member and every past term is there before their votes arrive.
+- **Seat history.** Each member's seats come from that member list, so they cover the whole
+  career even before the votes loaded here. The panel merges back-to-back terms in the same
+  seat and party into one spell (a change of district after redistricting, chamber or party
+  starts a new one) and says which Congress the site's votes start with when a career began
+  earlier.
+- **Former members** are anyone with a recorded vote here and no current term, so loading
+  earlier Congresses adds them automatically to the picker and search.
+- **Bills.** The daily `bills` job picks up the newly voted-on bills on its own; with thousands
+  to fetch it runs for hours (Congress.gov allows 5,000 requests an hour).
+- **Not loaded for earlier Congresses:** residents per district (the Census figures cover the
+  118th and 119th Congress lines). Survey comparisons need a survey from those years (the CES
+  runs every year since 2006), which is separate work.
+
 ## 3a. Bill titles, policy areas and subjects: Congress.gov
 
 | | |

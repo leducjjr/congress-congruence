@@ -195,6 +195,23 @@ python -m congress_congruence.ingest.ppc load 2026
 
 `fetch` reads only public PDFs; nothing reaches the panel until `load`.
 
+## Loading earlier Congresses
+
+Votes for earlier Congresses come from the same sources as today's (House Clerk files, Voteview
+for the Senate). A House Congress is about 1,000–1,800 votes at one request a second, so allow an
+hour or two per Congress; the Senate is one download each. Each House file is ~90 KB and is kept,
+so check space first (`df -h ~`): budget ~150 MB of files and ~100 MB of database per Congress.
+
+```bash
+git pull
+python -m congress_congruence.ingest.backfill 117 117          # try one Congress first
+nohup python -m congress_congruence.ingest.backfill 110 116 > logs/backfill.log 2>&1 &
+tail -f logs/backfill.log                                       # Ctrl+C stops watching, not the load
+sudo systemctl restart congress-api && scripts/publish_web.sh   # once, for the seat history display
+```
+
+Stopping it (or a reboot) is harmless: run the same command again and it carries on.
+
 ## Loading state ballot-measure results
 
 The results are typed into `config/ballot_<year>_items.yaml` (certified counts, with a link

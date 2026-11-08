@@ -386,6 +386,13 @@ select siv.roll_call_id, r.chamber, siv.support_side, v.bioguide_id, v.position,
 
 # Each Congress and chamber in which the member has recorded votes, newest first, with the seat
 # and party of the term covering their last vote in it.
+# Every term the member has served (from the member list, which covers whole careers,
+# not only the Congresses whose votes are loaded), oldest first.
+TERMS = """
+select chamber, state, district, party, caucus, start_date, end_date
+  from core.term where bioguide_id = %(id)s order by start_date
+"""
+
 SERVICE_PERIODS = """
 select p.congress, p.chamber, p.first_vote, p.last_vote, t.state, t.district, t.party, t.caucus
   from (select r.congress, r.chamber, min(r.vote_date) as first_vote, max(r.vote_date) as last_vote
