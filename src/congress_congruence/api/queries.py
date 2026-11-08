@@ -117,3 +117,32 @@ select distinct on (job) job, status, finished_at
   from core.ingest_run where status = 'succeeded'
  order by job, run_id desc
 """
+
+# Each surveyed item the member's chamber voted on, the member's vote, and the
+# estimated opinion where they represent: their state (senators) or district.
+OPINION = """
+select si.survey, si.variable, si.question, si.note,
+       r.roll_call_id, r.chamber, r.congress, r.session, r.roll_number, r.vote_date,
+       r.question as vote_question, r.result, r.yea_total, r.nay_total,
+       mv.position,
+       oe.support, oe.support_low, oe.support_high, oe.majority, oe.respondents, oe.district
+  from core.survey_item si
+  join core.survey_item_vote siv on siv.survey = si.survey and siv.variable = si.variable
+                                and siv.chamber = %(chamber)s
+  join core.roll_call r on r.roll_call_id = siv.roll_call_id
+  left join core.member_vote mv on mv.roll_call_id = r.roll_call_id and mv.bioguide_id = %(id)s
+  join core.opinion_estimate oe on oe.survey = si.survey and oe.variable = si.variable
+                               and oe.state = %(state)s
+                               and ((%(chamber)s = 'senate' and oe.district is null)
+                                 or (%(chamber)s = 'house' and oe.district = %(district)s))
+ where mv.position is not null
+ order by r.vote_date, si.variable
+"""
+
+# People who answered, per survey: the largest count among its questions.
+SURVEY_SIZES = """
+select survey, max(answered) as respondents from (
+  select survey, variable, sum(respondents) as answered
+    from core.opinion_estimate where district is null group by survey, variable) per_item
+ group by survey
+"""

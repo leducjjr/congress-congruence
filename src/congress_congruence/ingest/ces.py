@@ -1,18 +1,17 @@
 """Cooperative Election Study (CES) survey data, from Harvard Dataverse.
 
-Step 1 (now): inspect a year's release and summarize what's in it.
-    python -m congress_congruence.ingest.ces inspect 2025
-    python -m congress_congruence.ingest.ces inspect 2025 --file path/to/local.dta   # skip the download
+    python -m congress_congruence.ingest.ces inspect 2025   # what's in a release
+    python -m congress_congruence.ingest.ces link 2025      # which roll call answers each survey item
+    python -m congress_congruence.ingest.ces load 2025      # link + estimate state and district opinion
+    (add --file path/to/local.dta to any of these to skip the download)
 
-This downloads the year's main data file into RAW_DATA_DIR/ces/<year>/ (once),
-then writes logs/ces_<year>_inspect.txt listing:
-  - the dataset's files and version
-  - row count
-  - geography and weight columns (district, state, weights)
-  - every question that looks like a roll-call or bill item, with its wording,
-    answer codes and a weighted support/oppose split
+inspect downloads the year's main data file into RAW_DATA_DIR/ces/<year>/ (once)
+and writes logs/ces_<year>_inspect.txt: files, rows, geography and weight columns,
+and every question mentioning a bill, vote or Congress with a weighted split.
 
-The loader and district estimates are built from what this finds.
+link and load read config/ces_<year>_items.yaml, which lists the survey items
+about actions of Congress and how to find the vote that answers each one.
+load replaces that year's items, links and estimates in one transaction.
 """
 
 import json
@@ -216,6 +215,171 @@ def write_report(year: int, lines: list[str]) -> Path:
     return out
 
 
+# ---------------------------------------------------------------- link and load
+
+STATE_FIPS = {
+    1: "AL", 2: "AK", 4: "AZ", 5: "AR", 6: "CA", 8: "CO", 9: "CT", 10: "DE", 11: "DC", 12: "FL",
+    13: "GA", 15: "HI", 16: "ID", 17: "IL", 18: "IN", 19: "IA", 20: "KS", 21: "KY", 22: "LA",
+    23: "ME", 24: "MD", 25: "MA", 26: "MI", 27: "MN", 28: "MS", 29: "MO", 30: "MT", 31: "NE",
+    32: "NV", 33: "NH", 34: "NJ", 35: "NM", 36: "NY", 37: "NC", 38: "ND", 39: "OH", 40: "OK",
+    41: "OR", 42: "PA", 44: "RI", 45: "SC", 46: "SD", 47: "TN", 48: "TX", 49: "UT", 50: "VT",
+    51: "VA", 53: "WA", 54: "WV", 55: "WI", 56: "WY",
+}
+SUPPORT, OPPOSE = 1, 2
+
+
+def load_config(year: int) -> dict:
+    import yaml
+    path = config.PROJECT_ROOT / "config" / f"ces_{year}_items.yaml"
+    if not path.exists():
+        raise FileNotFoundError(f"No item list for {year}: create {path}")
+    return yaml.safe_load(path.read_text())
+
+
+def find_data_file(year: int, local_file: Path | None) -> Path:
+    if local_file:
+        return local_file
+    folder = config.raw_data_dir() / "ces" / str(year)
+    found = sorted(folder.glob("*.dta")) + sorted(folder.glob("*.csv"))
+    if found:
+        return found[0]
+    info = dataset_files(DATASETS[year])
+    chosen = pick_data_file(info["files"])
+    if not chosen:
+        raise FileNotFoundError(f"No data file in the CES {year} release")
+    return download(chosen, folder)
+
+
+def survey_congress(year: int) -> int:
+    from .votes import current_session
+    from datetime import date
+    return current_session(date(year, 11, 15))[0]
+
+
+def match_vote(conn, chamber: str, congress: int, rule: dict) -> tuple[dict | None, int]:
+    """The last vote matching a rule, and how many matched in all."""
+    where, params = ["chamber = %s", "congress = %s"], [chamber, congress]
+    if "bill" in rule:
+        where.append("bill_type = %s and bill_number = %s")
+        params += [rule["bill"][0], int(rule["bill"][1])]
+    if "find" in rule:
+        where.append("description ilike %s")
+        params.append(f"%{rule['find']}%")
+    qs = rule.get("questions") or []
+    if qs:
+        where.append("(" + " or ".join(["question ilike %s"] * len(qs)) + ")")
+        params += [f"%{q}%" for q in qs]
+    sql = ("select roll_call_id, vote_date, question, description, result, yea_total, nay_total "
+           f"from core.roll_call where {' and '.join(where)} order by vote_date desc, roll_number desc")
+    with conn.cursor() as cur:
+        cur.execute(sql, params)
+        cols = [d.name for d in cur.description]
+        rows = [dict(zip(cols, r)) for r in cur.fetchall()]
+    return (rows[0] if rows else None), len(rows)
+
+
+def link(conn, year: int, cfg: dict) -> list[tuple]:
+    """Resolve each item's vote per chamber. Returns rows for survey_item_vote and prints a review list."""
+    congress = survey_congress(year)
+    out = []
+    print(f"Linking {cfg['survey']} items to votes of the {congress}th Congress")
+    for var, item in cfg["items"].items():
+        print(f"\n{var}: {item['question']}")
+        for chamber, rule in item.get("votes", {}).items():
+            vote, n = match_vote(conn, chamber, congress, rule)
+            if not vote:
+                print(f"  {chamber:6} NO MATCH for {rule}")
+                continue
+            print(f"  {chamber:6} {vote['roll_call_id']}  {vote['vote_date']}  {vote['question']}  "
+                  f"{vote['result']} {vote['yea_total']}-{vote['nay_total']}  ({n} matched; using the latest)")
+            print(f"         {(vote['description'] or '')[:110]}")
+            out.append((cfg["survey"], var, chamber, vote["roll_call_id"],
+                        f"latest of {n} votes matching {json.dumps(rule)}"))
+    return out
+
+
+def house_seats(conn, year: int) -> dict[str, list[int]]:
+    """Voting House seats in each state on the survey date (excludes DC and territories)."""
+    from datetime import date
+    with conn.cursor() as cur:
+        cur.execute("""select state, array_agg(distinct district order by district) from core.term
+                        where chamber = 'house' and %s between start_date and end_date and district >= 0
+                        group by state""", (date(year, 11, 15),))
+        seats = dict(cur.fetchall())
+    return {st: d for st, d in seats.items() if st in STATE_FIPS.values() and st != "DC"}
+
+
+def responses_for(df, var: str, state_col: str, dist_col: str, weight_col: str,
+                  seats: dict[str, list[int]]) -> list[tuple]:
+    out = []
+    for st_code, cd, ans, w in zip(df[state_col], df[dist_col], df[var], df[weight_col]):
+        if ans not in (SUPPORT, OPPOSE) or w != w or w is None:   # skipped / not asked / missing weight
+            continue
+        try:
+            st = STATE_FIPS.get(int(st_code))
+        except (TypeError, ValueError):
+            st = None
+        if not st or st == "DC":
+            continue
+        if seats.get(st) == [0]:
+            dist = 0                                           # at-large state
+        else:
+            try:
+                dist = int(cd)
+            except (TypeError, ValueError):
+                dist = None
+            if dist not in seats.get(st, []):
+                dist = None                                    # still counts toward the state
+        out.append((st, dist, 1 if ans == SUPPORT else 0, float(w)))
+    return out
+
+
+def load(conn, year: int, local_file: Path | None = None) -> dict:
+    from .. import opinion
+    cfg = load_config(year)
+    path = find_data_file(year, local_file)
+    columns, labels, _, nrows = read_metadata(path)
+    weight_col = next((w for w in cfg["weight_preference"] if w in columns), None)
+    if not weight_col:
+        raise ValueError(f"None of the weight columns {cfg['weight_preference']} are in {path.name}")
+    items = [v for v in cfg["items"] if v in columns]
+    missing = [v for v in cfg["items"] if v not in columns]
+    if missing:
+        raise ValueError(f"Items not in the data file: {missing}")
+    df = read_columns(path, [cfg["state_column"], cfg["district_column"], weight_col] + items)
+    seats = house_seats(conn, year)
+    links = link(conn, year, cfg)
+    conn.commit()   # end the read-only transaction the lookups opened, so the block below is a real
+                    # transaction (inside an open one it would only be a savepoint, committed later)
+
+    survey = cfg["survey"]
+    summary = {"respondents": nrows, "weight": weight_col, "items": len(items), "votes_linked": len(links)}
+    with conn.transaction(), conn.cursor() as cur:
+        cur.execute("delete from core.survey_item where survey = %s", (survey,))   # cascades
+        for var in items:
+            item = cfg["items"][var]
+            cur.execute("insert into core.survey_item (survey, variable, question, survey_label, note) "
+                        "values (%s, %s, %s, %s, %s)",
+                        (survey, var, item["question"], labels.get(var), item.get("note")))
+        cur.executemany("insert into core.survey_item_vote (survey, variable, chamber, roll_call_id, match_note) "
+                        "values (%s, %s, %s, %s, %s)", links)
+        counts = {"support": 0, "oppose": 0, "too_close": 0}
+        for var in items:
+            resp = responses_for(df, var, cfg["state_column"], cfg["district_column"], weight_col, seats)
+            states, districts = opinion.estimate(resp, seats)
+            for a in states + districts:
+                cur.execute(
+                    """insert into core.opinion_estimate (survey, variable, state, district, respondents,
+                       effective_n, raw_support, support, support_low, support_high, majority, method)
+                       values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+                    (survey, var, a.state, a.district, a.respondents, a.effective_n, a.raw_support,
+                     a.support, a.low, a.high, a.majority, opinion.METHOD))
+                if a.district is not None:
+                    counts[a.majority] += 1
+        summary["district_calls"] = counts
+    return summary
+
+
 def main(argv: list[str]) -> int:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
     args = argv[1:]
@@ -224,14 +388,23 @@ def main(argv: list[str]) -> int:
         i = args.index("--file")
         local = Path(args[i + 1])
         args = args[:i] + args[i + 2:]
-    if len(args) != 2 or args[0] != "inspect" or not args[1].isdigit():
+    if len(args) != 2 or args[0] not in ("inspect", "link", "load") or not args[1].isdigit():
         print(__doc__)
         return 2
-    year = int(args[1])
+    cmd, year = args[0], int(args[1])
     if year not in DATASETS and not local:
         print(f"No Dataverse ID recorded for {year}. Known: {sorted(DATASETS)}")
         return 2
-    inspect(year, local)
+    if cmd == "inspect":
+        inspect(year, local)
+        return 0
+    from .. import db
+    from .votes import record_run
+    with db.connect() as conn:
+        if cmd == "link":
+            link(conn, year, load_config(year))
+        else:
+            print(record_run(conn, f"ces_{year}", lambda: load(conn, year, local)))
     return 0
 
 

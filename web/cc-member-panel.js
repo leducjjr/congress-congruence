@@ -112,6 +112,24 @@
     a:focus-visible, button:focus-visible { outline: 2px solid var(--mark); outline-offset: 2px; border-radius: 3px; }
 
     .source { margin: 16px 0 0; font-size: 0.8rem; color: var(--ink-soft); }
+
+    .opinion { margin: 0 0 22px; }
+    .op-lead { margin: 0 0 6px; }
+    .op-lead strong { font-variant-numeric: tabular-nums; }
+    .op-scale { display: grid; grid-template-columns: 1fr auto 1fr; font-size: 0.75rem;
+                color: var(--ink-soft); margin: 10px 0 2px; }
+    .op-scale span:nth-child(2) { text-align: center; }
+    .op-scale span:last-child { text-align: right; }
+    .op-list { list-style: none; margin: 0; padding: 0; }
+    .op-list li { padding: 10px 0; border-top: 1px solid var(--rule); }
+    .op-q { margin: 0 0 6px; font-weight: 600; }
+    .op-bar { display: block; width: 100%; height: 12px; margin: 0 0 4px; }
+    .op-est { margin: 0; font-size: 0.85rem; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+    .op-vote { margin: 2px 0 0; font-size: 0.9rem; display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+    .op-vote svg { align-self: center; }
+    .op-vote a { color: var(--ink-soft); white-space: nowrap; font-size: 0.85rem; }
+    .op-note, .op-about { margin: 4px 0 0; font-size: 0.8rem; color: var(--ink-soft); }
+    .op-about { margin-top: 10px; }
     .note { color: var(--ink-soft); }
     .error { color: var(--ink); background: var(--surface-sunk); border-radius: 6px; padding: 10px 12px; }
     .loading { color: var(--ink-soft); }
@@ -219,13 +237,16 @@
         return;
       }
       try {
-        const [member, votes] = await Promise.all([
+        const [member, votes, opinion] = await Promise.all([
           this.get(`/v1/members/${encodeURIComponent(id)}`),
           this.get(`/v1/members/${encodeURIComponent(id)}/votes?limit=${STRIP_SIZE}`),
+          // Optional: if this part fails, show the rest of the panel without it.
+          this.get(`/v1/members/${encodeURIComponent(id)}/opinion`).catch(() => null),
         ]);
         if (ticket !== this.request) return; // a newer member was chosen meanwhile
         this.member = member;
         this.votes = votes.votes;
+        this.opinion = opinion;
         this.showing = Math.min(this.listSize, this.votes.length);
         this.render();
       } catch (err) {
@@ -275,6 +296,9 @@
       if (facts.length) parts.push(h("ul", { class: "facts" }, facts));
       else parts.push(h("p", { class: "note" }, `No recorded votes yet in the ${ordinal(s.congress)} Congress.`));
 
+      const opinionSection = this.opinionSection();
+      if (opinionSection) parts.push(opinionSection);
+
       if (votes.length) {
         parts.push(h("h3", {}, "Recent votes"));
         parts.push(h("ol", { class: "votes" }, votes.slice(0, this.showing).map(v => this.voteRow(v))));
@@ -307,6 +331,78 @@
           v.position_detail && !["Yea", "Nay", "Present", "Not Voting"].includes(v.position_detail) ? ` (${v.position_detail})` : "",
           `. ${v.question ? v.question + ", " : ""}${(v.result || "").toLowerCase()}${tally}. `,
           h("a", { href: v.official_url, target: "_blank", rel: "noopener" }, fmtDate(v.date))));
+    }
+
+    opinionSection() {
+      const o = this.opinion;
+      if (!o || !o.items || !o.items.length) return null;
+      const m = this.member;
+      // "TX" or "TX-6", with a non-breaking hyphen so it never splits across lines
+      const where = (m.chamber === "senate" ? m.state : o.area).replace("-", "\u2011");
+      const whose = m.chamber === "senate" ? "state's" : "district's";
+      const s = o.summary;
+      const lead = s.clear_majority
+        ? h("p", { class: "op-lead" }, "Voted with ", h("strong", {}, `${s.with_majority} of ${s.clear_majority}`),
+            ` surveyed votes where ${where}'s estimated majority was clear.`)
+        : h("p", { class: "op-lead" }, `On these votes, ${where}'s estimated opinion was too close to call.`);
+
+      const verdict = {
+        with: `with the ${whose} majority`,
+        against: `against the ${whose} majority`,
+        too_close: `${where} too close to call`,
+        did_not_vote: "",
+      };
+      const rows = o.items.map(i => {
+        const c = i.constituents;
+        const [lo, hi] = c.range_pct;
+        const voted = i.position === "yea" || i.position === "nay" ? `Voted ${POSITION_TEXT[i.position]}` : "Did not vote";
+        const tail = verdict[i.agreement] ? `, ${verdict[i.agreement]}` : "";
+        return h("li", {},
+          h("p", { class: "op-q" }, i.question),
+          this.rangeBar(c.support_pct, lo, hi, `${where}: about ${Math.round(c.support_pct)}% support, likely between ${Math.round(lo)}% and ${Math.round(hi)}%`),
+          h("p", { class: "op-est" },
+            `${where}: ${Math.round(c.support_pct)}% support (likely ${Math.round(lo)}–${Math.round(hi)}%)`),
+          h("p", { class: "op-vote" }, mark(i.position, 11),
+            h("span", {}, h("strong", {}, voted), tail, ". "),
+            h("a", { href: i.vote.official_url, target: "_blank", rel: "noopener" }, fmtDate(i.vote.date))),
+          i.note ? h("p", { class: "op-note" }, i.note) : null);
+      });
+
+      const survey = (o.surveys || [])[0];
+      const about = survey
+        ? `Estimates from the Cooperative Election Study (${survey.name}); about ${survey.respondents.toLocaleString()} people answered each question nationwide. `
+        : "";
+      return h("section", { class: "opinion" },
+        h("h3", {}, "Compared with constituents"),
+        lead,
+        h("div", { class: "op-scale", "aria-hidden": "true" },
+          h("span", {}, "0% support"), h("span", {}, "50%"), h("span", {}, "100%")),
+        h("ol", { class: "op-list" }, rows),
+        h("p", { class: "op-about" }, about,
+          m.chamber === "senate"
+            ? "Senators are compared with their whole state. "
+            : "House districts have few respondents each, so estimates lean on statewide answers and many are too close to call. ",
+          "The shaded range is where support likely falls; a range crossing 50% is too close to call."));
+    }
+
+    rangeBar(est, lo, hi, label) {
+      const ns = "http://www.w3.org/2000/svg";
+      const svg = document.createElementNS(ns, "svg");
+      svg.setAttribute("class", "op-bar");
+      svg.setAttribute("viewBox", "0 0 100 10");
+      svg.setAttribute("preserveAspectRatio", "none");
+      svg.setAttribute("role", "img");
+      svg.setAttribute("aria-label", label);
+      const add = (tag, attrs) => {
+        const el = document.createElementNS(ns, tag);
+        for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+        svg.appendChild(el);
+      };
+      add("rect", { x: 0, y: 4, width: 100, height: 2, fill: "var(--rule)" });                       // 0..100% track
+      add("rect", { x: lo, y: 1.5, width: Math.max(0.8, hi - lo), height: 7, rx: 1, fill: "var(--mark-soft)" });
+      add("rect", { x: 49.8, y: 0, width: 0.4, height: 10, fill: "var(--ink-soft)" });               // 50% line
+      add("rect", { x: Math.min(99, Math.max(0, est - 0.6)), y: 1, width: 1.2, height: 8, fill: "var(--mark)" });
+      return svg;
     }
 
     sourceNote() {

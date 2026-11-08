@@ -9,7 +9,7 @@ See the systems inventory doc for the full design. This repo implements it in ph
 | --- | --- | --- |
 | 1 | Schema, member loader, House + Senate vote ingestion, validation | Built; live download not yet run |
 | 2 | Voteview historical backfill and reconciliation | Not started |
-| 3 | CES opinion data, item-to-vote linking, MRP, congruence scores | Not started |
+| 3 | CES opinion data, item-to-vote linking, district/state estimates, comparison | First version built (CES 2025) |
 | 4 | API, dashboard, address-to-district lookup | First member panel and API built |
 
 ## Layout
@@ -126,6 +126,41 @@ member's service in the current Congress. *With party majority* = votes where
 the member voted the same way (Yea or Nay) as most of their party; ties are left
 out, and independents count with the party they caucus with. Party is taken from
 the member's term, so a mid-term party switch isn't reflected yet.
+
+## Constituent opinion (CES)
+
+The Cooperative Election Study asks people whether they support specific actions
+of Congress. `config/ces_2025_items.yaml` lists the seven CES 2025 items about the
+119th Congress and how to find the vote that answers each one (the last decisive
+floor vote in each chamber; voting Yea is the "support" side).
+
+```bash
+python -m congress_congruence.ingest.ces inspect 2025   # what's in the release
+python -m congress_congruence.ingest.ces link 2025      # review which vote each item matched
+python -m congress_congruence.ingest.ces load 2025      # link + estimate every state and district
+```
+
+**How the estimates work** (`src/congress_congruence/opinion.py`). CES 2025 has
+17,000 respondents, about 40 per House district, too few for raw district
+percentages. Each state is pulled toward the national figure and each district
+toward its state, more strongly the fewer respondents it has. How hard to pull is
+learned from how much areas really differ, with a floor that assumes they can
+differ by at least ~5 points. Each estimate gets a 90% range; where the range
+crosses 50% the area is shown as **too close to call**, and no comparison is made.
+
+Checked on simulated surveys with known answers (`tests/test_opinion.py` and
+the notes in `opinion.py`): pooling cut district error by about a third versus
+raw percentages; ranges use a multiplier of 1.9 rather than the textbook 1.645
+because 1.645 only covered the truth 84-87% of the time; with 1.9 coverage was
+91-96% and about 1% of clear calls were wrong.
+
+This is simpler than full MRP, which would also use each district's demographics
+and past election results and would call more districts. Senators are compared
+with their whole state, where samples are much larger.
+
+The panel's **Compared with constituents** section lists each surveyed vote,
+the area's estimated support with its range, how the member voted, and whether
+that was with or against a clear majority.
 
 ## Scheduled jobs
 

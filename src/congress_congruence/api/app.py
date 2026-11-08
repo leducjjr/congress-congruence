@@ -8,6 +8,7 @@ Endpoints (all GET):
     /v1/members?state=TX&chamber=house members serving today
     /v1/members/{bioguide_id}          profile, attendance, votes with party majority
     /v1/members/{bioguide_id}/votes    most recent votes (limit=1..100, default 20)
+    /v1/members/{bioguide_id}/opinion  surveyed votes compared with constituents' estimated views
 
 Settings (environment or .env):
     API_DATABASE_URL   connection for a read-only database login (falls back to DATABASE_URL)
@@ -175,3 +176,53 @@ def member_votes(bioguide_id: str, response: Response, limit: int = Query(20, ge
         "official_url": q.official_vote_url(r["chamber"], r["congress"], r["session"],
                                             r["roll_number"], r["vote_date"]),
     } for r in rows]}
+
+
+def agreement(position: str, majority: str) -> str:
+    """How a vote lines up with the estimated majority where the member represents."""
+    if position not in ("yea", "nay"):
+        return "did_not_vote"
+    if majority == "too_close":
+        return "too_close"
+    return "with" if (position == "yea") == (majority == "support") else "against"
+
+
+@app.get("/v1/members/{bioguide_id}/opinion")
+def member_opinion(bioguide_id: str, response: Response):
+    row = get_member_row(bioguide_id)
+    rows = fetch(q.OPINION, {"id": bioguide_id, "chamber": row["chamber"], "state": row["state"],
+                             "district": row["district"] if row["chamber"] == "house" else None})
+    sizes = {r["survey"]: r["respondents"] for r in fetch(q.SURVEY_SIZES)}
+    items = [{
+        "survey": r["survey"],
+        "item": r["variable"],
+        "question": r["question"],
+        "note": r["note"],
+        "vote": {
+            "roll_call_id": r["roll_call_id"], "date": r["vote_date"], "question": r["vote_question"],
+            "result": r["result"], "yea_total": r["yea_total"], "nay_total": r["nay_total"],
+            "official_url": q.official_vote_url(r["chamber"], r["congress"], r["session"],
+                                                r["roll_number"], r["vote_date"]),
+        },
+        "position": r["position"],
+        "constituents": {
+            "area": "state" if row["chamber"] == "senate" else "district",
+            "support_pct": round(100 * r["support"], 1),
+            "range_pct": [round(100 * r["support_low"], 1), round(100 * r["support_high"], 1)],
+            "majority": r["majority"],
+            "respondents": r["respondents"],
+        },
+        "agreement": agreement(r["position"], r["majority"]),
+    } for r in rows]
+    counted = [i for i in items if i["agreement"] in ("with", "against")]
+    response.headers["Cache-Control"] = CACHE
+    return {
+        "area": q.seat_label(row["state"], row["district"], row["chamber"]),
+        "summary": {
+            "surveyed_votes": len(items),
+            "clear_majority": len(counted),
+            "with_majority": sum(i["agreement"] == "with" for i in counted),
+        },
+        "surveys": [{"name": k, "respondents": v} for k, v in sizes.items()],
+        "items": items,
+    }

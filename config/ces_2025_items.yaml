@@ -1,0 +1,66 @@
+# CES 2025 questions about actions of the 119th Congress, and how to find the vote
+# that answers each one. Answer codes in the survey: 1 = Support, 2 = Oppose.
+#
+# For each chamber, the loader takes the LAST floor vote that matches, which is the
+# decisive one (final passage, agreeing to the other chamber's version, or confirmation).
+# Matching:
+#   bill:      bill type and number as stored (hr 1, s 5, ...)
+#   find:      text that must appear in the vote's description (nominations have no bill number)
+#   questions: the vote question must contain one of these phrases
+# Run `python -m congress_congruence.ingest.ces link 2025` to see what each rule matched.
+#
+# Voting Yea is the "support" side of every item below.
+
+survey: CES 2025
+weight_preference: [commonpostweight, commonweight]
+district_column: cdid119
+state_column: inputstate
+
+final_questions: &final
+  - On Passage
+  - Passage of the Bill
+  - Concur
+  - Agreeing to the Resolution
+  - Joint Resolution Passage
+
+items:
+  CC25_340a:
+    question: Confirm Pete Hegseth as Secretary of Defense
+    votes:
+      senate: {find: Hegseth, questions: [Nomination, Confirmation]}
+
+  CC25_340b:
+    question: Confirm Robert F. Kennedy Jr. as Secretary of Health and Human Services
+    votes:
+      senate: {find: Kennedy, questions: [Nomination, Confirmation]}
+
+  CC25_340c:
+    question: Require detention of undocumented immigrants charged with theft (Laken Riley Act)
+    votes:
+      house:  {bill: [s, 5], questions: *final}
+      senate: {bill: [s, 5], questions: *final}
+
+  CC25_340d:
+    question: Require documentary proof of U.S. citizenship to register to vote (SAVE Act)
+    votes:
+      house:  {bill: [hr, 22], questions: *final}
+
+  CC25_340e:
+    question: Require medical care for infants born alive after an attempted abortion
+    note: The Senate's only floor vote was on cloture (whether to proceed), which failed.
+    votes:
+      house:  {bill: [hr, 21], questions: *final}
+      senate: {bill: [s, 6], questions: [Cloture]}
+
+  CC25_340f:
+    question: A tax bill extending the 2017 tax cuts, among other provisions (H.R. 1)
+    note: The survey listed several provisions; see the CES 2025 guide for the full wording.
+    votes:
+      house:  {bill: [hr, 1], questions: *final}
+      senate: {bill: [hr, 1], questions: *final}
+
+  CC25_340g:
+    question: Cut $9.4 billion from previously approved federal spending (Rescissions Act)
+    votes:
+      house:  {bill: [hr, 4], questions: *final}
+      senate: {bill: [hr, 4], questions: *final}
