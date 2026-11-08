@@ -6,6 +6,8 @@ Run locally:
 Endpoints (GET unless marked):
     /v1/health                         is the database reachable; how fresh is the data
     /v1/surveys                        every survey loaded, with links (Sources page)
+    /v1/surveyed                       every survey question compared with a vote (Surveyed votes page)
+    /v1/surveyed/detail?survey=&item=  one question: each member's vote against their area's opinion
     POST /v1/feedback                  the feedback form: emailed to the project inbox, never stored
     /v1/search?q=abort*                members (name, state, seat), survey questions and votes
     /v1/members?state=TX&chamber=house members serving today
@@ -202,16 +204,12 @@ def vote_summary(r: dict) -> dict:
     }
 
 
-def search_text(text: str, chamber: str | None, members: list[str], limit: int) -> dict:
-    """Survey questions and votes matching the text, with what the site can say about each."""
-    tsq = build_tsquery(text)
-    if not tsq:
-        return {"questions": [], "questions_total": 0, "votes": [], "votes_total": 0}
-    qrows = fetch(q.QUESTION_SEARCH, {"tsq": tsq, "limit": limit})
-    vrows = fetch(q.VOTE_SEARCH, {"tsq": tsq, "chamber": chamber, "limit": limit})
-
+def question_cards(qrows: list[dict], members: list[str]) -> list[dict]:
+    """For survey questions (rows with survey, variable, question, note, title, organization, fielded,
+    guide_url): the spread of support across areas, each chamber's vote, and how many members voted
+    with or against a clear majority where they live. Shared by search and the Surveyed votes page."""
     keys = [f"{r['survey']}|{r['variable']}" for r in qrows]
-    tallies, spreads = {}, {}
+    tallies, spreads, mine = {}, {}, {}
     if keys:
         for t in fetch(q.QUESTION_TALLY, {"keys": keys}):
             tallies.setdefault((t["survey"], t["variable"]), []).append(t)
@@ -220,21 +218,12 @@ def search_text(text: str, chamber: str | None, members: list[str], limit: int) 
                 "areas": sp["areas"], "lowest_pct": round(100 * sp["lowest"], 1),
                 "highest_pct": round(100 * sp["highest"], 1), "support": sp["support_areas"],
                 "oppose": sp["oppose_areas"], "too_close": sp["too_close_areas"]}
-
-    ids = [r["roll_call_id"] for r in vrows] + [t["roll_call_id"] for ts in tallies.values() for t in ts]
-    split, surveyed, mine = {}, {}, {}
-    if ids:
-        for r in fetch(q.VOTE_PARTY_SPLIT, {"ids": ids}):
-            split.setdefault(r["roll_call_id"], {}).setdefault(r["party"], {})[r["position"]] = r["n"]
-        for r in fetch(q.VOTE_SURVEYED, {"ids": ids}):
-            surveyed.setdefault(r["roll_call_id"], []).append(
-                {"survey": r["survey"], "item": r["variable"], "question": r["question"], "match": r["match_kind"]})
-        if members:
-            for r in fetch(q.MEMBER_POSITIONS, {"ids": ids, "members": members}):
-                mine.setdefault(r["roll_call_id"], []).append(
-                    {"bioguide_id": r["bioguide_id"], "name": r["name"], "position": r["position"]})
-
-    questions = [{
+    ids = [t["roll_call_id"] for ts in tallies.values() for t in ts]
+    if ids and members:
+        for r in fetch(q.MEMBER_POSITIONS, {"ids": ids, "members": members}):
+            mine.setdefault(r["roll_call_id"], []).append(
+                {"bioguide_id": r["bioguide_id"], "name": r["name"], "position": r["position"]})
+    return [{
         "survey": r["survey"], "item": r["variable"], "question": r["question"], "note": r["note"],
         "source": {"title": r["title"], "organization": r["organization"], "fielded": r["fielded"],
                    "guide_url": r["guide_url"]},
@@ -252,6 +241,29 @@ def search_text(text: str, chamber: str | None, members: list[str], limit: int) 
         } for t in sorted(tallies.get((r["survey"], r["variable"]), []), key=lambda t: t["chamber"] != "senate")],
     } for r in qrows]
 
+
+def search_text(text: str, chamber: str | None, members: list[str], limit: int) -> dict:
+    """Survey questions and votes matching the text, with what the site can say about each."""
+    tsq = build_tsquery(text)
+    if not tsq:
+        return {"questions": [], "questions_total": 0, "votes": [], "votes_total": 0}
+    qrows = fetch(q.QUESTION_SEARCH, {"tsq": tsq, "limit": limit})
+    vrows = fetch(q.VOTE_SEARCH, {"tsq": tsq, "chamber": chamber, "limit": limit})
+    questions = question_cards(qrows, members)
+
+    ids = [r["roll_call_id"] for r in vrows]
+    split, surveyed, mine = {}, {}, {}
+    if ids:
+        for r in fetch(q.VOTE_PARTY_SPLIT, {"ids": ids}):
+            split.setdefault(r["roll_call_id"], {}).setdefault(r["party"], {})[r["position"]] = r["n"]
+        for r in fetch(q.VOTE_SURVEYED, {"ids": ids}):
+            surveyed.setdefault(r["roll_call_id"], []).append(
+                {"survey": r["survey"], "item": r["variable"], "question": r["question"], "match": r["match_kind"]})
+        if members:
+            for r in fetch(q.MEMBER_POSITIONS, {"ids": ids, "members": members}):
+                mine.setdefault(r["roll_call_id"], []).append(
+                    {"bioguide_id": r["bioguide_id"], "name": r["name"], "position": r["position"]})
+
     votes = [{**vote_summary(r), "snippet": r["snippet"],
               "bill_title": r["bill_title"], "policy_area": r["policy_area"],
               "subjects": r["subjects"].split(" | ") if r["subjects"] else [],
@@ -261,6 +273,44 @@ def search_text(text: str, chamber: str | None, members: list[str], limit: int) 
               "your_members": mine.get(r["roll_call_id"], [])} for r in vrows]
     return {"questions": questions, "questions_total": qrows[0]["total"] if qrows else 0,
             "votes": votes, "votes_total": vrows[0]["total"] if vrows else 0}
+
+
+@app.get("/v1/surveyed")
+def surveyed(response: Response, member: list[str] = Query([], max_length=6)):
+    """Every survey question compared with a vote, newest survey first within each organization."""
+    members = [m for m in member if BIOGUIDE_RE.match(m)]
+    cards = question_cards(fetch(q.QUESTION_LIST), members)
+    response.headers["Cache-Control"] = CACHE
+    return {"questions": cards}
+
+
+@app.get("/v1/surveyed/detail")
+def surveyed_detail(response: Response,
+                    survey: str = Query(..., min_length=3, max_length=40),
+                    item: str = Query(..., min_length=2, max_length=40)):
+    """One survey question: its card, and for each linked vote every member who could vote, with the
+    estimated support where they live, how they voted, and whether that was with a clear majority."""
+    rows = fetch(q.QUESTION_ONE, {"survey": survey, "item": item})
+    if not rows:
+        raise HTTPException(404, "No survey question with that name")
+    card = question_cards(rows, [])[0]
+    by_vote = {}
+    for r in fetch(q.QUESTION_MEMBERS, {"survey": survey, "item": item}):
+        surveyed_area = r["support"] is not None
+        by_vote.setdefault(r["roll_call_id"], []).append({
+            "bioguide_id": r["bioguide_id"], "name": r["name"], "party": r["party"],
+            "state": r["state"], "seat": q.seat_label(r["state"], r["district"], r["chamber"]),
+            "position": r["position"], "sided_with": sided_with(r["position"], r["support_side"]),
+            "area": {"support_pct": round(100 * r["support"], 1), "low_pct": round(100 * r["support_low"], 1),
+                     "high_pct": round(100 * r["support_high"], 1), "majority": r["majority"],
+                     "respondents": r["respondents"]} if surveyed_area else None,
+            "agreement": agreement(r["position"], r["majority"], r["support_side"]) if surveyed_area
+                         else ("not_surveyed" if r["position"] in ("yea", "nay") else "did_not_vote"),
+        })
+    for v in card["votes"]:
+        v["member_votes"] = sorted(by_vote.get(v["roll_call_id"], []), key=lambda m: (m["state"], m["seat"]))
+    response.headers["Cache-Control"] = CACHE
+    return card
 
 
 @app.get("/v1/search")

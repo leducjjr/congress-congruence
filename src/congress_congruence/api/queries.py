@@ -338,3 +338,45 @@ select survey, variable, district is null as statewide, count(*) as areas,
  where (survey || '|' || variable) = any(%(keys)s)
  group by survey, variable, district is null
 """
+
+
+# ---------------------------------------------------------------- Surveyed votes page
+
+QUESTION_COLUMNS = """si.survey, si.variable, si.question, si.note, s.title, s.fielded,
+       coalesce(s.organization, s.survey) as organization, s.guide_url"""
+
+# Every question compared with at least one vote: by organization, newest survey first.
+QUESTION_LIST = f"""
+select {QUESTION_COLUMNS}
+  from core.survey_item si join core.survey s using (survey)
+ where exists (select 1 from core.survey_item_vote v where v.survey = si.survey and v.variable = si.variable)
+ order by coalesce(s.organization, s.survey), si.survey desc, si.variable
+"""
+
+QUESTION_ONE = f"""
+select {QUESTION_COLUMNS}
+  from core.survey_item si join core.survey s using (survey)
+ where si.survey = %(survey)s and si.variable = %(item)s
+"""
+
+# Every member's vote on each vote linked to the question, with the estimate for the area they
+# represented on the vote date (state for senators, district for representatives).
+QUESTION_MEMBERS = """
+select siv.roll_call_id, r.chamber, siv.support_side, v.bioguide_id, v.position,
+       coalesce(m.official_full, m.first_name || ' ' || m.last_name) as name,
+       t.state, t.district, coalesce(t.caucus, t.party) as party,
+       oe.support, oe.support_low, oe.support_high, oe.majority, oe.respondents
+  from core.survey_item_vote siv
+  join core.roll_call r using (roll_call_id)
+  join core.member_vote v using (roll_call_id)
+  join core.member m using (bioguide_id)
+  cross join lateral (select t.state, t.district, t.party, t.caucus from core.term t
+                       where t.bioguide_id = v.bioguide_id and t.chamber = r.chamber
+                         and r.vote_date between t.start_date and t.end_date
+                       order by t.start_date desc limit 1) t
+  left join core.opinion_estimate oe
+         on oe.survey = siv.survey and oe.variable = siv.variable and oe.state = t.state
+        and ((r.chamber = 'senate' and oe.district is null)
+             or (r.chamber = 'house' and oe.district = t.district))
+ where siv.survey = %(survey)s and siv.variable = %(item)s
+"""
