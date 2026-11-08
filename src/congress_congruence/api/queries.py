@@ -380,3 +380,34 @@ select siv.roll_call_id, r.chamber, siv.support_side, v.bioguide_id, v.position,
              or (r.chamber = 'house' and oe.district = t.district))
  where siv.survey = %(survey)s and siv.variable = %(item)s
 """
+
+# ---------------------------------------------------------------- former members and periods served
+
+# Each Congress and chamber in which the member has recorded votes, newest first, with the seat
+# and party of the term covering their last vote in it.
+SERVICE_PERIODS = """
+select p.congress, p.chamber, p.first_vote, p.last_vote, t.state, t.district, t.party, t.caucus
+  from (select r.congress, r.chamber, min(r.vote_date) as first_vote, max(r.vote_date) as last_vote
+          from core.member_vote v join core.roll_call r using (roll_call_id)
+         where v.bioguide_id = %(id)s
+         group by 1, 2) p
+  left join lateral (select t.state, t.district, t.party, t.caucus from core.term t
+                      where t.bioguide_id = %(id)s and t.chamber = p.chamber
+                        and p.last_vote between t.start_date and t.end_date
+                      order by t.start_date desc limit 1) t on true
+ order by p.congress desc, p.last_vote desc
+"""
+
+# Members not serving on the given day who have recorded votes in the data loaded, with their
+# last term (optionally only terms in one state).
+FORMER_MEMBERS = """
+select distinct on (t.bioguide_id)
+       t.bioguide_id, coalesce(m.official_full, m.first_name || ' ' || m.last_name) as name,
+       m.last_name, t.chamber, t.state, t.district, t.party, t.caucus, t.end_date
+  from core.term t join core.member m using (bioguide_id)
+ where (%(state)s::text is null or t.state = %(state)s)
+   and not exists (select 1 from core.term c where c.bioguide_id = t.bioguide_id
+                    and %(on)s between c.start_date and c.end_date)
+   and exists (select 1 from core.member_vote v where v.bioguide_id = t.bioguide_id)
+ order by t.bioguide_id, t.start_date desc
+"""

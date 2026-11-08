@@ -39,8 +39,9 @@
   // Keyboard: Up/Down move through suggestions, Enter opens, Escape closes.
   const input = $("site-q"), list = $("site-q-list");
   const memberHref = m => `index.html#${m.state}/${m.bioguide_id}`;
-  const describe = m => m.chamber === "senate" ? `Senator, ${m.state} · ${m.party}`
-                                               : `Representative, ${m.seat} · ${m.party}`;
+  const describe = m => (m.former ? "Former " : "") +
+    (m.chamber === "senate" ? `${m.former ? "senator" : "Senator"}, ${m.state} · ${m.party}`
+                            : `${m.former ? "representative" : "Representative"}, ${m.seat} · ${m.party}`);
   if (input && list) {
     let results = [], active = -1, timer = null, lastQuery = "";
     const close = () => { list.hidden = true; input.setAttribute("aria-expanded", "false");

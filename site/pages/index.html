@@ -61,16 +61,28 @@ main_class: home
     memberSel.disabled = true;
     if (!code) return;
     try {
-      const { members } = await getJSON(`/v1/members?state=${code}`);
+      const { members } = await getJSON(`/v1/members?state=${code}&include=former`);
       memberSel.replaceChildren(new Option("Choose", ""));
       for (const chamber of ["senate", "house"]) {
         const group = document.createElement("optgroup");
         group.label = chamber === "senate" ? "Senators" : "Representatives";
-        for (const m of members.filter(x => x.chamber === chamber)) {
+        for (const m of members.filter(x => x.chamber === chamber && !x.former)) {
           const where = chamber === "house" ? `${m.seat}, ` : "";
           group.append(new Option(`${m.name} (${where}${m.party})`, m.bioguide_id));
         }
         if (group.children.length) memberSel.append(group);
+      }
+      // Members who have left office but have votes in the records this site covers.
+      const former = members.filter(x => x.former);
+      if (former.length) {
+        const group = document.createElement("optgroup");
+        group.label = "Former members";
+        for (const m of former) {
+          const role = m.chamber === "senate" ? "Senator" : `Rep., ${m.seat}`;
+          const until = m.left_office ? `, until ${new Date(m.left_office + "T12:00:00").getFullYear()}` : "";
+          group.append(new Option(`${m.name} (former ${role}${until})`, m.bioguide_id));
+        }
+        memberSel.append(group);
       }
       memberSel.disabled = false;
       status.textContent = "";

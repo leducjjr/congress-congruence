@@ -3,8 +3,10 @@
 Status: steps 1–2 under way (Nov 2026): the shared header and footer, Find your members,
 Sources, Methods, Glossary, About, Contact (placeholder) and Privacy are built, and search
 finds members (name, state, seat), survey questions and votes (search.html). Subject tags from
-Congress.gov feed search. Surveyed votes (list + per-question chart and table) is built. Next: former
-members, then state ballot-measure results.
+Congress.gov feed search. Surveyed votes (list + per-question chart and table) is built. Former members:
+figures per Congress and chamber, a 'Former …' status line, and a Former members group in the picker
+and search (seat history and a Congress selector wait for earlier Congresses to be loaded). Next:
+state ballot-measure results.
 
 Originally a proposal (Nov 2026). Today the site is one page (pick a state and a member, see the
 panel). This plan turns it into a small site with a header, a footer, and reference pages, ready for

@@ -284,11 +284,16 @@
     new Date(iso + "T12:00:00").toLocaleDateString("en-US", opts);
 
   function seatSentence(m) {
-    const role = m.chamber === "senate" ? "Senator for" : (m.district === 0 ? "Representative for" : "Representative for");
+    const role = m.chamber === "senate" ? "Senator for" : "Representative for";
     const where = m.chamber === "senate" ? m.state : m.seat;
     const party = m.caucus && m.caucus !== m.party ? `${m.party}, caucuses with the ${m.caucus}s` : m.party;
-    const status = m.serving ? "" : " (no longer serving)";
-    return `${role} ${where}, ${party}${status}`;
+    // Former members: say so plainly, with when they left. No reason is given (retired, defeated,
+    // resigned...) because the member data doesn't reliably include one.
+    if (!m.serving) {
+      const until = m.left_office ? `; served until ${fmtDate(m.left_office)}` : "";
+      return `Former ${role.toLowerCase()} ${where}, ${party}${until}`;
+    }
+    return `${role} ${where}, ${party}`;
   }
 
   const SOURCE_TEXT = {
@@ -420,14 +425,24 @@
       }
 
       const facts = [];
-      if (s.votes_total) {
+      const periods = (m.service || []).filter(p => p.votes_total);
+      if (periods.length > 1) {
+        // Served in more than one Congress or chamber: one line for each, newest first.
+        for (const p of periods) {
+          facts.push(h("li", {},
+            h("strong", {}, `${p.chamber === "senate" ? "Senate" : "House"}${p.seat ? ` (${p.seat})` : ""}, ${ordinal(p.congress)} Congress`),
+            `: missed ${p.missed_pct}% of ${p.votes_total.toLocaleString()} ${p.votes_total === 1 ? "vote" : "votes"}`,
+            p.party_votes ? `; voted with their party's majority on ${p.with_party_pct}% of ${p.party_votes.toLocaleString()}` : "",
+            p.first_vote && p.last_vote ? ` (${fmtDate(p.first_vote)} to ${fmtDate(p.last_vote)})` : "", "."));
+        }
+      } else if (s.votes_total) {
         facts.push(h("li", {}, "Missed ", h("strong", {}, `${s.missed_pct}%`),
           ` of ${s.votes_total.toLocaleString()} votes in the ${ordinal(s.congress)} Congress`,
           s.first_vote && s.last_vote
             ? ` (${fmtDate(s.first_vote)} to ${fmtDate(s.last_vote)})` : "",
           "."));
       }
-      if (s.party_votes) {
+      if (periods.length <= 1 && s.party_votes) {
         facts.push(h("li", {}, "Voted with the majority of their party on ",
           h("strong", {}, `${s.with_party_pct}%`), ` of ${s.party_votes.toLocaleString()} votes.`));
       }

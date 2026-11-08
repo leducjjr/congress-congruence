@@ -10,7 +10,7 @@ Endpoints (GET unless marked):
     /v1/surveyed/detail?survey=&item=  one question: each member's vote against their area's opinion
     POST /v1/feedback                  the feedback form: emailed to the project inbox, never stored
     /v1/search?q=abort*                members (name, state, seat), survey questions and votes
-    /v1/members?state=TX&chamber=house members serving today
+    /v1/members?state=TX&chamber=house members serving today (&include=former adds those who've left)
     /v1/members/{bioguide_id}          profile, attendance, votes with party majority
     /v1/members/{bioguide_id}/votes    most recent votes (limit=1..100, default 20)
     /v1/members/{bioguide_id}/opinion  surveyed votes compared with constituents' estimated views
@@ -141,7 +141,7 @@ SEAT_RE = re.compile(r"^([a-z]{2})\s*-?\s*(\d{1,2}|al|at-large)$")
 
 
 def search_members(query: str, rows: list[dict], limit: int = 12) -> list[dict]:
-    """Members serving today matching a name, a state, or a seat. Examples:
+    """Members matching a name, a state, or a seat; current members before former ones. Examples:
     'cruz', 'ted c', 'velazquez', 'Texas', 'TX', 'TX-7', 'tx 7', 'ak-al'. A trailing * is ignored."""
     q = fold(query).replace("*", " ").strip()
     q = re.sub(r"\s+", " ", q)
@@ -151,12 +151,13 @@ def search_members(query: str, rows: list[dict], limit: int = 12) -> list[dict]:
     if seat and seat.group(1).upper() in STATES:
         st, d = seat.group(1).upper(), seat.group(2)
         district = 0 if d in ("al", "at-large") else int(d)
-        return [r for r in rows if r["chamber"] == "house" and r["state"] == st
-                and (r["district"] or 0) == district][:limit]
+        found = [r for r in rows if r["chamber"] == "house" and r["state"] == st and (r["district"] or 0) == district]
+        return sorted(found, key=lambda r: bool(r.get("former")))[:limit]
     state = STATE_NAMES.get(q) or (q.upper() if len(q) == 2 and q.upper() in STATES else None)
     if state:
         mine = [r for r in rows if r["state"] == state]
-        return sorted(mine, key=lambda r: (r["chamber"] != "senate", r["district"] or 0, r["last_name"] or ""))[:limit]
+        return sorted(mine, key=lambda r: (bool(r.get("former")), r["chamber"] != "senate", r["district"] or 0,
+                                           r["last_name"] or ""))[:limit]
 
     tokens = q.split(" ")
     scored = []
@@ -166,7 +167,8 @@ def search_members(query: str, rows: list[dict], limit: int = 12) -> list[dict]:
         if not all(any(w.startswith(t) for w in words) or t in where for t in tokens):
             continue
         last = fold(r["last_name"] or "")
-        score = (0 if last.startswith(tokens[0]) else 1, r["chamber"] != "senate", r["state"], r["district"] or 0)
+        score = (bool(r.get("former")), 0 if last.startswith(tokens[0]) else 1, r["chamber"] != "senate",
+                 r["state"], r["district"] or 0)
         scored.append((score, r))
     return [r for _, r in sorted(scored, key=lambda x: x[0])][:limit]
 
@@ -328,7 +330,9 @@ def search(response: Response,
     out = {"query": text}
     if only != "text":
         rows = fetch(q.CURRENT_MEMBERS, {"on": date.today(), "state": None, "chamber": None})
-        out["members"] = [member_summary(r) for r in search_members(text, rows)]
+        former = [{**r, "former": True} for r in fetch(q.FORMER_MEMBERS, {"on": date.today(), "state": None})]
+        out["members"] = [{**member_summary(r), **({"former": True, "left_office": r["end_date"]} if r.get("former") else {})}
+                          for r in search_members(text, rows + former)]
     if only != "members":
         out.update(search_text(text, chamber, members, limit))
     response.headers["Cache-Control"] = CACHE
@@ -351,15 +355,22 @@ def feedback(request: Request, data: dict = Body(...)):
 @app.get("/v1/members")
 def members(response: Response,
             state: str | None = Query(None, min_length=2, max_length=2),
-            chamber: str | None = Query(None, pattern="^(house|senate)$")):
+            chamber: str | None = Query(None, pattern="^(house|senate)$"),
+            include: str | None = Query(None, pattern="^former$")):
     if state is not None:
         state = state.upper()
         if state not in STATES:
             raise HTTPException(400, "Unknown state code")
     rows = fetch(q.CURRENT_MEMBERS, {"on": date.today(), "state": state, "chamber": chamber})
     rows.sort(key=lambda r: (r["chamber"] != "senate", r["state"], r["district"] or 0, r["last_name"]))
+    out = [member_summary(r) for r in rows]
+    if include == "former":     # members who have left office but have votes in the data loaded
+        former = [r for r in fetch(q.FORMER_MEMBERS, {"on": date.today(), "state": state})
+                  if chamber is None or r["chamber"] == chamber]
+        former.sort(key=lambda r: (r["last_name"] or "", r["name"]))
+        out += [{**member_summary(r), "former": True, "left_office": r["end_date"]} for r in former]
     response.headers["Cache-Control"] = CACHE
-    return {"members": [member_summary(r) for r in rows]}
+    return {"members": out}
 
 
 def get_member_row(bioguide_id: str) -> dict:
@@ -394,28 +405,39 @@ def seat_population(row: dict) -> dict | None:
     }
 
 
+def period_stats(bioguide_id: str, congress: int, chamber: str) -> dict:
+    st = fetch(q.STATS, {"id": bioguide_id, "congress": congress, "chamber": chamber})[0]
+    return {
+        "congress": congress, "chamber": chamber,
+        "votes_total": st["votes_total"], "votes_missed": st["votes_missed"],
+        "missed_pct": pct(st["votes_missed"], st["votes_total"]),
+        "party_votes": st["party_votes"], "with_party": st["with_party"],
+        "with_party_pct": pct(st["with_party"], st["party_votes"]),
+        "first_vote": st["first_vote"], "last_vote": st["last_vote"],
+    }
+
+
 @app.get("/v1/members/{bioguide_id}")
 def member(bioguide_id: str, response: Response):
+    """Profile and figures. 'service' has attendance and party alignment for every Congress and
+    chamber the member voted in (newest first); 'stats' is the most recent of them, or the current
+    Congress if they haven't voted yet."""
     row = get_member_row(bioguide_id)
-    congress = current_session()[0]
-    s = fetch(q.STATS, {"id": bioguide_id, "congress": congress, "chamber": row["chamber"]})[0]
+    service = []
+    for p in fetch(q.SERVICE_PERIODS, {"id": bioguide_id}):
+        service.append({**period_stats(bioguide_id, p["congress"], p["chamber"]),
+                        "seat": q.seat_label(p["state"], p["district"], p["chamber"]) if p["state"] else None,
+                        "party": p["caucus"] if p["caucus"] and p["caucus"] != p["party"] else p["party"]})
+    stats = service[0] if service else period_stats(bioguide_id, current_session()[0], row["chamber"])
     response.headers["Cache-Control"] = CACHE
     return {
         **member_summary(row),
         "serving": row["serving"],
         "term": {"start": row["start_date"], "end": row["end_date"]},
+        "left_office": None if row["serving"] else row["end_date"],
         "population": seat_population(row),
-        "stats": {
-            "congress": congress,
-            "votes_total": s["votes_total"],
-            "votes_missed": s["votes_missed"],
-            "missed_pct": pct(s["votes_missed"], s["votes_total"]),
-            "party_votes": s["party_votes"],
-            "with_party": s["with_party"],
-            "with_party_pct": pct(s["with_party"], s["party_votes"]),
-            "first_vote": s["first_vote"],
-            "last_vote": s["last_vote"],
-        },
+        "stats": stats,
+        "service": service,
     }
 
 

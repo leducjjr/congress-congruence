@@ -70,7 +70,7 @@ addEventListener("DOMContentLoaded", () => {
     return el("section", { class: "group" }, el("h2", {}, "Members"),
       el("ul", { class: "plain" }, members.map(m => el("li", { class: "result" },
         el("a", { href: `index.html#${m.state}/${m.bioguide_id}` }, m.name), " ",
-        el("span", { class: "meta" }, `${m.chamber === "senate" ? `Senator, ${m.state}` : `Representative, ${m.seat}`} · ${m.party}`)))));
+        el("span", { class: "meta" }, `${m.chamber === "senate" ? `${m.former ? "Former senator" : "Senator"}, ${m.state}` : `${m.former ? "Former representative" : "Representative"}, ${m.seat}`} · ${m.party}`)))));
   }
 
   function questionsGroup(questions, total) {
