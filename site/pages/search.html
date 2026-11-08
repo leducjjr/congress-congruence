@@ -15,6 +15,7 @@ head: |
       color: var(--ink-soft); margin: 0 0 18px; }
     .filters select { font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--rule);
       border-radius: 6px; padding: 4px 6px; }
+    .search-page .sub-head { font-size: 0.95rem; color: var(--ink-soft); margin: 18px 0 4px; }
   </style>
 main_class: search-page
 ---
@@ -67,10 +68,14 @@ addEventListener("DOMContentLoaded", () => {
 
   function membersGroup(members) {
     if (!members?.length) return null;
-    return el("section", { class: "group" }, el("h2", {}, "Members"),
-      el("ul", { class: "plain" }, members.map(m => el("li", { class: "result" },
+    const current = members.filter(m => !m.former), former = members.filter(m => m.former);
+    const list = ms => el("ul", { class: "plain" }, ms.map(m => el("li", { class: "result" },
         el("a", { href: `index.html#${m.state}/${m.bioguide_id}` }, m.name), " ",
-        el("span", { class: "meta" }, `${m.chamber === "senate" ? `${m.former ? "Former senator" : "Senator"}, ${m.state}` : `${m.former ? "Former representative" : "Representative"}, ${m.seat}`} · ${m.party}`)))));
+        el("span", { class: "meta" }, `${m.chamber === "senate" ? `${m.former ? "Former senator" : "Senator"}, ${m.state}` : `${m.former ? "Former representative" : "Representative"}, ${m.seat}`} · ${m.party}` +
+          (m.former && m.left_office ? ` · until ${date(m.left_office)}` : "")))));
+    return el("section", { class: "group" }, el("h2", {}, "Members"),
+      current.length ? list(current) : null,
+      former.length ? [el("h3", { class: "sub-head" }, "Former members"), list(former)] : null);
   }
 
   function questionsGroup(questions, total) {

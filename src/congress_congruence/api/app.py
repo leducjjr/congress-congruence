@@ -335,7 +335,8 @@ def search(response: Response,
         rows = fetch(q.CURRENT_MEMBERS, {"on": date.today(), "state": None, "chamber": None})
         former = [{**r, "former": True} for r in fetch(q.FORMER_MEMBERS, {"on": date.today(), "state": None})]
         out["members"] = [{**member_summary(r), **({"former": True, "left_office": r["end_date"]} if r.get("former") else {})}
-                          for r in search_members(text, rows + former)]
+                          # Suggestions as you type stay short; the Search page lists a whole delegation.
+                          for r in search_members(text, rows + former, 12 if only == "members" else 120)]
     if only != "members":
         out.update(search_text(text, chamber, members, limit))
     response.headers["Cache-Control"] = CACHE

@@ -163,6 +163,14 @@ def test_member_search_by_name_state_and_seat():
     assert names("john texas") == ["John Cornyn"]                     # a state word narrows a name
     assert names("zzz") == []
 
+    # A whole delegation, current members first then former ones; the limit is for suggestions.
+    big = [{"name": f"Rep {d}", "last_name": f"R{d:02}", "chamber": "house", "state": "OH", "district": d}
+           for d in range(1, 16)] + [{"name": "Gone", "last_name": "Gone", "chamber": "senate", "state": "OH",
+                                      "district": None, "former": True}]
+    assert len(search_members("Ohio", big)) == 12
+    found = search_members("Ohio", big, 120)
+    assert len(found) == 16 and found[-1]["name"] == "Gone"
+
 
 def test_search_endpoint(client):
     r = client.get("/v1/search", params={"q": "zz"})
