@@ -5,7 +5,10 @@ compared with what their constituents say in public surveys, now and historicall
 
 ## Decisions that stand
 - Both chambers from the start; Python; PostgreSQL schema `core`; Bioguide ID is the member key.
-- Dev site: https://congress-dev.monkeyinfinitum.com (Bluehost VPS, user `john`, repo cloned at
+- Project domain: uscongressvsvoters.com (registered Nov 2026 at Bluehost). Dev site:
+  https://dev.uscongressvsvoters.com (the old https://congress-dev.monkeyinfinitum.com still works;
+  same nginx site and certificate). The bare domain and www are kept for the public launch.
+- Server: Bluehost VPS, user `john`, repo cloned at
   ~/congress-congruence, read-only deploy key). Dev and prod share a server for now.
 - **No user data is collected or stored.** Addresses only for lookup; personal choices stay in the browser.
 - Several independent survey sources, **shown side by side, never blended** (per-source score lines).
