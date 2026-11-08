@@ -95,29 +95,38 @@ def area_of(label: str, home: str | None) -> tuple[str, int | None] | None:
     return None
 
 
-PAIR = re.compile(r"(?P<label>[A-Za-z0-9][^:]*?)\s*:\s*(?P<value>[^A-Za-z]*?)(?=\s{2,}[A-Za-z0-9][^:]*:|\s*$)")
+# A value in a header block: after a colon and/or '+/-', a number, an optional range end, '%'.
+# The place name is whatever text comes before it, so the layout can vary freely.
+HEADER_VALUE = re.compile(r"(?::\s*(?:\+\s*/\s*-|±)?|\+\s*/\s*-|±)\s*"
+                          r"(?P<value>\d[\d,]*(?:\.\d+)?(?:\s*[-–]\s*\d+(?:\.\d+)?)?)\s*%?")
 
 
 def header_values(text: str, heading: str) -> list[tuple[str, str]]:
-    """'label: value' pairs under a heading such as 'Sample Sizes:' (up to the next blank line).
-    A line can hold several pairs ('Iowa CD1: 500     Iowa CD2: 500'), and one value can be
-    shared by a comma-separated list of labels ('Iowa CD1, Iowa CD2: +/-5.5-6.0%')."""
+    """(place, value) pairs under a heading such as 'Sample Sizes:', up to the next blank line.
+
+    The PDFs lay these out many ways, all handled:
+      several per line           'State of Iowa:  2000     Iowa CD1: 500     Iowa CD2: 500'
+      one value, several places  'Iowa CD1, Iowa CD2, Iowa CD3: +/-5.5-6.0%'
+      no colon                   'State of Maine +/- 6.6%'    'Michigan CD4+/-6.7%'
+      value on the next line     'Michigan CD8:' then '+/-6.6%'"""
     m = re.search(rf"(?im)^\s*{heading}\s*:?\s*$", text)
     if not m:
         return []
-    out = []
+    lines = []
     for line in text[m.end():].lstrip("\r\n").splitlines():
         if not line.strip():
-            if out:
+            if lines:
                 break
             continue
-        pairs = list(PAIR.finditer(line.strip()))
-        if not pairs:
-            break
-        for p in pairs:
-            for label in p.group("label").split(","):
-                if label.strip():
-                    out.append((label.strip(), p.group("value").strip()))
+        lines.append(line.strip())
+    block = "   ".join(lines)
+    out, prev = [], 0
+    for v in HEADER_VALUE.finditer(block):
+        places = block[prev:v.start()]
+        prev = v.end()
+        for label in places.split(","):
+            if re.search(r"[A-Za-z]", label):
+                out.append((label.strip(), v.group("value").strip()))
     return out
 
 

@@ -178,6 +178,38 @@ def test_reads_the_real_district_layout():
     assert ppc.find_question(p, "Supreme Court")["number"] == "11"     # no lead-in carried past a table
 
 
+def test_header_layouts_from_maine_and_michigan():
+    maine = """
+          Sample Sizes:
+          State of Maine:     800                       Maine CD2: 500
+          National: 2,509
+
+          Confidence Interval:
+          State of Maine +/- 6.6%                       Maine CD2: +/- 5.7%
+          National: +/- 2.9%
+"""
+    michigan = """
+        Sample Sizes:
+        State of Michigan: 600            Michigan CD4: 509        Michigan CD7: 505         Michigan CD8: 516
+        Michigan CD10: 499       National: 2,509
+
+
+        Confidence Interval:
+        State of Michigan+/-4.2%         Michigan CD4+/-6.7%            Michigan CD7: +/-6.1%            Michigan CD8:
+        +/-6.6%
+        Michigan CD10: +/-6.2%                    National: +/- 2.9%
+"""
+    def read(text, heading):
+        return {ppc.area_of(k, None): v for k, v in ppc.header_values(text, heading) if ppc.area_of(k, None)}
+    assert read(maine, "Sample Sizes") == {("ME", None): "800", ("ME", 2): "500"}
+    assert read(maine, "Confidence Interval") == {("ME", None): "6.6", ("ME", 2): "5.7"}
+    assert read(michigan, "Sample Sizes") == {("MI", None): "600", ("MI", 4): "509", ("MI", 7): "505",
+                                              ("MI", 8): "516", ("MI", 10): "499"}
+    assert read(michigan, "Confidence Interval") == {("MI", None): "4.2", ("MI", 4): "6.7", ("MI", 7): "6.1",
+                                                     ("MI", 8): "6.6", ("MI", 10): "6.2"}
+    assert ("National", "2,509") in ppc.header_values(michigan, "Sample Sizes")
+
+
 def test_estimate_uses_published_interval_at_the_90_percent_level():
     a = ppc.estimate(56, 43, 0.045, 600, "TX", None)                   # Texas, Ukraine aid
     assert a.support == pytest.approx(56 / 99)

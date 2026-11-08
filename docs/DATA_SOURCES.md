@@ -188,6 +188,10 @@ not bills, and reports states only.
   "IA-1", "District 2", "3rd District", "AK At-Large".
 - **"(Statewide)" alone on a line.** Some PDFs wrap the state name onto the line above. The
   reader takes the state from the PDF's title ("- STATE OF GEORGIA and NATIONAL -").
+- **Header labels without a colon, or with the value on the next line.** Examples: Maine's
+  "State of Maine +/- 6.6%", Michigan's "Michigan CD4+/-6.7%", and "Michigan CD8:" with
+  "+/-6.6%" on the following line. The header is read as one stream of "place, then number"
+  pairs, so line breaks and colons don't matter.
 - **Several areas per header line.** Example: "State of Iowa: 2000   Iowa CD1: 500   Iowa
   CD2: 500". Every label-value pair is read.
 - **One interval shared by several districts, given as a range.** Example: "Iowa CD1, Iowa
