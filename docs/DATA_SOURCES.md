@@ -101,6 +101,10 @@ Principles that apply to every source:
   "not voting", and the original wording is kept in `raw_position`. Voteview's published
   totals may or may not include pairs; validation accepts either convention and nothing else.
 - **No times.** Voteview has dates but no times of day.
+- **Decimal IDs.** The 114th Congress Senate votes file writes ICPSR IDs as `14009.0` while its
+  member file writes `14009`, so all 502 votes first failed to match anyone. ID and code columns
+  are now read as plain whole numbers. Members whose Voteview row lacks a Bioguide ID are matched
+  through the ICPSR IDs in the member list.
 
 ## 3b. Earlier Congresses
 

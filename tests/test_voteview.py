@@ -94,6 +94,24 @@ def test_unmapped_member_fails_validation():
         voteview.validate_voteview(rc)
 
 
+def test_decimal_ids_in_one_file_still_match_the_other():
+    """The 114th Congress votes file writes ICPSR IDs as '14226.0'; the member file as '14226'."""
+    import re
+    decimal_votes = re.sub(rb"^(\d+),(\w+),(\d+),(\d+),(\d+),", rb"\1,\2,\3.0,\4.0,\5.0,", VOTES, flags=re.M)
+    assert b"14226.0" in decimal_votes
+    rc = voteview.build_roll_calls("senate", voteview.read_csv(ROLLCALLS),
+                                   voteview.read_csv(decimal_votes), voteview.read_csv(MEMBERS))[0][0]
+    voteview.validate_voteview(rc)
+    assert sorted(v.member_id for v in rc.votes) == ["B001277", "K000383", "T000278"]
+
+
+def test_member_list_fills_in_a_missing_bioguide_id():
+    members = MEMBERS.replace(b",K000383,", b",,")
+    rc = voteview.build_roll_calls("senate", voteview.read_csv(ROLLCALLS), voteview.read_csv(VOTES),
+                                   voteview.read_csv(members), {"14435": "K000383"})[0][0]
+    voteview.validate_voteview(rc)
+
+
 @pytest.fixture
 def conn(tmp_path, monkeypatch):
     url = os.environ.get("TEST_DATABASE_URL")

@@ -22,6 +22,7 @@ import csv
 import hashlib
 import io
 import logging
+import re
 import sys
 from collections import Counter, defaultdict
 from datetime import date
@@ -62,8 +63,19 @@ def file_names(chamber: str, congress: int) -> dict[str, str]:
             "members": f"members/{p}_members.csv"}
 
 
+# Some Voteview files write whole numbers as decimals ("14009.0" in the 114th Congress votes file,
+# "14009" elsewhere), so ID and code columns are read as plain whole numbers before matching.
+NUMBER_COLUMNS = ("icpsr", "rollnumber", "cast_code", "congress", "session", "clerk_rollnumber")
+WHOLE_DECIMAL = re.compile(r"^(-?\d+)\.0+$")
+
+
 def read_csv(content: bytes) -> list[dict]:
-    return list(csv.DictReader(io.StringIO(content.decode("utf-8"))))
+    rows = list(csv.DictReader(io.StringIO(content.decode("utf-8"))))
+    for r in rows:
+        for k in NUMBER_COLUMNS:
+            if r.get(k):
+                r[k] = WHOLE_DECIMAL.sub(r"\1", r[k].strip())
+    return rows
 
 
 def to_int(text: str | None) -> int | None:
@@ -75,10 +87,13 @@ def to_int(text: str | None) -> int | None:
 
 
 def build_roll_calls(chamber: str, rollcalls: list[dict], votes: list[dict],
-                     members: list[dict]) -> tuple[list[ParsedRollCall], list[str]]:
-    """Combine the three files into ParsedRollCalls. Returns (roll calls, problems)."""
+                     members: list[dict], known_icpsr: dict[str, str] | None = None
+                     ) -> tuple[list[ParsedRollCall], list[str]]:
+    """Combine the three files into ParsedRollCalls. Returns (roll calls, problems).
+    known_icpsr (ICPSR -> Bioguide, from the member list) fills in members whose Voteview
+    member row has no Bioguide ID."""
     name = CHAMBER_NAME[chamber]
-    icpsr_to_bio, problems = {}, []
+    icpsr_to_bio, problems = dict(known_icpsr or {}), []
     for m in members:
         if m["chamber"] == name and m.get("bioguide_id"):
             icpsr_to_bio[m["icpsr"]] = m["bioguide_id"]
@@ -199,8 +214,11 @@ def get_files(conn, chamber: str, congress: int, local_dir: Path | None) -> tupl
 
 def run(conn, chamber: str, congress: int, local_dir: Path | None = None) -> dict:
     files, sha = get_files(conn, chamber, congress, local_dir)
+    with conn.cursor() as cur:
+        cur.execute("select id_value, bioguide_id from core.member_external_id where id_type = 'icpsr'")
+        known = dict(cur.fetchall())
     roll_calls, problems = build_roll_calls(
-        chamber, read_csv(files["rollcalls"]), read_csv(files["votes"]), read_csv(files["members"]))
+        chamber, read_csv(files["rollcalls"]), read_csv(files["votes"]), read_csv(files["members"]), known)
     skip = official_ids(conn, chamber, congress)
 
     loaded = skipped = failed = 0
