@@ -205,6 +205,11 @@ VOTE_DOC = """to_tsvector('english', coalesce(r.description, '') || ' ' || coale
            coalesce(r.bill_type || ' ' || r.bill_number || ' ' || r.bill_type || r.bill_number, '') || ' ' ||
            coalesce(b.title, '') || ' ' || coalesce(b.policy_area, '') || ' ' || coalesce(bs.subjects, ''))"""
 
+# The same without subject tags: votes matching here are listed before those found only by a tag.
+VOTE_TITLE_DOC = """to_tsvector('english', coalesce(r.description, '') || ' ' || coalesce(r.question, '') || ' ' ||
+           coalesce(r.bill_type || ' ' || r.bill_number || ' ' || r.bill_type || r.bill_number, '') || ' ' ||
+           coalesce(b.title, '') || ' ' || coalesce(b.policy_area, ''))"""
+
 VOTE_BILL_JOIN = """
   left join core.bill b on b.congress = coalesce(r.bill_congress, r.congress)
                        and b.bill_type = r.bill_type and b.bill_number = r.bill_number
@@ -224,11 +229,12 @@ select r.roll_call_id, r.chamber, r.congress, r.session, r.roll_number, r.vote_d
             ts_headline('english', r.description, to_tsquery('english', %(tsq)s),
                         'MaxFragments=2, MinWords=8, MaxWords=24, StartSel=[[, StopSel=]], FragmentDelimiter=" … "')
        end as snippet,
+       {VOTE_TITLE_DOC} @@ to_tsquery('english', %(tsq)s) as title_match,
        count(*) over () as total
   from core.roll_call r{VOTE_BILL_JOIN}
  where {VOTE_DOC} @@ to_tsquery('english', %(tsq)s)
    and (%(chamber)s::text is null or r.chamber = %(chamber)s)
- order by r.vote_date desc, r.chamber, r.roll_number desc
+ order by title_match desc, r.vote_date desc, r.chamber, r.roll_number desc
  limit %(limit)s
 """
 
@@ -265,15 +271,14 @@ select si.survey, si.variable, si.question, si.note, s.title, s.fielded,
        coalesce(s.organization, s.survey) as organization, s.guide_url,
        count(*) over () as total
   from core.survey_item si join core.survey s using (survey)
-  -- A question can also be found by the subject tags of the bills it's compared with.
-  left join lateral (select string_agg(coalesce(b.title, '') || ' ' || coalesce(b.policy_area, '') || ' ' ||
-                                       coalesce(bsub.subject, ''), ' ') as words
+  -- A question can also be found by the official title and main topic (policy area) of the bills
+  -- it's compared with. Not by their full subject lists: a large bill such as the annual defense
+  -- bill carries hundreds of subjects and would match almost any search.
+  left join lateral (select string_agg(coalesce(b.title, '') || ' ' || coalesce(b.policy_area, ''), ' ') as words
                        from core.survey_item_vote siv
                        join core.roll_call r using (roll_call_id)
                        join core.bill b on b.congress = coalesce(r.bill_congress, r.congress)
                                        and b.bill_type = r.bill_type and b.bill_number = r.bill_number
-                       left join core.bill_subject bsub on bsub.congress = b.congress
-                                       and bsub.bill_type = b.bill_type and bsub.bill_number = b.bill_number
                       where siv.survey = si.survey and siv.variable = si.variable) tags on true
  where to_tsvector('english', si.question || ' ' || coalesce(si.survey_label, '') || ' ' || coalesce(si.note, '')
                    || ' ' || coalesce(tags.words, ''))

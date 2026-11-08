@@ -255,6 +255,7 @@ def search_text(text: str, chamber: str | None, members: list[str], limit: int) 
     votes = [{**vote_summary(r), "snippet": r["snippet"],
               "bill_title": r["bill_title"], "policy_area": r["policy_area"],
               "subjects": r["subjects"].split(" | ") if r["subjects"] else [],
+              "matched_by": "title" if r["title_match"] else "subject",
               "by_party": split.get(r["roll_call_id"], {}),
               "surveyed": surveyed.get(r["roll_call_id"], []),
               "your_members": mine.get(r["roll_call_id"], [])} for r in vrows]

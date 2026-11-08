@@ -95,7 +95,31 @@ def test_sync_stores_subjects_and_search_finds_votes_and_questions_by_them(conn,
     monkeypatch.setenv("API_DATABASE_URL", os.environ["TEST_DATABASE_URL"])
     with TestClient(api.app) as client:
         found = client.get("/v1/search", params={"q": "tax credit*", "only": "text"}).json()
-    (vote,) = found["votes"]
+        by_topic = client.get("/v1/search", params={"q": "health", "only": "text"}).json()
+    (vote,) = found["votes"]                                       # found through a subject tag
     assert vote["roll_call_id"] == "h-119-2-11" and vote["policy_area"] == "Health"
     assert "Tax credits" in vote["subjects"] and vote["bill_title"].startswith("Lower Health Care")
-    assert [q["item"] for q in found["questions"]] == ["ACA"]      # the question, through its vote's bill
+    assert vote["matched_by"] == "subject" and found["questions"] == []
+    assert [q["item"] for q in by_topic["questions"]] == ["ACA"]   # the question, through its bill's topic
+
+
+def test_big_bills_subject_lists_dont_drag_questions_in_and_title_matches_come_first(conn, monkeypatch, tmp_path):  # noqa: F811
+    test_load_and_compare(conn, monkeypatch, None)
+    with conn.cursor() as cur:
+        # The Ukraine amendment vote is on a big defense bill tagged with many subjects, immigration among them.
+        cur.execute("update core.roll_call set bill_type = 'hr', bill_number = 3838, bill_congress = 119, "
+                    "description = 'Amendment on Ukraine' where roll_call_id = 'h-119-1-255'")
+        cur.execute("update core.roll_call set description = 'Immigration Enforcement Act' where roll_call_id = 'h-119-2-11'")
+        cur.execute("insert into core.bill (congress, bill_type, bill_number, title, policy_area) "
+                    "values (119, 'hr', 3838, 'National Defense Authorization Act', 'Armed Forces and National Security')")
+        cur.executemany("insert into core.bill_subject values (119, 'hr', 3838, %s)",
+                        [("Immigration status and procedures",), ("Military procurement",)])
+    conn.commit()
+    from fastapi.testclient import TestClient
+    from congress_congruence.api import app as api
+    monkeypatch.setenv("API_DATABASE_URL", os.environ["TEST_DATABASE_URL"])
+    with TestClient(api.app) as client:
+        found = client.get("/v1/search", params={"q": "immigration", "only": "text"}).json()
+    assert found["questions"] == []                              # Ukraine question not pulled in by a tag
+    assert [(v["roll_call_id"], v["matched_by"]) for v in found["votes"]] == \
+        [("h-119-2-11", "title"), ("h-119-1-255", "subject")]   # title match first, though it's older-or-newer

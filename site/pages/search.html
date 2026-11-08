@@ -146,7 +146,7 @@ main_class: search-page
                 ? el("p", { class: "tally" }, `Members compared with their own ${v.chamber === "senate" ? "state" : "district"}: `,
                     el("strong", {}, m.with_majority.toLocaleString()), " voted with a clear majority, ",
                     el("strong", {}, m.against_majority.toLocaleString()), " against one, and ",
-                    el("strong", {}, m.too_close.toLocaleString()), " were in areas too close to call",
+                    el("strong", {}, m.too_close.toLocaleString()), m.too_close === 1 ? " was" : " were", " in areas too close to call",
                     m.not_surveyed ? `; ${plural(m.not_surveyed, "member's area wasn't", "members' areas weren't")} surveyed` : "",
                     m.did_not_vote ? `; ${plural(m.did_not_vote, "member", "members")} didn't vote` : "", ".")
                 : el("p", { class: "meta" }, "None of the members who voted represent an area this survey covered."),
@@ -197,9 +197,10 @@ main_class: search-page
     }
     return el("section", { class: "group" },
       el("h2", {}, "Votes"),
-      el("p", { class: "sub" }, total > votes.length
-        ? `The ${votes.length} most recent of ${total.toLocaleString()} matching votes, newest first.`
-        : `${plural(total, "matching vote", "matching votes")}, newest first.`),
+      el("p", { class: "sub" }, (total > votes.length
+        ? `${votes.length} of ${total.toLocaleString()} matching votes`
+        : plural(total, "matching vote", "matching votes")) +
+        ": those with your words in the title or main topic first, then those found only by a subject tag; newest first within each."),
       [...groups.values()].map(([first, ...rest]) => el("article", { class: "result" },
         el("h3", {}, first.bill ? `${first.bill.label}: ` : "",
           first.snippet ? highlighted(first.snippet) : (first.description || first.question || "Vote"),
