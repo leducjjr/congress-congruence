@@ -65,3 +65,23 @@ def test_inspect_local_file_writes_report(stata_file, monkeypatch, tmp_path):
     assert "CC25_330a: Laken Riley Act: support or oppose" in report
     assert "answers: 1.0=Support; 2.0=Oppose" in report or "answers: 1=Support; 2=Oppose" in report
     assert "CC25_401" not in report
+
+
+def test_pick_guide_prefers_a_pdf_named_guide():
+    files = [
+        {"id": 1, "name": "CCES24_Common_OUTPUT.dta", "bytes": 10**9, "restricted": False},
+        {"id": 2, "name": "Questionnaire_appendix.pdf", "bytes": 9_000_000, "restricted": False},
+        {"id": 3, "name": "CES_2024_Guide.pdf", "bytes": 2_000_000, "restricted": False},
+    ]
+    assert ces.pick_guide_file(files)["id"] == 3
+    assert ces.pick_guide_file(files[:2])["id"] == 2      # no 'guide' in any name: largest PDF
+    assert ces.pick_guide_file(files[:1]) is None
+
+
+def test_2024_items_file_is_well_formed():
+    cfg = ces.load_config(2024)
+    assert cfg["district_column"] == "cdid118" and cfg["weight_preference"] == ["commonweight"]
+    assert set(cfg["items"]) == {"CC24_340a", "CC24_340d", "CC24_340e", "CC24_340f"}
+    for item in cfg["items"].values():
+        assert item["question"] and item["votes"]
+        assert set(item["votes"]) <= {"house", "senate"}

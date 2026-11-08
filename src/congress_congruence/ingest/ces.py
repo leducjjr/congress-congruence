@@ -84,6 +84,23 @@ def pick_data_file(files: list[dict]) -> dict | None:
     return None
 
 
+def pick_guide_file(files: list[dict]) -> dict | None:
+    """The questionnaire guide: a PDF with 'guide' in its name, else the largest PDF."""
+    pdfs = [f for f in files if (f["name"] or "").lower().endswith(".pdf") and not f["restricted"]]
+    named = [f for f in pdfs if "guide" in f["name"].lower()]
+    pool = named or pdfs
+    return max(pool, key=lambda f: f["bytes"] or 0) if pool else None
+
+
+def guide_url_for(year: int) -> str | None:
+    try:
+        f = pick_guide_file(dataset_files(DATASETS[year])["files"])
+    except Exception as e:      # the guide link is a nicety; never block a load on it
+        log.warning("Couldn't look up the CES %s guide: %s", year, e)
+        return None
+    return f"{DATAVERSE}/file.xhtml?fileId={f['id']}" if f else None
+
+
 def download(file: dict, dest_dir: Path, http=None) -> Path:
     dest_dir.mkdir(parents=True, exist_ok=True)
     path = dest_dir / file["name"]
@@ -356,7 +373,9 @@ def load(conn, year: int, local_file: Path | None = None) -> dict:
     survey = cfg["survey"]
     summary = {"respondents": nrows, "weight": weight_col, "items": len(items), "votes_linked": len(links)}
     with conn.transaction(), conn.cursor() as cur:
-        src = cfg.get("source", {})
+        src = dict(cfg.get("source", {}))
+        if not src.get("guide_url"):
+            src["guide_url"] = guide_url_for(year)
         cur.execute(
             """insert into core.survey (survey, title, fielded, respondents, dataset_url, guide_url, about_url)
                values (%s, %s, %s, %s, %s, %s, %s)

@@ -1,0 +1,62 @@
+# CES 2024 questions about actions of the 118th Congress (2023-2024), and how to find
+# the vote that answers each one. Answer codes: 1 = Support, 2 = Oppose.
+# Rules work as in ces_2025_items.yaml; run `ces link 2024` to review the matches.
+# Voting Yea is the "support" side of every item below.
+#
+# Left out on purpose:
+#   CC24_340b (protect access to abortion services): no 118th Congress floor vote found
+#             that matches this wording. Add it if one is identified.
+#   CC24_340c (recognize same-sex and interracial marriages): the Respect for Marriage
+#             Act passed in 2022, in the 117th Congress, which isn't loaded.
+#   CC24_326c, CC24_328d: general policy questions, not tied to a vote in this Congress.
+
+survey: CES 2024
+# The 300-series questions were asked in the pre-election wave, so use its weight and
+# the districts respondents lived in then (118th Congress lines).
+weight_preference: [commonweight]
+district_column: cdid118
+state_column: inputstate
+
+source:
+  title: Cooperative Election Study 2024
+  fielded: fall 2024, before the election
+  dataset_url: https://doi.org/10.7910/DVN/X11EP6
+  about_url: https://cces.gov.harvard.edu/
+  # guide_url is found automatically from the dataset's file list on load.
+
+final_questions: &final
+  - On Passage
+  - Passage of the Bill
+  - Concur
+  - Agreeing to the Resolution
+  - Joint Resolution Passage
+
+items:
+  CC24_340a:
+    question: Prohibit government restrictions on access to contraceptives (Right to Contraception Act)
+    votes:
+      senate:
+        bill: [s, 4381]
+        questions: [Cloture]
+        note: The Senate's only floor vote was on cloture (whether to proceed), which failed.
+
+  CC24_340d:
+    question: Ban TikTok unless China sells it to a U.S. company
+    votes:
+      house:
+        bill: [hr, 7521]
+        questions: *final
+        note: >-
+          This is the House's vote on the stand-alone TikTok bill. It later became law as part
+          of a larger foreign-aid package, so senators' votes on it aren't compared here.
+
+  CC24_340e:
+    question: Renew post-9/11 surveillance programs that allow searching electronic data without a warrant (FISA reauthorization)
+    votes:
+      house:  {bill: [hr, 7888], questions: *final}
+      senate: {bill: [hr, 7888], questions: *final}
+
+  CC24_340f:
+    question: Deny asylum to immigrants who cross the U.S.-Mexico border illegally (Secure the Border Act)
+    votes:
+      house:  {bill: [hr, 2], questions: *final}
