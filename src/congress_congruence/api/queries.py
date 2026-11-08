@@ -235,9 +235,16 @@ select r.roll_call_id, r.chamber, r.congress, r.session, r.roll_number, r.vote_d
   from core.roll_call r{VOTE_BILL_JOIN}
  where {VOTE_DOC} @@ to_tsquery('english', %(tsq)s)
    and (%(chamber)s::text is null or r.chamber = %(chamber)s)
- order by title_match desc, r.vote_date desc, r.chamber, r.roll_number desc
+ order by {{order}}
  limit %(limit)s
 """
+
+# Sort orders a visitor can pick (whitelisted: the chosen text is put into the query).
+VOTE_SEARCH_ORDER = {
+    "match": "title_match desc, r.vote_date desc, r.chamber, r.roll_number desc",   # words in the title first
+    "newest": "r.vote_date desc, r.chamber, r.roll_number desc",
+    "oldest": "r.vote_date, r.chamber, r.roll_number",
+}
 
 # How each party voted, by the party of the term covering the vote date.
 VOTE_PARTY_SPLIT = """

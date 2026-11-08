@@ -259,13 +259,14 @@ def question_cards(qrows: list[dict], members: list[str]) -> list[dict]:
     } for r in qrows]
 
 
-def search_text(text: str, chamber: str | None, members: list[str], limit: int) -> dict:
+def search_text(text: str, chamber: str | None, members: list[str], limit: int, sort: str = "match") -> dict:
     """Survey questions and votes matching the text, with what the site can say about each."""
     tsq = build_tsquery(text)
     if not tsq:
         return {"questions": [], "questions_total": 0, "votes": [], "votes_total": 0}
     qrows = fetch(q.QUESTION_SEARCH, {"tsq": tsq, "limit": limit})
-    vrows = fetch(q.VOTE_SEARCH, {"tsq": tsq, "chamber": chamber, "limit": limit})
+    vrows = fetch(q.VOTE_SEARCH.replace("{order}", q.VOTE_SEARCH_ORDER[sort]),
+                  {"tsq": tsq, "chamber": chamber, "limit": limit})
     questions = question_cards(qrows, members)
 
     ids = [r["roll_call_id"] for r in vrows]
@@ -337,8 +338,10 @@ def search(response: Response,
            only: str | None = Query(None, pattern="^(members|text)$"),
            chamber: str | None = Query(None, pattern="^(house|senate)$"),
            member: list[str] = Query([], max_length=6),
-           limit: int = Query(40, ge=1, le=100)):
+           limit: int = Query(40, ge=1, le=100),
+           sort: str = Query("match", pattern="^(match|newest|oldest)$")):
     """Members (name, state or seat), survey questions and votes matching what was typed.
+    sort orders the votes: match (words in the title first, then newest), newest, or oldest.
 
     only=members is for suggestions as you type; member=<id> (up to 6) adds how those members voted
     on each vote found ("your members"). Text matching: see build_tsquery."""
@@ -351,7 +354,7 @@ def search(response: Response,
                           # Suggestions as you type stay short; the Search page lists a whole delegation.
                           for r in search_members(text, rows + former, 12 if only == "members" else 120)]
     if only != "members":
-        out.update(search_text(text, chamber, members, limit))
+        out.update(search_text(text, chamber, members, limit, sort))
     response.headers["Cache-Control"] = CACHE
     return out
 

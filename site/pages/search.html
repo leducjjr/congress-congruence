@@ -24,16 +24,19 @@ main_class: search-page
   End a word with * to match any ending (<em>abort*</em>), and put words in quotes to find them together
   (<em>"data center"</em>).</p>
 
-<form class="search-form" action="search.html" method="get" role="search">
+<form class="search-form" id="search-form" action="search.html" method="get" role="search">
   <label for="q" class="sr">Search</label>
   <input id="q" name="q" type="search" placeholder="e.g. abort*, Ukraine, H.R. 1, Cruz, TX-7">
   <button type="submit">Search</button>
 </form>
 <div class="filters">
-  <label>Votes in <select id="chamber">
+  <label>Votes in <select id="chamber" name="chamber" form="search-form">
     <option value="">both chambers</option><option value="house">the House</option><option value="senate">the Senate</option>
   </select></label>
-  <label><input type="checkbox" id="surveyed-only"> Only votes a survey asked about</label>
+  <label>Sort votes <select id="sort" name="sort" form="search-form">
+    <option value="match">best match</option><option value="newest">newest first</option><option value="oldest">oldest first</option>
+  </select></label>
+  <label><input type="checkbox" id="surveyed-only" name="surveyed" value="1" form="search-form"> Only votes a survey asked about</label>
 </div>
 <p class="mine" id="mine" hidden></p>
 
@@ -59,9 +62,11 @@ addEventListener("DOMContentLoaded", () => {
   $("q").value = query;
   $("chamber").value = params.get("chamber") || "";
   $("surveyed-only").checked = params.get("surveyed") === "1";
-  for (const id of ["chamber", "surveyed-only"]) $(id).addEventListener("change", () => {
+  $("sort").value = ["newest", "oldest"].includes(params.get("sort")) ? params.get("sort") : "match";
+  for (const id of ["chamber", "sort", "surveyed-only"]) $(id).addEventListener("change", () => {
     const p = new URLSearchParams({ q: $("q").value.trim() });
     if ($("chamber").value) p.set("chamber", $("chamber").value);
+    if ($("sort").value !== "match") p.set("sort", $("sort").value);
     if ($("surveyed-only").checked) p.set("surveyed", "1");
     location.search = p.toString();
   });
@@ -132,7 +137,8 @@ addEventListener("DOMContentLoaded", () => {
       el("p", { class: "sub" }, (total > votes.length
         ? `${votes.length} of ${total.toLocaleString()} matching votes`
         : plural(total, "matching vote", "matching votes")) +
-        ": those with your words in the title or main topic first, then those found only by a subject tag; newest first within each."),
+        ({ newest: ", newest first.", oldest: ", oldest first." }[$("sort").value] ||
+         ": those with your words in the title or main topic first, then those found only by a subject tag; newest first within each.")),
       [...groups.values()].map(([first, ...rest]) => el("article", { class: "result" },
         el("h3", {}, first.bill ? `${first.bill.label}: ` : "",
           first.snippet ? highlighted(first.snippet) : (first.description || first.question || "Vote"),
@@ -156,6 +162,7 @@ addEventListener("DOMContentLoaded", () => {
     out.replaceChildren(el("p", { class: "empty" }, "Searching…"));
     const p = new URLSearchParams({ q: query });
     if ($("chamber").value) p.set("chamber", $("chamber").value);
+    if ($("sort").value !== "match") p.set("sort", $("sort").value);
     for (const m of myMembers()) p.append("member", m.id);
     try {
       const res = await fetch(`${API}/v1/search?${p}`);

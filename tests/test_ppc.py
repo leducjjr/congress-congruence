@@ -386,6 +386,24 @@ def test_text_search_finds_questions_and_votes(conn, monkeypatch):
     assert set(just_members) == {"query", "members"}
 
 
+def test_vote_search_sort_orders(conn, monkeypatch):
+    test_load_and_compare(conn, monkeypatch, None)
+    with conn.cursor() as cur:
+        cur.execute("update core.roll_call set description = 'Farm bill' where roll_call_id = 'h-119-1-255'")
+        cur.execute("update core.roll_call set description = 'Something else', question = 'On farm passage' "
+                    "where roll_call_id = 'h-119-2-11'")
+    conn.commit()
+    from fastapi.testclient import TestClient
+    from congress_congruence.api import app as api
+    monkeypatch.setenv("API_DATABASE_URL", os.environ["TEST_DATABASE_URL"])
+    ids = lambda r: [v["roll_call_id"] for v in r.json()["votes"]]          # noqa: E731
+    with TestClient(api.app) as client:
+        assert ids(client.get("/v1/search", params={"q": "farm", "sort": "match"})) == ["h-119-2-11", "h-119-1-255"]
+        assert ids(client.get("/v1/search", params={"q": "farm", "sort": "newest"})) == ["h-119-2-11", "h-119-1-255"]
+        assert ids(client.get("/v1/search", params={"q": "farm", "sort": "oldest"})) == ["h-119-1-255", "h-119-2-11"]
+        assert client.get("/v1/search", params={"q": "farm", "sort": "random"}).status_code == 422
+
+
 def test_long_vote_titles_come_with_a_matching_snippet(conn, monkeypatch):
     test_load_and_compare(conn, monkeypatch, None)
     long_title = ("; and ".join(f"Person {i}, of Virginia, to be Assistant Secretary of Agriculture" for i in range(30))
