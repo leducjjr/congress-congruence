@@ -32,12 +32,13 @@ SITE = ROOT / "site"
 # Header navigation, in order: (file, label). Pages not listed here still get built.
 NAV = [
     ("index.html", "Find your members"),
+    ("surveyed.html", "Surveyed votes"),
     ("sources.html", "Sources"),
     ("methods.html", "Methods"),
     ("glossary.html", "Glossary"),
     ("about.html", "About"),
 ]
-ASSETS = {"site.css": SITE / "site.css", "site.js": SITE / "site.js",
+ASSETS = {"site.css": SITE / "site.css", "site.js": SITE / "site.js", "cards.js": SITE / "cards.js",
           "cc-member-panel.js": ROOT / "web" / "cc-member-panel.js"}
 
 

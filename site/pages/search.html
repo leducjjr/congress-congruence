@@ -2,6 +2,7 @@
 title: Search
 description: Search members of Congress, the survey questions this site compares with votes, and every recorded House and Senate vote.
 head: |
+  <script src="cards.js" defer></script>
   <style>
     .search-page h1 { font-size: 1.35rem; margin: 0 0 4px; }
     .search-page .hint { color: var(--ink-soft); font-size: 0.92rem; margin: 0 0 16px; }
@@ -14,29 +15,6 @@ head: |
       color: var(--ink-soft); margin: 0 0 18px; }
     .filters select { font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--rule);
       border-radius: 6px; padding: 4px 6px; }
-    .mine { font-size: 0.9rem; color: var(--ink-soft); margin: 0 0 18px; }
-    .mine button { font: inherit; font-size: 0.85rem; background: none; border: 0; color: var(--ink);
-      text-decoration: underline; text-decoration-color: var(--mark); cursor: pointer; padding: 0 2px; }
-    .group { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px;
-      padding: clamp(14px, 2.5vw, 24px); margin: 0 0 18px; }
-    .group > h2 { font-size: 1.1rem; margin: 0 0 4px; }
-    .group > .sub { color: var(--ink-soft); font-size: 0.88rem; margin: 0 0 10px; }
-    .group ul.plain { list-style: none; margin: 0; padding: 0; }
-    .result { border-top: 1px solid var(--rule); padding: 12px 0; }
-    .result:first-of-type { border-top: 0; }
-    .result h3 { font-size: 1rem; margin: 0 0 4px; line-height: 1.35; }
-    .result p { margin: 4px 0; font-size: 0.92rem; overflow-wrap: anywhere; }
-    .meta { color: var(--ink-soft); font-size: 0.86rem; }
-    .tag { display: inline-block; font-size: 0.75rem; border: 1px solid var(--rule); border-radius: 999px;
-      padding: 0 8px; margin-left: 4px; color: var(--ink-soft); white-space: nowrap; vertical-align: 1px; }
-    .tag.surveyed { border-color: var(--mark); color: var(--ink); }
-    a.tag { white-space: normal; max-width: 100%; margin: 2px 4px 2px 0; border-radius: 10px; line-height: 1.4; }
-    .tally strong { font-weight: 700; }
-    .more summary { cursor: pointer; font-size: 0.88rem; color: var(--ink-soft); }
-    .more ul { margin: 6px 0 0; padding-left: 1.2em; font-size: 0.88rem; }
-    .empty { color: var(--ink-soft); }
-    .result h3 mark { background: none; color: inherit; text-decoration: underline;
-      text-decoration-color: var(--mark); text-decoration-thickness: 2px; text-underline-offset: 3px; }
   </style>
 main_class: search-page
 ---
@@ -61,29 +39,15 @@ main_class: search-page
 <div id="out" aria-live="polite"></div>
 
 <script>
-(() => {
-  const API = "/api";
-  const STORE = "cc-my-members";
+addEventListener("DOMContentLoaded", () => {
+  const { API, el, date, pct, plural, chamberName, POS, myMembers, forgetMembers, yourMembersLine } = window.CC;
   const $ = id => document.getElementById(id);
-  const el = (tag, attrs = {}, ...kids) => {
-    const n = document.createElement(tag);
-    for (const [k, v] of Object.entries(attrs)) if (v != null && v !== false) n.setAttribute(k, v);
-    for (const k of kids.flat(Infinity)) if (k != null && k !== false) n.append(k instanceof Node ? k : String(k));
-    return n;
-  };
-  const date = iso => new Date(iso + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-  const pct = x => `${Math.round(x)}%`;
-  const plural = (n, one, many) => `${n.toLocaleString()} ${n === 1 ? one : many}`;
-  const chamberName = c => c === "senate" ? "Senate" : "House";
-  const POS = { yea: "Yea", nay: "Nay", present: "Present", not_voting: "didn't vote" };
 
-  // "Your members": the members most recently opened on this device (kept only in this browser).
-  function myMembers() { try { return JSON.parse(localStorage.getItem(STORE)) || []; } catch { return []; } }
   function showMine() {
     const mine = myMembers(), box = $("mine");
     if (!mine.length) { box.hidden = true; return; }
     const clear = el("button", { type: "button" }, "forget");
-    clear.addEventListener("click", () => { try { localStorage.removeItem(STORE); } catch {} run(); });
+    clear.addEventListener("click", () => { forgetMembers(); run(); });
     box.replaceChildren("Showing how your members voted: ", mine.map(m => m.name).join(", "),
       " (members you've looked at on this device, kept only in this browser) ", clear);
     box.hidden = false;
@@ -109,49 +73,12 @@ main_class: search-page
         el("span", { class: "meta" }, `${m.chamber === "senate" ? `Senator, ${m.state}` : `Representative, ${m.seat}`} · ${m.party}`)))));
   }
 
-  function yourMembersLine(list) {
-    if (!list?.length) return null;
-    return el("p", {}, "Your members: ", list.map((m, i) => [i ? " · " : "", el("strong", {}, m.name), ` ${POS[m.position] || m.position}`]));
-  }
-
-  function spreadLine(label, s) {
-    if (!s) return null;
-    const range = s.lowest_pct === s.highest_pct ? pct(s.lowest_pct) : `${pct(s.lowest_pct)} to ${pct(s.highest_pct)}`;
-    return el("p", {}, `Support in the ${plural(s.areas, label.one, label.many)} surveyed: ${range}. `,
-      `Clear majority in favor in ${s.support}, opposed in ${s.oppose}, too close to call in ${s.too_close}.`);
-  }
-
   function questionsGroup(questions, total) {
     if (!questions?.length) return null;
     return el("section", { class: "group" },
       el("h2", {}, "Survey questions"),
       el("p", { class: "sub" }, "Questions independent surveys asked, and how members voted compared with a clear majority where they live."),
-      questions.map(q => el("article", { class: "result", id: `q-${q.survey}-${q.item}`.replace(/\s+/g, "-") },
-        el("h3", {}, q.question),
-        el("p", { class: "meta" }, `${q.source.organization} · ${q.source.title}`, q.source.fielded ? ` · asked ${q.source.fielded}` : "", " · ",
-          el("a", { href: q.source.guide_url || `sources.html#${q.source.organization.toLowerCase().replace(/[^a-z0-9]+/g, "-")}` },
-             q.source.guide_url ? "Survey questions" : "About this survey")),
-        spreadLine({ one: "state", many: "states" }, q.spread.states),
-        spreadLine({ one: "district", many: "districts" }, q.spread.districts),
-        q.votes.map(v => {
-          const m = v.members;
-          const compared = m.with_majority + m.against_majority + m.too_close;
-          return el("div", {},
-            el("p", {}, el("strong", {}, `${chamberName(v.chamber)} vote`), `, ${date(v.date)}: ${v.question || ""} — ${v.result || ""} ${v.yea}–${v.nay}. `,
-              v.support_side === "nay" ? "Voting Nay supported the proposal. " : "",
-              el("a", { href: v.official_url }, "Official record")),
-            v.match === "related"
-              ? el("p", { class: "meta" }, "Related vote: close to, but not the same as, what was asked, so members aren't scored on it.")
-              : compared
-                ? el("p", { class: "tally" }, `Members compared with their own ${v.chamber === "senate" ? "state" : "district"}: `,
-                    el("strong", {}, m.with_majority.toLocaleString()), " voted with a clear majority, ",
-                    el("strong", {}, m.against_majority.toLocaleString()), " against one, and ",
-                    el("strong", {}, m.too_close.toLocaleString()), m.too_close === 1 ? " was" : " were", " in areas too close to call",
-                    m.not_surveyed ? `; ${plural(m.not_surveyed, "member's area wasn't", "members' areas weren't")} surveyed` : "",
-                    m.did_not_vote ? `; ${plural(m.did_not_vote, "member", "members")} didn't vote` : "", ".")
-                : el("p", { class: "meta" }, "None of the members who voted represent an area this survey covered."),
-            yourMembersLine(v.your_members));
-        }))),
+      questions.map(q => window.CC.questionCard(q, { link: true })),
       total > questions.length ? el("p", { class: "sub" }, `Showing ${questions.length} of ${total}.`) : null);
   }
 
@@ -178,7 +105,7 @@ main_class: search-page
       parties ? el("p", { class: "meta" }, `Yea–Nay by party: ${parties}`) : null,
       topicLine(v),
       v.surveyed.length ? el("p", {}, v.surveyed.map((s, i) => [i ? " " : "",
-        el("a", { class: `tag ${s.match === "same" ? "surveyed" : ""}`, href: `search.html?q=${encodeURIComponent(s.question)}` },
+        el("a", { class: `tag ${s.match === "same" ? "surveyed" : ""}`, href: window.CC.detailHref(s) },
           s.match === "same" ? `Surveyed: ${s.question}` : `Related to a survey question: ${s.question}`)])) : null,
       yourMembersLine(v.your_members),
       el("p", { class: "meta" }, el("a", { href: v.official_url }, "Official record"),
@@ -241,5 +168,5 @@ main_class: search-page
     }
   }
   run();
-})();
+});
 </script>

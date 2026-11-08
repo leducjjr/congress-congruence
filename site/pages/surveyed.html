@@ -1,0 +1,268 @@
+---
+title: Surveyed votes
+description: Every bill independent surveys asked people about, and how each member of Congress voted compared with what people where they live said.
+head: |
+  <script src="cards.js" defer></script>
+  <style>
+    .surveyed-page h1 { font-size: 1.35rem; margin: 0 0 4px; }
+    .surveyed-page .lede { color: var(--ink-soft); margin: 0 0 18px; }
+    .back { font-size: 0.9rem; margin: 0 0 10px; }
+    .org-group > h2 { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
+    .org-group > h2 small { font-weight: 400; color: var(--ink-soft); font-size: 0.85rem; }
+    /* Detail chart: members placed by their area's support (x), voting for (top) or against (bottom). */
+    .chart-wrap { margin: 14px 0 6px; }
+    .chart { width: 100%; height: auto; display: block; overflow: visible; }
+    .chart .axis, .chart .row-label, .chart .tick { fill: var(--ink-soft); font-size: 13px; font-family: inherit; }
+    .chart .row-label { font-weight: 600; fill: var(--ink); }
+    .chart .mid { stroke: var(--ink-soft); stroke-width: 1.5; }
+    .chart .base { stroke: var(--rule); }
+    .chart .zone-with { fill: var(--mark-soft); opacity: 0.55; }
+    .chart .zone-against { fill: var(--against-soft); opacity: 0.55; }
+    .chart .zone-label { font-size: 12px; fill: var(--ink-soft); }
+    @media (max-width: 600px) { .chart .row-label { font-size: 12px; } .chart .zone-label { font-size: 10.5px; } }
+    .dot { stroke-width: 1.6; }
+    .dot.with { fill: var(--mark); stroke: var(--mark); }
+    .dot.against { fill: var(--against); stroke: var(--against); }
+    .dot.too_close, .dot.related { fill: var(--unclear); stroke: var(--unclear); }
+    .dot.nay { fill: var(--surface); }
+    .legend .axis-caption { flex-basis: 100%; }
+    .chart a:focus-visible .dot, .chart a:hover .dot { stroke: var(--ink); stroke-width: 3; }
+    .legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 0.85rem; color: var(--ink-soft); margin: 6px 0 4px; }
+    .legend svg { vertical-align: -2px; margin-right: 4px; }
+    .how { font-size: 0.9rem; }
+    .filters-row { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; margin: 14px 0 8px; font-size: 0.9rem; }
+    .filters-row input { font: inherit; font-size: 0.9rem; color: var(--ink); background: var(--surface);
+      border: 1px solid var(--rule); border-radius: 6px; padding: 5px 8px; min-width: 12rem; }
+    .chip { font: inherit; font-size: 0.85rem; background: var(--page); border: 1px solid var(--rule); color: var(--ink);
+      border-radius: 999px; padding: 3px 10px; cursor: pointer; }
+    .chip[aria-pressed="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+    table.members { border-collapse: collapse; width: 100%; font-size: 0.9rem; }
+    table.members th, table.members td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+    table.members th button { font: inherit; font-weight: 600; background: none; border: 0; padding: 0; color: var(--ink); cursor: pointer; }
+    table.members th[aria-sort] button::after { content: " ▾"; color: var(--mark); }
+    table.members th[aria-sort="ascending"] button::after { content: " ▴"; }
+    .table-scroll { overflow-x: auto; }
+    .verdict.with { color: var(--mark); font-weight: 600; }
+    .verdict.against { color: var(--against); font-weight: 600; }
+    .count-note { color: var(--ink-soft); font-size: 0.86rem; }
+  </style>
+main_class: surveyed-page
+---
+<div id="view" aria-live="polite"><p class="empty">Loading…</p></div>
+
+<script>
+addEventListener("DOMContentLoaded", () => {
+  const { API, el, date, pct, plural, chamberName, POS, myMembers } = window.CC;
+  const view = document.getElementById("view");
+  const params = new URLSearchParams(location.search);
+  const survey = params.get("survey"), item = params.get("item");
+
+  async function get(path) {
+    const res = await fetch(API + path);
+    if (!res.ok) throw new Error(res.status === 404 ? "That survey question wasn't found." : `the server answered ${res.status}`);
+    return res.json();
+  }
+
+  // ---------------------------------------------------------------- the list
+
+  async function showList() {
+    document.title = "Surveyed votes · US Congress vs Voters";
+    const p = new URLSearchParams();
+    for (const m of myMembers()) p.append("member", m.id);
+    const { questions } = await get(`/v1/surveyed${p.size ? `?${p}` : ""}`);
+    const byOrg = new Map();
+    for (const q of questions) byOrg.set(q.source.organization, [...(byOrg.get(q.source.organization) || []), q]);
+    view.replaceChildren(
+      el("h1", {}, "Surveyed votes"),
+      el("p", { class: "lede" }, "Every bill independent surveys asked people about, and how members of Congress voted ",
+        "compared with what people where they live said. Each survey organization is shown separately. ",
+        el("a", { href: "methods.html" }, "How the comparison works"), "."),
+      ...(questions.length ? [...byOrg].map(([org, qs]) => el("section", { class: "group org-group", id: window.CC.slug(org) },
+        el("h2", {}, org, el("small", {}, `${plural(qs.length, "question", "questions")} · `,
+          el("a", { href: `sources.html#${window.CC.slug(org)}` }, "about this source"))),
+        qs.map(q => window.CC.questionCard(q, { link: true }))))
+        : [el("p", { class: "empty" }, "No survey questions have been compared with votes yet.")]));
+  }
+
+  // ---------------------------------------------------------------- one question
+
+  const VERDICT = { with: "With the majority", against: "Against the majority", too_close: "Too close to call",
+                    not_surveyed: "Area not surveyed", did_not_vote: "Didn't vote" };
+
+  // Beeswarm: place each dot at its x, nudging up/down from the row's centre line until it doesn't
+  // overlap a dot already placed. Simple and good enough for a few hundred members.
+  function swarm(points, r) {
+    const placed = [];
+    for (const p of [...points].sort((a, b) => a.x - b.x)) {
+      for (let k = 0; ; k++) {
+        const dy = (k % 2 ? 1 : -1) * Math.ceil(k / 2) * (2 * r + 1);
+        if (!placed.some(q => Math.abs(q.x - p.x) < 2 * r + 1 && Math.abs(q.dy - dy) < 2 * r + 1)) {
+          placed.push({ ...p, dy }); break;
+        }
+      }
+    }
+    return placed;
+  }
+
+  // Drawn at the width it will be shown (not scaled down), so text stays readable on a phone.
+  function chart(v, width) {
+    const plotted = v.member_votes.filter(m => m.area && m.sided_with);
+    const W = Math.max(300, Math.round(width)), narrow = W < 600;
+    const padL = 2, padR = 2, plotW = W - padL - padR;
+    const r = v.chamber === "senate" ? (narrow ? 4.5 : 6) : (narrow ? 2.6 : 4.5);
+    // Scale fitted to the data but always centred on the even split: e.g. 30%-70% when every area
+    // falls in that range, so dots spread out instead of piling up in a narrow column.
+    const dev = Math.max(0, ...plotted.map(m => Math.abs(m.area.support_pct - 50)));
+    const span = Math.min(50, Math.max(20, Math.ceil((dev + 3) / 10) * 10));
+    const lo = 50 - span, hi = 50 + span;
+    const x = pctv => padL + plotW * (pctv - lo) / (hi - lo);
+    const rows = ["support", "oppose"].map(side =>
+      swarm(plotted.filter(m => m.sided_with === side).map(m => ({ m, x: x(m.area.support_pct) })), r));
+    const half = rows.map(pts => Math.max(r * 2, ...pts.map(p => Math.abs(p.dy) + r)) + 6);
+    const top = 30, gap = 34, rowLabelH = 20;
+    const y0 = top + rowLabelH + half[0], y1 = y0 + half[0] + gap + rowLabelH + half[1];
+    const H = y1 + half[1] + 30;
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    const S = (tag, attrs = {}, text) => {
+      const n = document.createElementNS("http://www.w3.org/2000/svg", tag);
+      for (const [k, val] of Object.entries(attrs)) n.setAttribute(k, val);
+      if (text != null) n.textContent = text;
+      return n;
+    };
+    svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+    svg.setAttribute("class", "chart");
+    svg.setAttribute("role", "img");
+    const counts = { with: 0, against: 0, too_close: 0 };
+    for (const m of plotted) if (m.agreement in counts) counts[m.agreement]++;
+    svg.setAttribute("aria-label", `${plotted.length} members placed by support in their area. ` +
+      `${counts.with} voted with a clear majority, ${counts.against} against one, ${counts.too_close} in areas too close to call. ` +
+      "The table below lists every member.");
+    // Shaded zones: top-right and bottom-left = voted with where they live; the others = against.
+    const band = (y, h, side) => [[lo, 50, side === "support" ? "zone-against" : "zone-with"],
+                                  [50, hi, side === "support" ? "zone-with" : "zone-against"]]
+      .forEach(([a, b, cls]) => svg.append(S("rect", { x: x(a), y, width: x(b) - x(a), height: h, class: cls })));
+    const row0 = y0 - half[0], row1 = y1 - half[1];
+    band(row0, 2 * half[0], "support");
+    band(row1, 2 * half[1], "oppose");
+    const yeaSide = v.support_side === "nay" ? "Nay" : "Yea", naySide = v.support_side === "nay" ? "Yea" : "Nay";
+    svg.append(S("text", { x: padL, y: row0 - 8, class: "row-label" }, `Voted for the proposal (${yeaSide})`));
+    svg.append(S("text", { x: padL, y: row1 - 8, class: "row-label" }, `Voted against it (${naySide})`));
+    // Each corner says what it means.
+    const corner = (xx, yy, anchor, text) => svg.append(S("text", { x: xx, y: yy, class: "zone-label", "text-anchor": anchor }, text));
+    corner(x(hi) - 6, row0 + 15, "end", "with their area");
+    corner(x(lo) + 6, row0 + 15, "start", "against their area");
+    corner(x(lo) + 6, row1 + 15, "start", "with their area");
+    corner(x(hi) - 6, row1 + 15, "end", "against their area");
+    svg.append(S("line", { x1: x(50), x2: x(50), y1: row0 - 2, y2: row1 + 2 * half[1] + 2, class: "mid" }));
+    const axisY = H - 6;
+    svg.append(S("line", { x1: x(lo), x2: x(hi), y1: axisY - 16, y2: axisY - 16, class: "base" }));
+    for (const t of (narrow ? [lo, 50, hi] : [lo, 50 - span / 2, 50, 50 + span / 2, hi]))
+      svg.append(S("text", { x: x(t), y: axisY, class: "tick", "text-anchor": t === lo ? "start" : t === hi ? "end" : "middle" }, `${t}%`));
+    svg.dataset.range = `${lo}–${hi}`;
+    const related = v.match === "related";
+    rows.forEach((pts, i) => {
+      const cy = i ? y1 : y0;
+      for (const p of pts) {
+        const m = p.m;
+        const a = S("a", { href: `index.html#${m.state}/${m.bioguide_id}` });
+        const cls = `dot ${related ? "related" : m.agreement} ${m.position}`;
+        a.append(S("circle", { cx: p.x, cy: cy + p.dy, r, class: cls }));
+        a.append(S("title", {}, `${m.name} (${m.seat}, ${m.party}): voted ${POS[m.position]}; ` +
+          `${pct(m.area.support_pct)} support where they live (likely ${pct(m.area.low_pct)}–${pct(m.area.high_pct)}). ` +
+          (related ? "Related vote, not counted." : VERDICT[m.agreement] + ".")));
+        svg.append(a);
+      }
+    });
+    return svg;
+  }
+
+  function legend(v, range) {
+    const dot = (cls, fill) => {
+      const s = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      s.setAttribute("width", "14"); s.setAttribute("height", "14"); s.setAttribute("aria-hidden", "true");
+      s.innerHTML = `<circle cx="7" cy="7" r="5" class="dot ${cls}${fill ? "" : " nay"}"></circle>`;
+      return s;
+    };
+    return el("div", { class: "legend" },
+      el("span", { class: "axis-caption" }, `Left to right: estimated support where the member lives (${v.chamber === "senate" ? "state" : "district"}), from ${range.split("–")[0]}% to ${range.split("–")[1]}%. The middle line is an even split.`),
+      el("span", {}, dot("with", true), "With a clear majority where they live"),
+      el("span", {}, dot("against", true), "Against a clear majority"),
+      el("span", {}, dot("too_close", true), "Too close to call"),
+      el("span", {}, dot("with", true), "filled = voted Yea, ", dot("with", false), "ring = voted Nay"));
+  }
+
+  function membersTable(v) {
+    const rows = v.member_votes;
+    let filter = "all", text = "", sortKey = "support", dir = 1;
+    const box = el("div");
+    const search = el("input", { type: "search", placeholder: "Find a member or state", "aria-label": "Find a member or state" });
+    const chips = ["all", "with", "against", "too_close", "not_surveyed", "did_not_vote"].map(f => {
+      const n = f === "all" ? rows.length : rows.filter(m => m.agreement === f).length;
+      if (!n) return null;
+      const b = el("button", { type: "button", class: "chip", "aria-pressed": String(f === filter) },
+        `${f === "all" ? "Everyone" : VERDICT[f]} (${n})`);
+      b.addEventListener("click", () => { filter = f; chipEls.forEach(c => c && c.setAttribute("aria-pressed", String(c === b))); draw(); });
+      return b;
+    });
+    const chipEls = chips;
+    search.addEventListener("input", () => { text = search.value.trim().toLowerCase(); draw(); });
+    const cols = [["name", "Member"], ["seat", v.chamber === "senate" ? "State" : "District"], ["party", "Party"],
+                  ["position", "Vote"], ["support", "Support where they live"], ["agreement", "Compared with their area"]];
+    const thead = el("tr", {}, cols.map(([k, label]) => {
+      const th = el("th", { scope: "col" }, el("button", { type: "button" }, label));
+      th.firstChild.addEventListener("click", () => { dir = sortKey === k ? -dir : 1; sortKey = k; draw(); });
+      th.dataset.key = k;
+      return th;
+    }));
+    const tbody = el("tbody");
+    const value = (m, k) => k === "support" ? (m.area ? m.area.support_pct : -1) : (m[k] || "");
+    function draw() {
+      for (const th of thead.children) th.dataset.key === sortKey
+        ? th.setAttribute("aria-sort", dir > 0 ? "ascending" : "descending") : th.removeAttribute("aria-sort");
+      const shown = rows.filter(m => (filter === "all" || m.agreement === filter) &&
+        (!text || `${m.name} ${m.seat} ${m.state}`.toLowerCase().includes(text)))
+        .sort((a, b) => { const x = value(a, sortKey), y = value(b, sortKey);
+                          return (x < y ? -1 : x > y ? 1 : 0) * dir || a.name.localeCompare(b.name); });
+      tbody.replaceChildren(...shown.map(m => el("tr", {},
+        el("td", {}, el("a", { href: `index.html#${m.state}/${m.bioguide_id}` }, m.name)),
+        el("td", {}, m.seat), el("td", {}, m.party || ""), el("td", {}, POS[m.position] || m.position),
+        el("td", {}, m.area ? `${pct(m.area.support_pct)} (likely ${pct(m.area.low_pct)}–${pct(m.area.high_pct)})` : "not surveyed"),
+        el("td", { class: `verdict ${v.match === "related" ? "" : m.agreement}` },
+          v.match === "related" && m.area ? "Related vote, not counted" : VERDICT[m.agreement]))));
+      count.textContent = `Showing ${plural(shown.length, "member", "members")}.`;
+    }
+    const count = el("p", { class: "count-note" });
+    box.append(el("div", { class: "filters-row" }, search, chips), count,
+      el("div", { class: "table-scroll" }, el("table", { class: "members" }, el("thead", {}, thead), tbody)));
+    draw();
+    return box;
+  }
+
+  async function showDetail() {
+    const q = await get(`/v1/surveyed/detail?${new URLSearchParams({ survey, item })}`);
+    document.title = `${q.question} · Surveyed votes · US Congress vs Voters`;
+    view.replaceChildren(
+      el("p", { class: "back" }, el("a", { href: "surveyed.html" }, "← All surveyed votes")),
+      el("section", { class: "group" }, window.CC.questionCard(q, { heading: "h1" })),
+      ...q.votes.map(v => el("section", { class: "group" },
+        el("h2", {}, `${chamberName(v.chamber)}: how each member voted, compared with their ${v.chamber === "senate" ? "state" : "district"}`),
+        el("p", { class: "sub" }, `${date(v.date)} · ${v.question || ""} — ${v.result || ""} ${v.yea}–${v.nay}`,
+          v.support_side === "nay" ? ". This vote was on blocking the proposal, so voting Nay supported it" : "", "."),
+        v.match === "related" ? el("p", { class: "meta" },
+          "Related vote: close to, but not the same as, what the survey asked, so it's shown in grey and nobody is scored on it.") : null,
+        el("details", { class: "more how" }, el("summary", {}, "How to read this chart"),
+          el("p", {}, "Each dot is a member of Congress. Left to right is the estimated share of people where they live who support the proposal; the line in the middle is an even split, and the scale covers just the range the areas fall in. ",
+            "Members in the top row voted for the proposal, those in the bottom row against it. So a dot in the top right or bottom left voted the way most people where they live wanted; ",
+            "top left or bottom right, the other way. Grey dots are in areas where the survey can't tell which side most people are on. ",
+            "Hover or tap a dot for the member's name, or use the table below.")),
+        ...(() => { const c = chart(v, view.clientWidth - 50);
+                    return [el("div", { class: "chart-wrap" }, c), legend(v, c.dataset.range)]; })(),
+        membersTable(v))));
+  }
+
+  (survey && item ? showDetail() : showList()).catch(e => {
+    view.replaceChildren(el("p", { class: "empty" }, `This page couldn't load: ${e.message}`),
+      el("p", {}, el("a", { href: "surveyed.html" }, "All surveyed votes")));
+  });
+});
+</script>

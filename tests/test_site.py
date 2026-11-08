@@ -11,7 +11,9 @@ spec.loader.exec_module(build_site)
 
 def test_builds_every_page_in_the_frame(tmp_path):
     built = build_site.build(tmp_path, "abc123")
-    assert {"index.html", "sources.html", "methods.html", "glossary.html", "about.html", "privacy.html"} <= set(built)
+    assert {"index.html", "surveyed.html", "search.html", "sources.html", "methods.html", "glossary.html", "about.html",
+            "privacy.html", "contact.html"} <= set(built)
+    assert (tmp_path / "cards.js").exists() and 'src="cards.js?v=abc123"' in (tmp_path / "surveyed.html").read_text()
     for name in built:
         page = (tmp_path / name).read_text()
         assert page.count('aria-current="page"') == (1 if name in dict(build_site.NAV) else 0), name
