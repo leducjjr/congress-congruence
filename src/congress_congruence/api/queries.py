@@ -108,7 +108,8 @@ select r.roll_call_id, r.chamber, r.congress, r.session, r.roll_number, r.vote_d
 """
 
 FRESHNESS = """
-select chamber, source, count(*) as votes, max(vote_date) as latest_vote
+select chamber, source, count(*) as votes, min(vote_date) as first_vote, max(vote_date) as latest_vote,
+       min(congress) as first_congress, max(congress) as latest_congress
   from core.roll_call group by chamber, source order by chamber, source
 """
 

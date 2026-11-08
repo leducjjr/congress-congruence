@@ -412,7 +412,10 @@
       const facts = [];
       if (s.votes_total) {
         facts.push(h("li", {}, "Missed ", h("strong", {}, `${s.missed_pct}%`),
-          ` of ${s.votes_total.toLocaleString()} votes in the ${ordinal(s.congress)} Congress.`));
+          ` of ${s.votes_total.toLocaleString()} votes in the ${ordinal(s.congress)} Congress`,
+          s.first_vote && s.last_vote
+            ? ` (${fmtDate(s.first_vote)} to ${fmtDate(s.last_vote)})` : "",
+          "."));
       }
       if (s.party_votes) {
         facts.push(h("li", {}, "Voted with the majority of their party on ",

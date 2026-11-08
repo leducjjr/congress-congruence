@@ -132,6 +132,7 @@ def test_health_reports_freshness(client):
     h = client.get("/v1/health").json()
     assert h["status"] == "ok"
     assert h["data"][0]["latest_vote"] == "2025-03-03"
+    assert h["data"][0]["first_vote"] <= h["data"][0]["latest_vote"] and h["data"][0]["first_congress"] == 119
 
 
 def test_connections_are_read_only(client):

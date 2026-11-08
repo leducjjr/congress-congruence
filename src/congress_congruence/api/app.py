@@ -103,7 +103,9 @@ def pct(part: int, whole: int) -> float | None:
 def health(response: Response):
     response.headers["Cache-Control"] = "no-cache"
     data = [{"chamber": r["chamber"], "source": r["source"], "votes": r["votes"],
-             "latest_vote": r["latest_vote"]} for r in fetch(q.FRESHNESS)]
+             "first_vote": r["first_vote"], "latest_vote": r["latest_vote"],
+             "first_congress": r["first_congress"], "latest_congress": r["latest_congress"]}
+            for r in fetch(q.FRESHNESS)]
     runs = {r["job"]: r["finished_at"] for r in fetch(q.LAST_RUNS)}
     return {"status": "ok", "data": data, "last_successful_runs": runs}
 

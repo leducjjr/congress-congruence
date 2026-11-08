@@ -30,7 +30,8 @@
     }
     select:focus-visible { outline: 2px solid var(--mark); outline-offset: 1px; }
     .status { color: var(--ink-soft); font-size: 0.9rem; min-height: 1.5em; margin: 0 0 12px; }
-    footer { color: var(--ink-soft); font-size: 0.8rem; margin-top: 24px; }
+    .coverage { color: var(--ink-soft); font-size: 0.85rem; margin: -12px 0 20px; }
+    .coverage:empty { display: none; }
   </style>
   <script src="cc-member-panel.js" defer></script>
 </head>
@@ -38,6 +39,7 @@
 <main>
   <h1>Congress voting record</h1>
   <p class="intro">Pick a state, then a member of the House or Senate, to see how they've voted.</p>
+  <p class="coverage" id="coverage"></p>
 
   <div class="pick">
     <label>State
@@ -51,7 +53,6 @@
 
   <cc-member-panel id="panel" hidden></cc-member-panel>
 
-  <footer id="freshness"></footer>
 </main>
 
 <script>
@@ -115,10 +116,27 @@
   const [hashState, hashId] = location.hash.slice(1).split("/");
   if (STATES[hashState]) { stateSel.value = hashState; loadState(hashState, hashId); }
 
+  // How far back the records go and how current they are, so it's clear on a long-running site.
+  const longDate = iso => new Date(iso + "T12:00:00").toLocaleDateString("en-US",
+    { month: "long", day: "numeric", year: "numeric" });
+  const ordinal = n => n + ((n % 100 >= 11 && n % 100 <= 13) ? "th" : ({ 1: "st", 2: "nd", 3: "rd" }[n % 10] || "th"));
+  const CADENCE = { house: "checked every 2 hours",
+                    senate: "updated daily from Voteview, which can trail the official record by days to weeks" };
   getJSON("/v1/health").then(({ data }) => {
-    const parts = data.map(d => `${d.chamber === "house" ? "House" : "Senate"} votes through ${
-      new Date(d.latest_vote + "T12:00:00").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}`);
-    $("freshness").textContent = parts.length ? `Data: ${parts.join("; ")}.` : "";
+    if (!data.length) return;
+    const first = data.reduce((a, d) => d.first_vote < a.first_vote ? d : a);
+    const firstCongress = Math.min(...data.map(d => d.first_congress));
+    const latestCongress = Math.max(...data.map(d => d.latest_congress));
+    const congresses = firstCongress === latestCongress ? `the ${ordinal(firstCongress)} Congress`
+      : `the ${ordinal(firstCongress)} through ${ordinal(latestCongress)} Congresses`;
+    const through = ["house", "senate"].map(ch => {
+      const rows = data.filter(d => d.chamber === ch);
+      if (!rows.length) return null;
+      const latest = rows.map(d => d.latest_vote).sort().at(-1);
+      return `${ch === "house" ? "House" : "Senate"} votes through ${longDate(latest)} (${CADENCE[ch]})`;
+    }).filter(Boolean);
+    $("coverage").textContent = `Voting records cover ${congresses}, starting ${longDate(first.first_vote)}. `
+      + through.join("; ") + ".";
   }).catch(() => {});
 </script>
 </body>

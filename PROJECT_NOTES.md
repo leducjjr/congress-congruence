@@ -27,6 +27,9 @@ Full details of every source and its special handling: `docs/DATA_SOURCES.md`
 - Population: Census ACS 1-year (2023 = 118th lines, 2024 = 119th lines).
 - Watcher (monthly): new CES releases are drafted for review; new Census releases load automatically.
 
+## Site plan
+See `docs/SITE_PLAN.md`: header, footer and reference pages, leading with the vote-vs-survey comparison.
+
 ## Next candidates (agreed order)
 1. State ballot-measure results (actual votes; good for senators; topic matches would be "related").
 2. AP VoteCast (check reuse terms first).
