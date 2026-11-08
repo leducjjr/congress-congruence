@@ -42,8 +42,12 @@ def fetch(year: int, geography: str, within: str | None = None, http=None) -> li
     if os.environ.get("CENSUS_API_KEY"):
         params["key"] = os.environ["CENSUS_API_KEY"]
     resp = (http or http_session()).get(API.format(year=year), params=params, timeout=60)
-    resp.raise_for_status()
-    return resp.json()
+    try:
+        resp.raise_for_status()
+        return resp.json()
+    except ValueError:   # the Census API answers problems with a plain-text or HTML message
+        raise RuntimeError(f"The Census API didn't return data for {year} ({geography}). "
+                           f"It said: {resp.text.strip()[:300] or '(empty reply)'}") from None
 
 
 def parse_districts(table: list[list[str]]) -> tuple[int, list[tuple[str, int, int]]]:

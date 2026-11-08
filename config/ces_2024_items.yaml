@@ -45,7 +45,9 @@ items:
     votes:
       house:
         bill: [hr, 7521]
-        questions: *final
+        # Passed under suspension of the rules (a fast-track procedure needing two-thirds),
+        # so its final vote is recorded as "On Motion to Suspend the Rules and Pass".
+        questions: [On Passage, Suspend the Rules and Pass]
         note: >-
           This is the House's vote on the stand-alone TikTok bill. It later became law as part
           of a larger foreign-aid package, so senators' votes on it aren't compared here.

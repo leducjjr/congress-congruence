@@ -85,3 +85,8 @@ def test_2024_items_file_is_well_formed():
     for item in cfg["items"].values():
         assert item["question"] and item["votes"]
         assert set(item["votes"]) <= {"house", "senate"}
+
+
+def test_2024_tiktok_rule_accepts_a_suspension_vote():
+    rule = ces.load_config(2024)["items"]["CC24_340d"]["votes"]["house"]
+    assert "Suspend the Rules and Pass" in rule["questions"]

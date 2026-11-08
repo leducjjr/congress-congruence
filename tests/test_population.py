@@ -90,3 +90,15 @@ def test_api_population_for_house_and_senate(conn, monkeypatch):
     assert sen["residents"] == 31290831 and sen["area"] == "TX"
     assert sen["smallest_state"] == {"state": "WY", "residents": 587618}
     assert sen["largest_state"] == {"state": "TX", "residents": 31290831}
+
+
+def test_non_data_reply_is_reported_in_plain_words():
+    class Http:
+        def get(self, url, params, timeout):
+            class R:
+                status_code, text = 200, "error: unknown/unsupported geography hierarchy"
+                def raise_for_status(self): pass
+                def json(self): raise ValueError("not json")
+            return R()
+    with pytest.raises(RuntimeError, match="unknown/unsupported geography"):
+        population.fetch(2024, "congressional district:*", "state:*", Http())

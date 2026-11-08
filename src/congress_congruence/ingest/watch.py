@@ -170,7 +170,8 @@ def candidate_votes(conn, congress: int, question: str, limit: int = 4) -> list[
                               yea_total, nay_total
                          from core.roll_call where congress = %s
                           and (question ilike any (array['%%Passage%%', '%%Concur%%', '%%Nomination%%',
-                                                         '%%Cloture%%', '%%Agreeing to the Resolution%%']))""",
+                                                         '%%Cloture%%', '%%Agreeing to the Resolution%%',
+                                                         '%%Suspend the Rules and Pass%%']))""",
                     (congress,))
         cols = [d.name for d in cur.description]
         rows = [dict(zip(cols, r)) for r in cur.fetchall()]
@@ -207,8 +208,8 @@ def draft_items(conn, year: int, rel: dict, columns, labels, values, nrows) -> s
         "  about_url: https://cces.gov.harvard.edu/",
         "",
         "final_questions: &final",
-        "  - On Passage", "  - Passage of the Bill", "  - Concur", "  - Agreeing to the Resolution",
-        "  - Joint Resolution Passage",
+        "  - On Passage", "  - Passage of the Bill", "  - Suspend the Rules and Pass", "  - Concur",
+        "  - Agreeing to the Resolution", "  - Joint Resolution Passage",
         "",
         "items:",
     ]
