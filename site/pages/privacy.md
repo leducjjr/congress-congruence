@@ -7,6 +7,8 @@ description: What this site does and doesn't collect about visitors. No accounts
 <p class="lede">This site doesn't collect personal information. There are no accounts, no cookies and no
 advertising or tracking scripts.</p>
 
+Questions about privacy: <span data-email="privacy">privacy (at) {{email_domain}}</span>.
+
 ## What we don't do {#dont}
 
 - We don't ask for your name, email or any account.

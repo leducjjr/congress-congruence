@@ -40,4 +40,5 @@ political party or campaign, or any of the survey organizations whose work it us
 
 ## Contact and corrections {#contact}
 
-If you find an error, we want to fix it. See the [Contact](contact.html) page.
+If you find an error, we want to fix it: write to <span data-email="corrections">corrections (at) {{email_domain}}</span>.
+For anything else, see the [Contact](contact.html) page.

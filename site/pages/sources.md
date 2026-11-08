@@ -129,4 +129,4 @@ reached. Each year's figures are matched to the district lines in use at the tim
 
 Every downloaded file is kept unchanged, so any figure can be rebuilt and checked, and the code that
 does it is [public]({{source_url}}). If you find an
-error, please tell us (contact details are on the [About](about.html) page).
+error, please tell us at <span data-email="corrections">corrections (at) {{email_domain}}</span>.

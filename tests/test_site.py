@@ -28,7 +28,9 @@ def test_contact_addresses_are_not_written_out_and_security_txt_is_published(tmp
     build_site.build(tmp_path, "x")
     contact = (tmp_path / "contact.html").read_text()
     assert 'data-email="corrections"' in contact and "corrections (at) uscongressvsvoters.org" in contact
-    assert "@uscongressvsvoters.org" not in contact            # nothing for address harvesters
+    for page in tmp_path.glob("*.html"):                       # nothing for address harvesters, anywhere
+        assert "@uscongressvsvoters.org" not in page.read_text(), page.name
+    assert 'data-email="corrections"' in (tmp_path / "about.html").read_text()
     sec = (tmp_path / ".well-known" / "security.txt").read_text()
     assert "Contact: mailto:security@uscongressvsvoters.org" in sec and "Expires: " in sec
 
