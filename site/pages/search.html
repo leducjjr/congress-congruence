@@ -160,12 +160,23 @@ main_class: search-page
     return ["…", snippet.split(/\[\[|\]\]/).map((part, i) => i % 2 ? el("mark", {}, part) : part), "…"];
   }
 
+  // The bill's policy area and any of its official subject tags that contain a searched word,
+  // which explains matches whose title doesn't (e.g. "immigration" finding the Laken Riley Act).
+  const words = query.toLowerCase().replace(/["*]/g, " ").split(/\s+/).filter(w => w.length > 2);
+  function topicLine(v) {
+    if (!v.policy_area && !v.subjects?.length) return null;
+    const tagged = (v.subjects || []).filter(s => words.some(w => s.toLowerCase().includes(w))).slice(0, 4);
+    return el("p", { class: "meta" }, v.policy_area ? `Topic: ${v.policy_area}` : "",
+      tagged.length ? `${v.policy_area ? " · " : ""}Subjects: ${tagged.join("; ")}` : "");
+  }
+
   function voteLine(v) {
     const parties = Object.entries(v.by_party || {}).sort((a, b) => a[0].localeCompare(b[0]))
       .map(([p, c]) => `${p}s ${c.yea || 0}–${c.nay || 0}`).join(" · ");
     return [
       el("p", { class: "meta" }, `${chamberName(v.chamber)} · ${date(v.date)} · `, v.question || "", v.result ? ` — ${v.result} ${v.yea}–${v.nay}` : ""),
       parties ? el("p", { class: "meta" }, `Yea–Nay by party: ${parties}`) : null,
+      topicLine(v),
       v.surveyed.length ? el("p", {}, v.surveyed.map((s, i) => [i ? " " : "",
         el("a", { class: `tag ${s.match === "same" ? "surveyed" : ""}`, href: `search.html?q=${encodeURIComponent(s.question)}` },
           s.match === "same" ? `Surveyed: ${s.question}` : `Related to a survey question: ${s.question}`)])) : null,

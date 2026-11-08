@@ -91,6 +91,25 @@ Principles that apply to every source:
   totals may or may not include pairs; validation accepts either convention and nothing else.
 - **No times.** Voteview has dates but no times of day.
 
+## 3a. Bill titles, policy areas and subjects: Congress.gov
+
+| | |
+|---|---|
+| Source | [Congress.gov API](https://api.congress.gov/) (Library of Congress), `GET /v3/bill/{congress}/{type}/{number}` and `.../subjects` |
+| Fetched | Daily at 07:05 UTC (`bills` job): every bill with a recorded vote that is new, has had a vote since its last check, or was last checked over 30 days ago |
+| Code | `ingest/bills.py`; tables `core.bill`, `core.bill_subject` |
+
+- **Why.** Vote titles are official names ("Laken Riley Act") that often lack the words people search
+  for. The Library of Congress tags each bill with one policy area and many legislative subjects. Search
+  matches votes on those too, and survey questions through the bills of the votes they're linked to.
+- **Key.** Needs a free api.data.gov key as `CONGRESS_API_KEY` in `.env` (5,000 requests an hour; two per
+  bill; the loader pauses 0.4 s between requests and waits a minute on HTTP 429). A missing or refused key
+  stops the run with a clear message; the key never appears in logs or errors.
+- **Raw copies.** Each bill's responses are kept as `RAW_DATA_DIR/congress_gov/bills/<congress>/<type><number>.json`.
+- **Subjects are paged.** The subjects list is followed through every page (`pagination.next`).
+- **Not found.** A bill Congress.gov doesn't know is recorded as checked, so it isn't asked again every day.
+- **Nominations and procedural votes** have no bill, so they get no subjects.
+
 ## 4. Constituent opinion: Cooperative Election Study (CES)
 
 | | |

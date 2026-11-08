@@ -199,13 +199,25 @@ select s.survey, s.title, s.fielded, s.respondents, s.dataset_url, s.guide_url, 
 # ---------------------------------------------------------------- text search (votes, survey questions)
 # %(tsq)s is a to_tsquery string built by app.build_tsquery from letters and digits only.
 
+# Words a vote can be found by: its title and question, the bill number, and (once loaded from
+# Congress.gov) the bill's official title, policy area and subject tags.
 VOTE_DOC = """to_tsvector('english', coalesce(r.description, '') || ' ' || coalesce(r.question, '') || ' ' ||
-           coalesce(r.bill_type || ' ' || r.bill_number || ' ' || r.bill_type || r.bill_number, ''))"""
+           coalesce(r.bill_type || ' ' || r.bill_number || ' ' || r.bill_type || r.bill_number, '') || ' ' ||
+           coalesce(b.title, '') || ' ' || coalesce(b.policy_area, '') || ' ' || coalesce(bs.subjects, ''))"""
+
+VOTE_BILL_JOIN = """
+  left join core.bill b on b.congress = coalesce(r.bill_congress, r.congress)
+                       and b.bill_type = r.bill_type and b.bill_number = r.bill_number
+  left join lateral (select string_agg(s.subject, ' | ' order by s.subject) as subjects
+                       from core.bill_subject s
+                      where s.congress = b.congress and s.bill_type = b.bill_type
+                        and s.bill_number = b.bill_number) bs on true"""
 
 VOTE_SEARCH = f"""
 select r.roll_call_id, r.chamber, r.congress, r.session, r.roll_number, r.vote_date, r.question,
        r.description, r.result, r.yea_total, r.nay_total, r.present_total, r.not_voting_total,
        r.bill_congress, r.bill_type, r.bill_number, r.amendment_number,
+       b.title as bill_title, b.policy_area, bs.subjects,
        -- Long titles (e.g. dozens of nominations confirmed together) are shown as the part that
        -- matched; [[ ]] mark the matching words.
        case when length(r.description) > 220 then
@@ -213,7 +225,7 @@ select r.roll_call_id, r.chamber, r.congress, r.session, r.roll_number, r.vote_d
                         'MaxFragments=2, MinWords=8, MaxWords=24, StartSel=[[, StopSel=]], FragmentDelimiter=" … "')
        end as snippet,
        count(*) over () as total
-  from core.roll_call r
+  from core.roll_call r{VOTE_BILL_JOIN}
  where {VOTE_DOC} @@ to_tsquery('english', %(tsq)s)
    and (%(chamber)s::text is null or r.chamber = %(chamber)s)
  order by r.vote_date desc, r.chamber, r.roll_number desc
@@ -253,7 +265,18 @@ select si.survey, si.variable, si.question, si.note, s.title, s.fielded,
        coalesce(s.organization, s.survey) as organization, s.guide_url,
        count(*) over () as total
   from core.survey_item si join core.survey s using (survey)
- where to_tsvector('english', si.question || ' ' || coalesce(si.survey_label, '') || ' ' || coalesce(si.note, ''))
+  -- A question can also be found by the subject tags of the bills it's compared with.
+  left join lateral (select string_agg(coalesce(b.title, '') || ' ' || coalesce(b.policy_area, '') || ' ' ||
+                                       coalesce(bsub.subject, ''), ' ') as words
+                       from core.survey_item_vote siv
+                       join core.roll_call r using (roll_call_id)
+                       join core.bill b on b.congress = coalesce(r.bill_congress, r.congress)
+                                       and b.bill_type = r.bill_type and b.bill_number = r.bill_number
+                       left join core.bill_subject bsub on bsub.congress = b.congress
+                                       and bsub.bill_type = b.bill_type and bsub.bill_number = b.bill_number
+                      where siv.survey = si.survey and siv.variable = si.variable) tags on true
+ where to_tsvector('english', si.question || ' ' || coalesce(si.survey_label, '') || ' ' || coalesce(si.note, '')
+                   || ' ' || coalesce(tags.words, ''))
        @@ to_tsquery('english', %(tsq)s)
    and exists (select 1 from core.survey_item_vote v where v.survey = si.survey and v.variable = si.variable)
  order by si.survey desc, si.variable

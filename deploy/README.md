@@ -138,6 +138,7 @@ fails or doesn't report on time (which also catches the server being down).
    | house | `17 */2 * * *` | 1 hour |
    | senate-voteview | `40 6 * * *` | 1 hour |
    | survey-watch | `25 7 1 * *` | 1 day |
+   | bills | `5 7 * * *` | 1 hour |
 
 3. Add each check's ping URL to `.env`:
 
@@ -147,6 +148,7 @@ fails or doesn't report on time (which also catches the server being down).
    HEALTHCHECK_HOUSE=https://hc-ping.com/your-uuid-3
    HEALTHCHECK_SENATE_VOTEVIEW=https://hc-ping.com/your-uuid-4
    HEALTHCHECK_SURVEY_WATCH=https://hc-ping.com/your-uuid-5
+   HEALTHCHECK_BILLS=https://hc-ping.com/your-uuid-6
    ```
 
 Jobs report "started" and then "succeeded" or "failed" with their exit code.

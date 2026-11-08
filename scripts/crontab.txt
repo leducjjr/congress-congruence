@@ -16,5 +16,8 @@
 # Senate votes from Voteview: daily. Three files, a few MB.
 40 6 * * *      $HOME/congress-congruence/scripts/run_job.sh senate-voteview
 
+# Bill titles and subject tags from Congress.gov: daily, after the vote jobs.
+5 7 * * *       $HOME/congress-congruence/scripts/run_job.sh bills
+
 # New survey releases: monthly (1st of the month). Drafts for review; never loads anything.
 25 7 1 * *      $HOME/congress-congruence/scripts/run_job.sh survey-watch

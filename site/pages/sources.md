@@ -57,6 +57,14 @@ redrawn districts, special elections and moves between the House and Senate are 
 Bill names and links go to [Congress.gov](https://www.congress.gov/), the official site for federal
 legislation, run by the Library of Congress.
 
+**What we use:** for each bill with a recorded vote, its official title, its policy area and the
+subject tags the Library of Congress assigns (for example, "Immigration status and procedures"), from
+the [Congress.gov API](https://api.congress.gov/). Search uses them, so a search for a topic finds
+bills whose names don't mention it.
+
+**How often:** checked daily for bills with new votes, and every bill again each month, since subject
+tags are added over time.
+
 ## Surveys of what people want {#surveys}
 
 We compare votes with what people said in independent, published surveys. We use more than one survey
