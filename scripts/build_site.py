@@ -10,6 +10,7 @@ Pages are Markdown (.md) or HTML (.html) files that start with a short header:
     ---
 
 Optional header keys: head (extra tags for <head>), main_class.
+Settings in site/site.yaml (e.g. source_url) fill {{source_url}}-style placeholders on any page.
 Markdown pages get the "prose" layout; headings get link anchors; {#id} after a heading sets
 its anchor. The panel script, site.css and site.js are copied alongside, and every reference
 to them carries ?v=<version> so browsers fetch the new copy after each update.
@@ -77,6 +78,7 @@ def stamp(text: str, version: str) -> str:
 
 def build(out: Path, version: str) -> list[str]:
     frame = (SITE / "frame.html").read_text(encoding="utf-8")
+    settings = yaml.safe_load((SITE / "site.yaml").read_text(encoding="utf-8")) or {}
     out.mkdir(parents=True, exist_ok=True)
     built = []
     for path in sorted((SITE / "pages").glob("*")):
@@ -92,6 +94,8 @@ def build(out: Path, version: str) -> list[str]:
                 .replace("{{main_class}}", meta.get("main_class", "prose" if path.suffix == ".md" else ""))
                 .replace("{{nav}}", nav_html(name))
                 .replace("{{body}}", render_body(path, body)))
+        for key, value in settings.items():                  # {{source_url}} etc. from site/site.yaml
+            page = page.replace("{{" + key + "}}", html.escape(str(value), quote=True))
         (out / name).write_text(stamp(page, version), encoding="utf-8")
         built.append(name)
     for name, src in ASSETS.items():

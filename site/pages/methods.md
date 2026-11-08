@@ -94,5 +94,6 @@ comparison names its source. When sources agree, that's worth knowing; when they
   party, and what they promised voters. Voting against a majority isn't necessarily wrong, and this site
   doesn't say it is. It shows the comparison so you can judge.
 
-The technical details, including every special case we've handled for each source, are kept with the
-site's code and will be published with it.
+The technical details, including every special case we've handled for each source, are in the
+site's [source code]({{source_url}}): see [DATA_SOURCES.md]({{source_url}}/blob/main/docs/DATA_SOURCES.md)
+and the estimate method in [opinion.py]({{source_url}}/blob/main/src/congress_congruence/opinion.py).

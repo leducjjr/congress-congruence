@@ -119,5 +119,6 @@ reached. Each year's figures are matched to the district lines in use at the tim
 
 ## Updates and corrections {#updates}
 
-Every downloaded file is kept unchanged, so any figure can be rebuilt and checked. If you find an
+Every downloaded file is kept unchanged, so any figure can be rebuilt and checked, and the code that
+does it is [public]({{source_url}}). If you find an
 error, please tell us (contact details are on the [About](about.html) page).

@@ -26,6 +26,13 @@ state by state and district by district. This site does that, openly and the sam
   readers decide what it means.
 - **No tracking.** No accounts, no cookies, no advertising. See [Privacy](privacy.html).
 
+## Open source {#source-code}
+
+Everything that produces this site is public: the code that downloads and checks each source, the
+methods that estimate opinion, the rules that match survey questions to votes, and every special case
+we've handled. Read it, check it, or reuse it: [source code]({{source_url}}). The full technical notes on
+each data source are in [DATA_SOURCES.md]({{source_url}}/blob/main/docs/DATA_SOURCES.md).
+
 ## Independence {#independence}
 
 This is an independent civic project. It isn't affiliated with the U.S. government, Congress, any

@@ -6,9 +6,10 @@ compared with what their constituents say in public surveys, now and historicall
 ## Decisions that stand
 - Both chambers from the start; Python; PostgreSQL schema `core`; Bioguide ID is the member key.
 - Primary domain: **uscongressvsvoters.org** (a non-profit exercise, so .org). Sister domain
-  uscongressvsvoters.com (both registered Nov 2026 at Bluehost) should forward to .org at launch.
-  Dev site: https://dev.uscongressvsvoters.org (dev.uscongressvsvoters.com and
-  congress-dev.monkeyinfinitum.com also answer; same nginx site and certificate). The bare
+  uscongressvsvoters.com and uscongressvsvoters.online (all registered Nov 2026 at Bluehost) should
+  forward to .org at launch.
+  Dev site: https://dev.uscongressvsvoters.org (dev. on .com and .online, and
+  congress-dev.monkeyinfinitum.com, also answer; same nginx site and certificate). The bare
   domains and www are kept for the public launch.
 - Server: Bluehost VPS, user `john`, repo cloned at
   ~/congress-congruence, read-only deploy key. Dev and prod share a server for now.
@@ -30,6 +31,8 @@ Full details of every source and its special handling: `docs/DATA_SOURCES.md`
 - Watcher (monthly): new CES releases are drafted for review; new Census releases load automatically.
 
 ## Site plan
+Source code is linked from every page (footer, About); the URL is in `site/site.yaml`. The repo
+must be public for visitors to open it.
 Pages live in `site/pages/` (Markdown for reference pages), built by `scripts/build_site.py`.
 See `docs/SITE_PLAN.md`: header, footer and reference pages, leading with the vote-vs-survey comparison.
 
