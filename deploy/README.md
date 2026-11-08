@@ -110,10 +110,10 @@ sudo tail -20 /var/log/nginx/error.log    # web server errors
 Test a restore now and then, into a scratch database:
 
 ```bash
-createdb congress_restore_test
+sudo -u postgres createdb -O john congress_restore_test   # your login can't create databases
 pg_restore --no-owner -d congress_restore_test ~/backups/congress-YYYY-MM-DD.dump
 psql congress_restore_test -c "select count(*) from core.roll_call;"
-dropdb congress_restore_test
+sudo -u postgres dropdb congress_restore_test
 ```
 
 These copies are on the same server. To keep one somewhere else, copy it to

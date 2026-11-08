@@ -3,10 +3,10 @@
 # Run by the scheduler (scripts/run_job.sh backup) or by hand.
 #
 # Restore test (into a scratch database, never over the real one):
-#     createdb congress_restore_test
+#     sudo -u postgres createdb -O john congress_restore_test
 #     pg_restore --no-owner -d congress_restore_test ~/backups/congress-YYYY-MM-DD.dump
 #     psql congress_restore_test -c "select count(*) from core.roll_call;"
-#     dropdb congress_restore_test
+#     sudo -u postgres dropdb congress_restore_test
 #
 # These copies live on the same server, so they protect against mistakes and bad
 # loads, not against losing the server. Copy one off the server now and then
