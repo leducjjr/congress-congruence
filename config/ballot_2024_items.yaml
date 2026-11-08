@@ -23,13 +23,26 @@ source:
   fielded: November 5, 2024
   about_url: https://ballotpedia.org/2024_ballot_measure_election_results
 
-# The Senate never passed the SAVE America Act (S. 1383; House version H.R. 7296). The rule takes its
-# last recorded Senate vote; `ballots link 2024` shows which one, to check.
+# The Senate took up the SAVE America Act as the House message on S. 1383 (a vehicle bill whose own
+# title is about a veterans committee) and never voted on passing it. Its recorded votes (March 2026,
+# per the Senate Daily Press): s-119-2-57 to lay the House message before the Senate, 51-48; then
+# cloture on unrelated amendments and procedural motions; then s-119-2-73, cloture on Husted
+# amendment 4732 requiring photo ID to vote, rejected 53-47 (60 needed).
+#   Citizenship measures -> s-119-2-57, the one vote on taking up the bill itself.
+#   Voter-ID measure     -> s-119-2-73, the vote on photo ID specifically.
 save_america_senate: &save_senate
-  bill: [s, 1383]
+  roll_call: s-119-2-57
+  expect: "51-48"
   note: >-
-    The Senate never passed the SAVE America Act, which would require proof of citizenship to register
-    and photo ID to vote in federal elections. This is its last recorded Senate vote on the bill.
+    The Senate never voted on passing the SAVE America Act, which would require documents proving
+    citizenship to register and photo ID to vote in federal elections. This was its vote to take up
+    the bill; Yea was the vote to move it forward.
+photo_id_senate: &photo_id_senate
+  roll_call: s-119-2-73
+  expect: "53-47"
+  note: >-
+    A vote to end debate on Senator Husted's amendment to the SAVE America Act requiring photo ID to
+    vote in federal elections. It got 53 votes; 60 were needed. Yea was the vote to move it forward.
 # House: only a one-district state's representative is compared with a statewide result, and no
 # one-district state voted on these in 2024. Kept for 2026 (South Dakota and Alaska have measures).
 save_america_house: &save_house
@@ -73,7 +86,7 @@ items:
       require documents proving citizenship to register. Nevada voters must approve it again in 2026
       for it to take effect.
     votes:
-      senate: *save_senate
+      senate: *photo_id_senate
     results:
       - {state: NV, measure: "Nevada Question 7", yes_votes: 1031153, no_votes: 376873,
          url: "https://ballotpedia.org/Nevada_Question_7,_Require_Voter_Identification_Initiative_(2024)"}

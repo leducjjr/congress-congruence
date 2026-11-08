@@ -285,7 +285,7 @@ Special handling:
   the row to district 0, using the House seats in place on November 15 of the measure's year).
   Representatives of states with several districts aren't compared: a statewide result doesn't say
   what their district voted. The 2024 citizenship and voter-ID measures were in no one-district
-  state, so the 2024 file links Senate votes only; a House rule is kept for 2026 (Alaska, South Dakota).
+  state, so the 2024 file links Senate votes only: the vote to take up the SAVE America Act (s-119-2-57) for the citizenship measures, and cloture on the photo-ID amendment (s-119-2-73) for Nevada. The Senate never voted on passage; a House rule is kept for 2026 (Alaska, South Dakota).
 - **Always related.** No measure asks exactly what a bill in Congress does (the state amendments say
   only citizens may vote; the SAVE America Act would also require documents proving citizenship to
   register and photo ID to vote), so every 2024 item is `match: related`: shown, never counted.
