@@ -588,7 +588,11 @@
           "they agree. ",
           m.chamber === "senate"
             ? "Senators are compared with their whole state."
-            : "House districts have few respondents each, so estimates lean on statewide answers and many are too close to call."),
+            // Only true of small district samples (the CES has a few dozen people per district;
+            // district surveys such as PPC's have hundreds), so say it only when it applies.
+            : o.items.some(i => i.constituents.area === "district" && i.constituents.respondents < 100)
+              ? "Where a survey reached only a few dozen people in the district, its estimate leans on statewide answers, so many of those are too close to call."
+              : ""),
         lead,
         (o.samples || []).length ? h("p", { class: "op-sample" }, "People surveyed: ",
           o.samples.map((x, k) => [k ? "; " : "",
