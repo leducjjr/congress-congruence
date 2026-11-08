@@ -12,6 +12,7 @@ rm -rf build/site
 py=python3; [ -x .venv/bin/python ] && py=.venv/bin/python     # the project Python has markdown + yaml
 "$py" scripts/build_site.py --out build/site --version "$version"
 sudo mkdir -p /var/www/congress-dev
-sudo cp build/site/* /var/www/congress-dev/
-sudo chmod 644 /var/www/congress-dev/*
+sudo cp -r build/site/. /var/www/congress-dev/          # includes .well-known/
+sudo find /var/www/congress-dev -type d -exec chmod 755 {} +
+sudo find /var/www/congress-dev -type f -exec chmod 644 {} +
 echo "Published the site to /var/www/congress-dev (version $version)"

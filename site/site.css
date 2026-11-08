@@ -77,3 +77,4 @@ main.prose { max-width: none; }
 .site-footer p { margin: 0 0 10px; }
 .site-footer .coverage:empty { display: none; }
 .footer-links a { white-space: nowrap; }
+.prose-body td a { overflow-wrap: anywhere; }

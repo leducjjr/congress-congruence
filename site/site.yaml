@@ -1,3 +1,6 @@
 # Site-wide settings used when building pages. {{source_url}} in any page or the frame is replaced
 # with source_url below. The repository must be public for visitors to open it.
 source_url: https://github.com/leducjjr/congress-congruence
+# Public email addresses are written as <span data-email="contact">contact (at) uscongressvsvoters.org</span>;
+# site.js turns them into mailto links, so the full address never appears in the page source.
+email_domain: uscongressvsvoters.org

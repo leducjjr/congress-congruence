@@ -30,6 +30,14 @@ Full details of every source and its special handling: `docs/DATA_SOURCES.md`
 - Population: Census ACS 1-year (2023 = 118th lines, 2024 = 119th lines).
 - Watcher (monthly): new CES releases are drafted for review; new Census releases load automatically.
 
+## Email
+Bluehost Professional Email Plus (Titan) on uscongressvsvoters.org: `contact@` (public; aliases
+corrections@, press@, privacy@, security@) and `admin@` (never published; login/recovery address for
+Bluehost, GitHub, api.data.gov, Census, healthchecks). .com/.online mail should forward to .org, and
+those two domains get SPF `v=spf1 -all` + DMARC `p=reject`. Addresses appear on the Contact page via
+`data-email` (no full address in the page source). `site/static/.well-known/security.txt` has an
+**Expires** date (2027-11-01): renew it yearly.
+
 ## Site plan
 Source code is linked from every page (footer, About); the URL is in `site/site.yaml`. The repo
 must be public for visitors to open it.

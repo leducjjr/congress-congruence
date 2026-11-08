@@ -24,6 +24,15 @@ def test_builds_every_page_in_the_frame(tmp_path):
         assert (tmp_path / asset).exists()
 
 
+def test_contact_addresses_are_not_written_out_and_security_txt_is_published(tmp_path):
+    build_site.build(tmp_path, "x")
+    contact = (tmp_path / "contact.html").read_text()
+    assert 'data-email="corrections"' in contact and "corrections (at) uscongressvsvoters.org" in contact
+    assert "@uscongressvsvoters.org" not in contact            # nothing for address harvesters
+    sec = (tmp_path / ".well-known" / "security.txt").read_text()
+    assert "Contact: mailto:security@uscongressvsvoters.org" in sec and "Expires: " in sec
+
+
 def test_reference_anchors_the_panel_links_to_exist(tmp_path):
     build_site.build(tmp_path, "x")
     sources = (tmp_path / "sources.html").read_text()

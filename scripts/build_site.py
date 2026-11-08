@@ -100,6 +100,10 @@ def build(out: Path, version: str) -> list[str]:
         built.append(name)
     for name, src in ASSETS.items():
         shutil.copyfile(src, out / name)
+    # Files served as they are, e.g. .well-known/security.txt
+    static = SITE / "static"
+    if static.exists():
+        shutil.copytree(static, out, dirs_exist_ok=True)
     return built
 
 

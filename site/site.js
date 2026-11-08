@@ -95,6 +95,17 @@
     input.addEventListener("blur", () => setTimeout(close, 100));
   }
 
+  // Email addresses: written in pages as "contact (at) example.org" so they aren't harvested from the
+  // page source; turned into links here. data-email holds the part before the @.
+  for (const span of document.querySelectorAll("[data-email]")) {
+    const domain = span.textContent.split("(at)")[1]?.trim();
+    if (!domain) continue;
+    const address = `${span.getAttribute("data-email")}@${domain}`;
+    const a = document.createElement("a");
+    a.href = `mailto:${address}`; a.textContent = address;
+    span.replaceWith(a);
+  }
+
   // Sources page: one row per survey loaded, under its organization's section.
   const lists = document.querySelectorAll("[data-surveys]");
   if (lists.length) {
