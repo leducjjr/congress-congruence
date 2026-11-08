@@ -376,7 +376,7 @@
         h("h3", {}, "Compared with constituents"),
         lead,
         h("div", { class: "op-scale", "aria-hidden": "true" },
-          h("span", {}, "0% support"), h("span", {}, "50%"), h("span", {}, "100%")),
+          h("span", {}, "All oppose"), h("span", {}, "Even split"), h("span", {}, "All support")),
         h("ol", { class: "op-list" }, rows),
         h("p", { class: "op-about" }, about,
           m.chamber === "senate"
