@@ -476,8 +476,8 @@
           i.note ? h("p", { class: "op-note" }, i.note) : null,
           guide ? h("p", { class: "op-note" },
             h("a", { href: guide, target: "_blank", rel: "noopener",
-                     title: `The exact wording is in the survey guide under ${i.item}` },
-              `Survey question ${i.item}`), " (exact wording in the survey guide)") : null);
+                     title: `Opens the survey guide; search it for ${i.item}` },
+              "See the exact question"), ` (in the survey guide, search for ${i.item})`) : null);
       });
 
       const link = (href, text) => href ? h("a", { href, target: "_blank", rel: "noopener" }, text) : null;

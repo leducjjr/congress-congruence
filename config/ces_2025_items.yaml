@@ -66,7 +66,7 @@ items:
 
   CC25_340f:
     question: A tax bill extending the 2017 tax cuts, among other provisions (H.R. 1)
-    note: The survey question listed several provisions; its link below has the full wording.
+    note: The survey question listed several provisions; see the exact question below for all of them.
     votes:
       house:  {bill: [hr, 1], questions: *final}
       senate: {bill: [hr, 1], questions: *final}
