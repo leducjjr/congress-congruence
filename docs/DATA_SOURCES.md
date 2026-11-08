@@ -35,6 +35,12 @@ Principles that apply to every source:
 - **Terms.** Each term (chamber, state, district, party, dates) is stored separately. Every
   comparison uses the seat the member held **on the day of the vote**. That matters when
   districts are redrawn or a member moves between chambers.
+- **Appointed senators.** The list ends an appointment on the day of the special election
+  (e.g. Jon Husted, Ohio, "until Nov 3, 2026"), but an appointee serves until the winner is
+  sworn in, weeks later. While the list has no later term in that seat, the loader keeps the
+  appointment running to the seat's regular end (Jan 3 of 2025/2027/2029 + 6n for classes 1/2/3)
+  and keeps the list's date in `term.listed_end_date`. Once the list adds the successor, the
+  next daily refresh uses the list's own date again (sql/009).
 - **Party and caucus.** Independents count with the party they caucus with (for "voted with
   party majority"). A party switch in the middle of a term isn't reflected yet.
 - **Known gaps.**

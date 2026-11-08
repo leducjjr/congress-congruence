@@ -405,9 +405,11 @@
         const where = pop.area.replace("-", "\u2011");
         const year = (pop.source.match(/\d{4}/) || [""])[0];
         parts.push(h("p", { class: "people" },
+          // Former members: the state's figure is today's; a district's is for the lines of their last term.
           m.chamber === "senate"
-            ? `${stateName(pop.area)} has about ${people(pop.residents)} residents, represented by two senators.`
-            : `${where} has about ${people(pop.residents)} residents.`,
+            ? `${stateName(pop.area)} has about ${people(pop.residents)} residents${m.serving ? "" : " today"}, represented by two senators.`
+            : m.serving ? `${where} has about ${people(pop.residents)} residents.`
+                        : `${where}, as drawn for their last term, had about ${people(pop.residents)} residents.`,
           m.chamber === "senate" && pop.smallest_state && pop.largest_state
             ? ` States range from about ${people(pop.smallest_state.residents)} (${stateName(pop.smallest_state.state)}) to ${people(pop.largest_state.residents)} (${stateName(pop.largest_state.state)}) residents, each with two senators.`
             : pop.average_district ? ` The average House district has about ${people(pop.average_district)}.` : "",

@@ -13,6 +13,7 @@ IDs, terms and party changes are fully replaced on every run, in one transaction
 import logging
 import sys
 from dataclasses import dataclass, field
+from datetime import date
 from pathlib import Path
 
 import yaml
@@ -87,11 +88,54 @@ def parse(people: list[dict]) -> ParsedMembers:
                 "end_date": t["end"],
                 "how": t.get("how"),
                 "end_type": t.get("end-type"),
+                "listed_end_date": None,
                 "party_affiliations": [
                     (a["party"], a["start"], a["end"]) for a in t.get("party_affiliations", [])
                 ],
             })
     return out
+
+
+# Senate seats of each class run six-year terms ending January 3 of these years (and every 6 after).
+CLASS_TERM_END_YEAR = {1: 2025, 2: 2027, 3: 2029}
+
+
+def as_date(d) -> date:
+    return d if isinstance(d, date) else date.fromisoformat(str(d))
+
+
+def regular_end(senate_class: int, after: date) -> date:
+    """The end of the seat's regular six-year term that is running on a date."""
+    base = CLASS_TERM_END_YEAR[senate_class]
+    year = after.year + 1
+    while (year - base) % 6:
+        year += 1
+    return date(year, 1, 3)
+
+
+def hold_appointed_seats(terms: list[dict], today: date) -> list[str]:
+    """Keep an appointed senator serving until a successor appears in the list.
+
+    The list ends an appointment on the day of the special election, but the appointee serves
+    until the winner is sworn in, weeks later. So when an appointment has ended by the list's date
+    and no one else (or the appointee, newly elected) has a later term in that seat, the term runs
+    to the seat's regular end; the list's own date is kept in listed_end_date. Once the list adds
+    the successor, the next refresh uses the list's date again. Returns who was held, for the log."""
+    held = []
+    for t in terms:
+        t.setdefault("listed_end_date", None)
+        if t["chamber"] != "senate" or t.get("how") != "appointment" or not t.get("senate_class"):
+            continue
+        start, end = as_date(t["start_date"]), as_date(t["end_date"])
+        if end >= today:
+            continue
+        successor = any(o is not t and o["chamber"] == "senate" and o["state"] == t["state"]
+                        and o.get("senate_class") == t["senate_class"] and as_date(o["start_date"]) > start
+                        for o in terms)
+        if not successor:
+            t["listed_end_date"], t["end_date"] = end, regular_end(t["senate_class"], start)
+            held.append(f"{t['bioguide_id']} ({t['state']}, appointed; listed end {end})")
+    return held
 
 
 def load(conn, parsed: ParsedMembers) -> dict[str, int]:
@@ -119,9 +163,10 @@ def load(conn, parsed: ParsedMembers) -> dict[str, int]:
         for t in parsed.terms:
             cur.execute(
                 """insert into core.term (bioguide_id, chamber, state, district, senate_class, party,
-                                          caucus, start_date, end_date, how, end_type)
+                                          caucus, start_date, end_date, how, end_type, listed_end_date)
                    values (%(bioguide_id)s, %(chamber)s, %(state)s, %(district)s, %(senate_class)s,
-                           %(party)s, %(caucus)s, %(start_date)s, %(end_date)s, %(how)s, %(end_type)s)
+                           %(party)s, %(caucus)s, %(start_date)s, %(end_date)s, %(how)s, %(end_type)s,
+                           %(listed_end_date)s)
                    returning term_id""",
                 t,
             )
@@ -146,6 +191,8 @@ def run(source_dir: Path, conn=None) -> dict[str, int]:
     for name in SOURCE_FILES:
         people += read_yaml(source_dir / name)
     parsed = parse(people)
+    for who in hold_appointed_seats(parsed.terms, date.today()):
+        log.info("Kept serving until a successor is listed: %s", who)
     for id_type, value, kept, skipped in parsed.duplicate_ids:
         log.warning("Duplicate %s ID %s: kept %s, skipped %s", id_type, value, kept, skipped)
 

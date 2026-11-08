@@ -99,3 +99,24 @@ def test_schema_rejects_house_term_without_district(conn):
                values ('X000002', 'house', 'WY', '2023-01-03', '2025-01-03')"""
         )
     conn.rollback()
+
+
+def test_appointed_senator_serves_until_a_successor_is_listed():
+    from datetime import date
+    def sen(bio, start, end, how=None):
+        return {"bioguide_id": bio, "chamber": "senate", "state": "OH", "senate_class": 3, "start_date": start,
+                "end_date": end, "how": how, "listed_end_date": None}
+    appointed = sen("H000001", date(2025, 1, 21), date(2026, 11, 3), "appointment")
+    terms = [sen("V000001", date(2023, 1, 3), date(2025, 1, 9)), appointed]
+    held = members.hold_appointed_seats(terms, date(2026, 11, 8))
+    assert held and appointed["end_date"] == date(2029, 1, 3) and appointed["listed_end_date"] == date(2026, 11, 3)
+    # Once the winner is listed, the list's own date stands.
+    appointed2 = sen("H000001", date(2025, 1, 21), date(2026, 11, 3), "appointment")
+    terms = [appointed2, sen("W000001", date(2026, 12, 1), date(2029, 1, 3), "special-election")]
+    assert members.hold_appointed_seats(terms, date(2026, 12, 5)) == []
+    assert appointed2["end_date"] == date(2026, 11, 3)
+    # Appointments still running by the list's date, and other terms, are left alone.
+    running = sen("X000001", date(2025, 1, 21), date(2026, 11, 3), "appointment")
+    assert members.hold_appointed_seats([running], date(2026, 6, 1)) == [] and running["end_date"] == date(2026, 11, 3)
+    assert members.regular_end(1, date(2025, 2, 1)) == date(2031, 1, 3)
+    assert members.regular_end(2, date(2025, 2, 1)) == date(2027, 1, 3)
