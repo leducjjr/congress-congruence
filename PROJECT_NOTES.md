@@ -48,6 +48,16 @@ must be public for visitors to open it.
 Pages live in `site/pages/` (Markdown for reference pages), built by `scripts/build_site.py`.
 See `docs/SITE_PLAN.md`: header, footer and reference pages, leading with the vote-vs-survey comparison.
 
+## Before public launch (checklist)
+- Decide how to open the source: make the repo public (the site already links to it; until then
+  visitors get GitHub's "not found") and choose a license (e.g. MIT, or AGPL to keep modified copies open).
+- Production copy without the dev password, on the bare uscongressvsvoters.org (+ www); .com and
+  .online forward to .org. Consider a separate production server.
+- Email: DMARC on .org from `p=none` to `p=quarantine` once reports are clean; renew security.txt
+  Expires yearly (now 2027-11-01).
+- Optional: host the Public Sans font on the server instead of Google Fonts (Privacy page mentions it).
+- Send the Senate webmaster access request (can link the public repo).
+
 ## Next candidates (agreed order)
 1. State ballot-measure results (actual votes; good for senators; topic matches would be "related").
 2. AP VoteCast (check reuse terms first).
