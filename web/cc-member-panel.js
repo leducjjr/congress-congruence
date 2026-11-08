@@ -86,7 +86,9 @@
       border: 1px solid var(--rule); border-radius: 999px; padding: 2px 12px;
     }
     .jumps button:hover { border-color: var(--mark); }
-    h3[tabindex]:focus { outline: none; }
+    h3[tabindex]:focus, .op-sources:focus { outline: none; }
+    .op-sources:focus-visible { outline: 2px solid var(--mark); outline-offset: 4px; border-radius: 3px; }
+    .op-sources { scroll-margin-top: 12px; }
     h3[tabindex]:focus-visible { outline: 2px solid var(--mark); outline-offset: 4px; }
     h3 { scroll-margin-top: 12px; }
     .intro + .intro { margin-top: 0; }
@@ -299,7 +301,10 @@
         h("p", { class: "seat" }, seatSentence(m)),
       ];
       const jumps = [];
-      if (this.opinion?.items?.length) jumps.push(["compared", "Compared with constituents"]);
+      if (this.opinion?.items?.length) {
+        jumps.push(["compared", "Compared with constituents"]);
+        if (this.opinion.surveys?.length) jumps.push(["sources", this.opinion.surveys.length > 1 ? "Survey sources" : "Survey source"]);
+      }
       if (votes.length) jumps.push(["recent", "Recent votes"]);
       if (jumps.length) {
         // Buttons, not #links: the host page may use the address's # part (the dev page stores the member there).
@@ -514,7 +519,7 @@
         h("div", { class: "op-scale", "aria-hidden": "true" },
           h("span", {}, "All oppose"), h("span", {}, "Even split"), h("span", {}, "All support")),
         h("ol", { class: "op-list" }, rows),
-        ...sourceLines);
+        sourceLines.length ? h("div", { id: "sources", class: "op-sources", tabindex: "-1" }, sourceLines) : null);
     }
 
     rangeBar(est, lo, hi, label) {
