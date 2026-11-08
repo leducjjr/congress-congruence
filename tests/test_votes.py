@@ -5,6 +5,7 @@ Fixtures:
   senate_119_1_00077.xml  Senate vote 77, 21 Feb 2025, amendment to S.Con.Res. 7 (24-76)
 """
 
+import re
 import copy
 import os
 from pathlib import Path
@@ -210,6 +211,18 @@ def test_save_raw_files_each_session_separately_and_replaces_changed_files(conn,
     assert (tmp_path / "house_clerk" / "119" / "2" / "roll001.xml").read_bytes() == b"<a>2026 corrected</a>"
 
 
+def test_vacated_vote_is_skipped_not_failed(conn, tmp_path, monkeypatch):
+    """h-114-1-300: vacated by unanimous consent; the file lists nobody and every total is 0."""
+    monkeypatch.setenv("RAW_DATA_DIR", str(tmp_path))
+    monkeypatch.setattr(votes, "REQUEST_PAUSE_SECONDS", 0)
+    vacated = re.sub(rb"<recorded-vote>.*?</recorded-vote>", b"", HOUSE, flags=re.S)
+    vacated = re.sub(rb"<(yea|nay|present|not-voting)-total>\d+</", rb"<\1-total>0</", vacated)
+    assert votes.is_vacated(parse_house(vacated))
+    responses = iter([vacated, HOUSE, None])
+    monkeypatch.setattr(votes, "download", lambda url, session: next(responses))
+    assert votes.sync(conn, "house", 119, 1) == {"loaded": 1, "failed": 0, "vacated": 1, "next_roll": 3}
+
+
 def test_sync_loads_until_first_missing_vote_and_skips_bad_files(conn, tmp_path, monkeypatch):
     monkeypatch.setenv("RAW_DATA_DIR", str(tmp_path))
     monkeypatch.setattr(votes, "REQUEST_PAUSE_SECONDS", 0)
@@ -224,7 +237,7 @@ def test_sync_loads_until_first_missing_vote_and_skips_bad_files(conn, tmp_path,
 
     monkeypatch.setattr(votes, "download", fake_download)
     result = votes.sync(conn, "house", 119, 1)
-    assert result == {"loaded": 1, "failed": 1, "next_roll": 3}
+    assert result == {"loaded": 1, "failed": 1, "vacated": 0, "next_roll": 3}
     assert requested[0].endswith("/2025/roll001.xml") and len(requested) == 3
 
 
@@ -292,7 +305,7 @@ def test_sync_stops_cleanly_on_an_unrecognized_file(conn, tmp_path, monkeypatch)
                       b"<?xml version='1.0'?><something-else/>"])
     monkeypatch.setattr(votes, "download", lambda url, session: next(responses))
     result = votes.sync(conn, "house", 119, 1)          # no exception
-    assert result == {"loaded": 1, "failed": 1, "next_roll": 2}
+    assert result == {"loaded": 1, "failed": 1, "vacated": 0, "next_roll": 2}
 
 
 @pytest.mark.parametrize("day, expected", [

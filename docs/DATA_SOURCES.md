@@ -59,6 +59,10 @@ Principles that apply to every source:
 - **IDs.** Each vote is stored as `h-<congress>-<session>-<roll>` (e.g. `h-119-1-362`).
 - **Validation.** The member rows must add up to the Clerk's published Yea, Nay, Present and
   Not Voting totals. No member may appear twice.
+- **Vacated votes.** A vote vacated by unanimous consent keeps its roll number, but its file
+  lists nobody and every total is zero (e.g. h-114-1-300, June 4, 2015; also h-114-2-44,
+  h-113-2-275, h-112-1-484, h-112-2-327). These are noted as vacated and skipped, not loaded and
+  not counted as failures.
 - **Members missing from the member list.** The first House vote of the 117th Congress (h-117-1-1)
   lists L000555, who isn't in congress-legislators (it lists people who served; a member-elect who
   never took the seat isn't there). Rather than drop the vote, the loader adds such a person to

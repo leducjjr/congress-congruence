@@ -251,7 +251,20 @@ def fetch_one(conn, chamber: str, congress: int, session_no: int, roll: int,
         return None
     sha = save_raw(conn, chamber, congress, session_no, content, url.rsplit("/", 1)[1], url)
     conn.commit()
-    return load_roll_call(conn, parse(chamber, content), sha, url)
+    rc = parse(chamber, content)
+    if is_vacated(rc):
+        log.info("%s: vacated (no votes recorded; the number stays used)", rc.roll_call_id)
+        return VACATED
+    return load_roll_call(conn, rc, sha, url)
+
+
+VACATED = -2
+
+
+def is_vacated(rc: ParsedRollCall) -> bool:
+    """A vote vacated by unanimous consent keeps its number, but its file lists nobody and every
+    total is zero (e.g. h-114-1-300, June 4, 2015). There is nothing to load."""
+    return not rc.votes and not any((rc.yea_total, rc.nay_total, rc.present_total, rc.not_voting_total))
 
 
 def sync(conn, chamber: str, congress: int, session_no: int) -> dict[str, int]:
@@ -263,7 +276,7 @@ def sync(conn, chamber: str, congress: int, session_no: int) -> dict[str, int]:
         cur.execute("select roll_number from core.roll_call where chamber=%s and congress=%s "
                     "and session=%s and source <> 'voteview'", (chamber, congress, session_no))
         have = {row[0] for row in cur.fetchall()}
-    http, loaded, failed, roll = http_session(), 0, 0, 1
+    http, loaded, failed, vacated, roll = http_session(), 0, 0, 0, 1
     while True:
         if roll in have:
             roll += 1
@@ -286,11 +299,13 @@ def sync(conn, chamber: str, congress: int, session_no: int) -> dict[str, int]:
             break
         if n is None:
             break
-        if n >= 0:
+        if n == VACATED:
+            vacated += 1
+        elif n >= 0:
             loaded += 1
         roll += 1
         time.sleep(REQUEST_PAUSE_SECONDS)
-    return {"loaded": loaded, "failed": failed, "next_roll": roll}
+    return {"loaded": loaded, "failed": failed, "vacated": vacated, "next_roll": roll}
 
 
 # ---------------------------------------------------------------- command line
