@@ -9,7 +9,7 @@ compared with what their constituents say in public surveys, now and historicall
   https://dev.uscongressvsvoters.com (the old https://congress-dev.monkeyinfinitum.com still works;
   same nginx site and certificate). The bare domain and www are kept for the public launch.
 - Server: Bluehost VPS, user `john`, repo cloned at
-  ~/congress-congruence, read-only deploy key). Dev and prod share a server for now.
+  ~/congress-congruence, read-only deploy key. Dev and prod share a server for now.
 - **No user data is collected or stored.** Addresses only for lookup; personal choices stay in the browser.
 - Several independent survey sources, **shown side by side, never blended** (per-source score lines).
 - Only votes on the same proposal a survey asked about are scored; close-but-different bills are
