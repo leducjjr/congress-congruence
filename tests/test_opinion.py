@@ -268,3 +268,15 @@ def test_older_votes_use_the_seat_held_at_the_time(conn, survey_file, monkeypatc
     new = next(i for i in body["items"] if i["item"] == "CC25_340c")
     assert new["constituents"]["area_label"] == "TX-1"
     assert {s["name"] for s in body["surveys"]} == {"CES 2024", "CES 2025"}
+
+
+def test_api_reports_surveyed_and_residents_per_area(client, conn):
+    with conn.cursor() as cur:
+        cur.execute("""insert into core.area_population (congress, state, district, population, source)
+                       values (119, 'TX', 1, 770000, 'test'), (119, 'TX', null, 31000000, 'test')""")
+    conn.commit()
+    house = client.get("/v1/members/H000001/opinion").json()
+    assert house["samples"] == [{"survey": "CES 2025", "area_label": "TX-1", "surveyed": 300, "residents": 770000}]
+    assert all(i["constituents"]["residents"] == 770000 for i in house["items"])
+    senate = client.get("/v1/members/S000001/opinion").json()
+    assert senate["samples"][0]["surveyed"] == 600 and senate["samples"][0]["residents"] == 31000000

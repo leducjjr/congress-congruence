@@ -156,6 +156,10 @@
     .op-list { list-style: none; margin: 0; padding: 0; }
     .op-list li { padding: 10px 0; border-top: 1px solid var(--rule); }
     .op-q { margin: 0 0 6px; font-weight: 600; }
+    .people { margin: -14px 0 18px; color: var(--ink-soft); font-size: 0.9rem; }
+    .people-src { font-size: 0.8rem; }
+    .op-sample { margin: 2px 0 0; font-size: 0.85rem; color: var(--ink-soft); }
+    .op-sample strong { color: var(--ink); font-variant-numeric: tabular-nums; }
     .op-key { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 0.8rem; color: var(--ink-soft); margin: 8px 0 0; }
     .op-key span { display: inline-flex; align-items: center; gap: 6px; }
     .op-key .sw { display: inline-block; width: 18px; height: 8px; border-radius: 2px; }
@@ -235,6 +239,22 @@
     const what = v.bill ? `${v.bill.label}: ${short}` : short;
     const how = v.position === "not_voting" ? "Did not vote" : `Voted ${POSITION_TEXT[v.position] || v.position_detail}`;
     return `${fmtDate(v.date)} · ${what} · ${how}`;
+  }
+
+  const STATE_NAMES = { AL:"Alabama",AK:"Alaska",AZ:"Arizona",AR:"Arkansas",CA:"California",CO:"Colorado",
+    CT:"Connecticut",DE:"Delaware",FL:"Florida",GA:"Georgia",HI:"Hawaii",ID:"Idaho",IL:"Illinois",IN:"Indiana",
+    IA:"Iowa",KS:"Kansas",KY:"Kentucky",LA:"Louisiana",ME:"Maine",MD:"Maryland",MA:"Massachusetts",MI:"Michigan",
+    MN:"Minnesota",MS:"Mississippi",MO:"Missouri",MT:"Montana",NE:"Nebraska",NV:"Nevada",NH:"New Hampshire",
+    NJ:"New Jersey",NM:"New Mexico",NY:"New York",NC:"North Carolina",ND:"North Dakota",OH:"Ohio",OK:"Oklahoma",
+    OR:"Oregon",PA:"Pennsylvania",RI:"Rhode Island",SC:"South Carolina",SD:"South Dakota",TN:"Tennessee",TX:"Texas",
+    UT:"Utah",VT:"Vermont",VA:"Virginia",WA:"Washington",WV:"West Virginia",WI:"Wisconsin",WY:"Wyoming",
+    DC:"the District of Columbia",PR:"Puerto Rico" };
+  const stateName = code => STATE_NAMES[code] || code;
+
+  function people(n) {
+    if (n == null) return "";
+    if (n >= 1e6) return `${(n / 1e6).toFixed(1).replace(/\.0$/, "")} million`;
+    return (Math.round(n / 1000) * 1000).toLocaleString();
   }
 
   const fmtDate = (iso, opts = { month: "short", day: "numeric", year: "numeric" }) =>
@@ -317,6 +337,19 @@
         h("h2", {}, m.name),
         h("p", { class: "seat" }, seatSentence(m)),
       ];
+      const pop = m.population;
+      if (pop) {
+        const where = pop.area.replace("-", "\u2011");
+        const year = (pop.source.match(/\d{4}/) || [""])[0];
+        parts.push(h("p", { class: "people" },
+          m.chamber === "senate"
+            ? `${stateName(pop.area)} has about ${people(pop.residents)} residents, represented by two senators.`
+            : `${where} has about ${people(pop.residents)} residents.`,
+          m.chamber === "senate" && pop.smallest_state && pop.largest_state
+            ? ` States range from about ${people(pop.smallest_state.residents)} (${stateName(pop.smallest_state.state)}) to ${people(pop.largest_state.residents)} (${stateName(pop.largest_state.state)}) residents, each with two senators.`
+            : pop.average_district ? ` The average House district has about ${people(pop.average_district)}.` : "",
+          h("span", { class: "people-src" }, ` Census Bureau estimate${year ? `, ${year}` : ""}.`)));
+      }
       const jumps = [];
       if (this.opinion?.items?.length) {
         jumps.push(["compared", "Compared with constituents"]);
@@ -536,6 +569,11 @@
             ? "Senators are compared with their whole state."
             : "House districts have few respondents each, so estimates lean on statewide answers and many are too close to call."),
         lead,
+        (o.samples || []).length ? h("p", { class: "op-sample" }, "People surveyed: ",
+          o.samples.map((x, k) => [k ? "; " : "",
+            h("strong", {}, x.surveyed.toLocaleString()), ` in ${nb(x.area_label)} (${x.survey})`,
+            x.residents ? `, out of about ${people(x.residents)} residents` : ""]).flat(),
+          ".") : null,
         h("div", { class: "op-key", "aria-hidden": "true" },
           h("span", {}, mark("yea", 12), "Voted Yea (support end)"),
           h("span", {}, mark("nay", 12), "Voted Nay (oppose end)"),

@@ -162,6 +162,20 @@ The panel's **Compared with constituents** section lists each surveyed vote,
 the area's estimated support with its range, how the member voted, and whether
 that was with or against a clear majority.
 
+## Residents per area (Census)
+
+```bash
+python -m congress_congruence.ingest.population 2024   # ACS 2024 1-year: 119th Congress district lines
+python -m congress_congruence.ingest.population 2023   # ACS 2023 1-year: 118th Congress district lines
+```
+
+Total population (table B01003) for every state and House district from the
+Census Bureau's American Community Survey. Each release reports districts as
+drawn for one Congress and names it in the district names; rows are filed under
+that Congress. The panel shows each member's residents (with the average House
+district, or the range of state sizes for senators) and, in the constituent
+section, how many people were surveyed in the area out of how many residents.
+
 ## Scheduled jobs
 
 `scripts/run_job.sh` runs one job and appends its output to `logs/<job>.log`.

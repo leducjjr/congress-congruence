@@ -128,7 +128,8 @@ select si.survey, si.variable, si.question, coalesce(siv.reader_note, si.note) a
        r.question as vote_question, r.result, r.yea_total, r.nay_total,
        mv.position,
        t.state, t.district as seat_district,
-       oe.support, oe.support_low, oe.support_high, oe.majority, oe.respondents, oe.district
+       oe.support, oe.support_low, oe.support_high, oe.majority, oe.respondents, oe.district,
+       ap.population as residents
   from core.member_vote mv
   join core.survey_item_vote siv on siv.roll_call_id = mv.roll_call_id
   join core.survey_item si on si.survey = siv.survey and si.variable = siv.variable
@@ -142,6 +143,9 @@ select si.survey, si.variable, si.question, coalesce(siv.reader_note, si.note) a
                                and oe.state = t.state
                                and ((r.chamber = 'senate' and oe.district is null)
                                  or (r.chamber = 'house' and oe.district = t.district))
+  left join core.area_population ap on ap.congress = r.congress and ap.state = t.state
+                                   and ap.district is not distinct from
+                                       (case when r.chamber = 'house' then t.district end)
  where mv.bioguide_id = %(id)s
  order by r.vote_date, si.variable
 """
@@ -150,4 +154,32 @@ select si.survey, si.variable, si.question, coalesce(siv.reader_note, si.note) a
 SURVEYS = """
 select survey, title, fielded, respondents, dataset_url, guide_url, about_url
   from core.survey order by survey
+"""
+
+
+# Residents of an area as drawn for a given Congress (district null = whole state).
+AREA_POPULATION = """
+select population, source, congress from core.area_population
+ where congress = %(congress)s and state = %(state)s and district is not distinct from %(district)s
+"""
+
+# A whole state's residents don't depend on district lines: use the most recent figure.
+STATE_POPULATION = """
+select population, source, congress from core.area_population
+ where state = %(state)s and district is null
+ order by congress desc limit 1
+"""
+
+# For context: the average House district, and the smallest and largest states (50 states only).
+POPULATION_CONTEXT = """
+select (select round(avg(population)) from core.area_population
+         where congress = %(congress)s and district is not null and state not in ('DC', 'PR')) as avg_district,
+       (select state from core.area_population where congress = %(congress)s and district is null
+           and state not in ('DC', 'PR') order by population limit 1) as smallest_state,
+       (select min(population) from core.area_population where congress = %(congress)s and district is null
+           and state not in ('DC', 'PR')) as smallest_pop,
+       (select state from core.area_population where congress = %(congress)s and district is null
+           and state not in ('DC', 'PR') order by population desc limit 1) as largest_state,
+       (select max(population) from core.area_population where congress = %(congress)s and district is null
+           and state not in ('DC', 'PR')) as largest_pop
 """

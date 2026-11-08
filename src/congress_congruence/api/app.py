@@ -131,6 +131,29 @@ def get_member_row(bioguide_id: str) -> dict:
     return rows[0]
 
 
+def seat_population(row: dict) -> dict | None:
+    """Residents of the member's seat (lines of the Congress their term began in), with context."""
+    if row["chamber"] == "senate":
+        # Six-year terms span Congresses, and a state's population doesn't depend on district lines.
+        found = fetch(q.STATE_POPULATION, {"state": row["state"]})
+    else:
+        congress = current_session(row["start_date"])[0]
+        found = fetch(q.AREA_POPULATION, {"congress": congress, "state": row["state"], "district": row["district"]})
+    if not found:
+        return None
+    congress = found[0]["congress"]
+    ctx = fetch(q.POPULATION_CONTEXT, {"congress": congress})[0]
+    return {
+        "residents": found[0]["population"],
+        "source": found[0]["source"],
+        "congress": congress,
+        "area": q.seat_label(row["state"], row["district"], row["chamber"]),
+        "average_district": int(ctx["avg_district"]) if ctx["avg_district"] else None,
+        "smallest_state": {"state": ctx["smallest_state"], "residents": ctx["smallest_pop"]} if ctx["smallest_state"] else None,
+        "largest_state": {"state": ctx["largest_state"], "residents": ctx["largest_pop"]} if ctx["largest_state"] else None,
+    }
+
+
 @app.get("/v1/members/{bioguide_id}")
 def member(bioguide_id: str, response: Response):
     row = get_member_row(bioguide_id)
@@ -141,6 +164,7 @@ def member(bioguide_id: str, response: Response):
         **member_summary(row),
         "serving": row["serving"],
         "term": {"start": row["start_date"], "end": row["end_date"]},
+        "population": seat_population(row),
         "stats": {
             "congress": congress,
             "votes_total": s["votes_total"],
@@ -211,10 +235,16 @@ def member_opinion(bioguide_id: str, response: Response):
             "range_pct": [round(100 * r["support_low"], 1), round(100 * r["support_high"], 1)],
             "majority": r["majority"],
             "respondents": r["respondents"],
+            "residents": r["residents"],
         },
         "agreement": agreement(r["position"], r["majority"]),
     } for r in rows]
     counted = [i for i in items if i["agreement"] in ("with", "against")]
+    samples, res = {}, {}
+    for i in items:
+        key = (i["survey"], i["constituents"]["area_label"])
+        samples[key] = max(samples.get(key, 0), i["constituents"]["respondents"])
+        res[key] = i["constituents"]["residents"]
     response.headers["Cache-Control"] = CACHE
     return {
         "area": q.seat_label(row["state"], row["district"], row["chamber"]),
@@ -223,6 +253,9 @@ def member_opinion(bioguide_id: str, response: Response):
             "clear_majority": len(counted),
             "with_majority": sum(i["agreement"] == "with" for i in counted),
         },
+        # People surveyed where the member represented them, per survey (largest count among its questions).
+        "samples": sorted(({"survey": k[0], "area_label": k[1], "surveyed": v, "residents": res.get(k)}
+                           for k, v in samples.items()), key=lambda x: x["survey"], reverse=True),
         "surveys": [{
             "name": s["survey"], "title": s["title"], "fielded": s["fielded"], "respondents": s["respondents"],
             "dataset_url": s["dataset_url"], "guide_url": s["guide_url"], "about_url": s["about_url"],

@@ -70,7 +70,7 @@ def client():
 
 @pytest.fixture(autouse=True)
 def pin_congress(monkeypatch, client):
-    monkeypatch.setattr(client.api, "current_session", lambda: (119, 1))
+    monkeypatch.setattr(client.api, "current_session", lambda day=None: (119, 1))
 
 
 def stats(client, bio):
