@@ -249,7 +249,7 @@ def search_text(text: str, chamber: str | None, members: list[str], limit: int) 
         } for t in sorted(tallies.get((r["survey"], r["variable"]), []), key=lambda t: t["chamber"] != "senate")],
     } for r in qrows]
 
-    votes = [{**vote_summary(r), "by_party": split.get(r["roll_call_id"], {}),
+    votes = [{**vote_summary(r), "snippet": r["snippet"], "by_party": split.get(r["roll_call_id"], {}),
               "surveyed": surveyed.get(r["roll_call_id"], []),
               "your_members": mine.get(r["roll_call_id"], [])} for r in vrows]
     return {"questions": questions, "questions_total": qrows[0]["total"] if qrows else 0,

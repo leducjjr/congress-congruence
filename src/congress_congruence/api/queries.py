@@ -206,6 +206,12 @@ VOTE_SEARCH = f"""
 select r.roll_call_id, r.chamber, r.congress, r.session, r.roll_number, r.vote_date, r.question,
        r.description, r.result, r.yea_total, r.nay_total, r.present_total, r.not_voting_total,
        r.bill_congress, r.bill_type, r.bill_number, r.amendment_number,
+       -- Long titles (e.g. dozens of nominations confirmed together) are shown as the part that
+       -- matched; [[ ]] mark the matching words.
+       case when length(r.description) > 220 then
+            ts_headline('english', r.description, to_tsquery('english', %(tsq)s),
+                        'MaxFragments=2, MinWords=8, MaxWords=24, StartSel=[[, StopSel=]], FragmentDelimiter=" … "')
+       end as snippet,
        count(*) over () as total
   from core.roll_call r
  where {VOTE_DOC} @@ to_tsquery('english', %(tsq)s)

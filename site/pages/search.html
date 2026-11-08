@@ -35,6 +35,8 @@ head: |
     .more summary { cursor: pointer; font-size: 0.88rem; color: var(--ink-soft); }
     .more ul { margin: 6px 0 0; padding-left: 1.2em; font-size: 0.88rem; }
     .empty { color: var(--ink-soft); }
+    .result h3 mark { background: none; color: inherit; text-decoration: underline;
+      text-decoration-color: var(--mark); text-decoration-thickness: 2px; text-underline-offset: 3px; }
   </style>
 main_class: search-page
 ---
@@ -153,6 +155,11 @@ main_class: search-page
       total > questions.length ? el("p", { class: "sub" }, `Showing ${questions.length} of ${total}.`) : null);
   }
 
+  // "…the [[Federal]] [[Emergency]] Management Agency…" -> text with the [[marked]] words in bold.
+  function highlighted(snippet) {
+    return ["…", snippet.split(/\[\[|\]\]/).map((part, i) => i % 2 ? el("mark", {}, part) : part), "…"];
+  }
+
   function voteLine(v) {
     const parties = Object.entries(v.by_party || {}).sort((a, b) => a[0].localeCompare(b[0]))
       .map(([p, c]) => `${p}s ${c.yea || 0}–${c.nay || 0}`).join(" · ");
@@ -183,8 +190,11 @@ main_class: search-page
         ? `The ${votes.length} most recent of ${total.toLocaleString()} matching votes, newest first.`
         : `${plural(total, "matching vote", "matching votes")}, newest first.`),
       [...groups.values()].map(([first, ...rest]) => el("article", { class: "result" },
-        el("h3", {}, first.bill ? `${first.bill.label}: ` : "", first.description || first.question || "Vote",
+        el("h3", {}, first.bill ? `${first.bill.label}: ` : "",
+          first.snippet ? highlighted(first.snippet) : (first.description || first.question || "Vote"),
           first.surveyed.some(s => s.match === "same") ? el("span", { class: "tag surveyed" }, "Surveyed") : null),
+        first.snippet ? el("details", { class: "more" }, el("summary", {}, "Show full title"),
+          el("p", {}, first.description)) : null,
         voteLine(first),
         rest.length ? el("details", { class: "more" }, el("summary", {}, `${plural(rest.length, "other vote", "other votes")} on this bill`),
           el("ul", {}, rest.map(v => el("li", {}, `${date(v.date)}: ${v.question || ""} — ${v.result || ""} ${v.yea}–${v.nay} `,

@@ -384,3 +384,21 @@ def test_text_search_finds_questions_and_votes(conn, monkeypatch):
     assert [x["roll_call_id"] for x in bill["votes"]] == ["h-119-2-11"]
     assert phrase["votes"] == []
     assert set(just_members) == {"query", "members"}
+
+
+def test_long_vote_titles_come_with_a_matching_snippet(conn, monkeypatch):
+    test_load_and_compare(conn, monkeypatch, None)
+    long_title = ("; and ".join(f"Person {i}, of Virginia, to be Assistant Secretary of Agriculture" for i in range(30))
+                  + "; and Pat Doe, of Ohio, to be Administrator of the Federal Emergency Management Agency")
+    with conn.cursor() as cur:
+        cur.execute("update core.roll_call set description = %s where roll_call_id = 'h-119-2-10'", (long_title,))
+        cur.execute("update core.roll_call set description = 'Short title about an emergency' where roll_call_id = 'h-119-2-11'")
+    conn.commit()
+    from fastapi.testclient import TestClient
+    from congress_congruence.api import app as api
+    monkeypatch.setenv("API_DATABASE_URL", os.environ["TEST_DATABASE_URL"])
+    with TestClient(api.app) as client:
+        votes = {v["roll_call_id"]: v for v in client.get("/v1/search", params={"q": "emergency", "only": "text"}).json()["votes"]}
+    assert "[[Emergency]]" in votes["h-119-2-10"]["snippet"] and len(votes["h-119-2-10"]["snippet"]) < 400
+    assert votes["h-119-2-10"]["description"] == long_title                      # full title still available
+    assert votes["h-119-2-11"]["snippet"] is None                                # short titles shown whole
