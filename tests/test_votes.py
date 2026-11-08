@@ -165,6 +165,31 @@ def test_unknown_senate_id_loads_nothing(conn):
         assert cur.fetchone()[0] == 0
 
 
+def test_house_member_missing_from_the_list_is_added_under_the_files_name(conn):
+    rc = parse_house(HOUSE)
+    gone = rc.votes[0]
+    assert gone.name                                   # the parser keeps the name the file prints
+    with conn.cursor() as cur:
+        cur.execute("delete from core.member where bioguide_id = %s", (gone.member_id,))
+    conn.commit()
+    assert votes.load_roll_call(conn, rc) == 433
+    with conn.cursor() as cur:
+        cur.execute("select last_name, official_full from core.member where bioguide_id = %s", (gone.member_id,))
+        assert cur.fetchone() == (gone.name, gone.name)
+        cur.execute("select count(*) from core.term where bioguide_id = %s", (gone.member_id,))
+        assert cur.fetchone()[0] == 0                  # no seat is invented for them
+
+
+def test_house_member_missing_with_no_name_still_stops(conn):
+    rc = parse_house(HOUSE)
+    rc.votes[0].name = None
+    with conn.cursor() as cur:
+        cur.execute("delete from core.member where bioguide_id = %s", (rc.votes[0].member_id,))
+    conn.commit()
+    with pytest.raises(votes.ValidationError, match="not in member table"):
+        votes.load_roll_call(conn, rc)
+
+
 def test_save_raw_keeps_file_and_records_it(conn, tmp_path, monkeypatch):
     monkeypatch.setenv("RAW_DATA_DIR", str(tmp_path))
     sha = votes.save_raw(conn, "house", 119, 1, HOUSE, "roll362.xml", "https://example/roll362.xml")

@@ -128,6 +128,23 @@ def save_raw(conn, chamber: str, congress: int, session_no: int, content: bytes,
     return sha
 
 
+def add_unlisted_members(cur, rc: ParsedRollCall, missing: list[str]) -> None:
+    """A House file can list someone the member list doesn't have: e.g. a member-elect listed on
+    the opening vote of a Congress who never took the seat (L000555 on h-117-1-1), or a new
+    member before the list is refreshed. Add them under the name the Clerk's file prints, with
+    no term (so they're never shown as a member of any seat); a later member refresh fills in
+    the rest if the list ever includes them. Without a name to go on, stop as before."""
+    names = {v.member_id: v.name for v in rc.votes if v.member_id in missing}
+    if not all(names.values()):
+        raise ValidationError(f"{rc.roll_call_id}: Bioguide IDs not in member table: {missing}. "
+                              "Refresh members (ingest.members) and retry.")
+    for bioguide, name in names.items():
+        log.warning("%s: %s (%s) isn't in the member list; added under the name in the Clerk's file",
+                    rc.roll_call_id, bioguide, name)
+        cur.execute("insert into core.member (bioguide_id, first_name, last_name, official_full) "
+                    "values (%s, '', %s, %s) on conflict do nothing", (bioguide, name, name))
+
+
 def load_roll_call(conn, rc: ParsedRollCall, raw_sha: str | None = None,
                    source_url: str | None = None, lis_map: dict[str, str] | None = None,
                    source: str | None = None, validator=None) -> int:
@@ -155,8 +172,7 @@ def load_roll_call(conn, rc: ParsedRollCall, raw_sha: str | None = None,
                         ([r[1] for r in rows],))
             missing = cur.fetchone()[0]
             if missing:
-                raise ValidationError(f"{rc.roll_call_id}: Bioguide IDs not in member table: {sorted(missing)}. "
-                                      "Refresh members (ingest.members) and retry.")
+                add_unlisted_members(cur, rc, sorted(missing))
 
         cur.execute("delete from core.roll_call where roll_call_id = %s", (rc.roll_call_id,))
         cur.execute(

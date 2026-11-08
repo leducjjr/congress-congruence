@@ -52,8 +52,13 @@ Principles that apply to every source:
 
 - **IDs.** Each vote is stored as `h-<congress>-<session>-<roll>` (e.g. `h-119-1-362`).
 - **Validation.** The member rows must add up to the Clerk's published Yea, Nay, Present and
-  Not Voting totals. No member may appear twice, and every member must already exist in the
-  member table.
+  Not Voting totals. No member may appear twice.
+- **Members missing from the member list.** The first House vote of the 117th Congress (h-117-1-1)
+  lists L000555, who isn't in congress-legislators (it lists people who served; a member-elect who
+  never took the seat isn't there). Rather than drop the vote, the loader adds such a person to
+  `core.member` under the name the Clerk's file prints, with no term, so they're never shown as
+  holding a seat. A later member refresh fills in the rest if the list ever includes them. A
+  missing member with no name in the file still stops the vote from loading.
 - **"Error sanitizing file".** The Clerk's server sometimes returns this text instead of XML.
   The loader retries twice, then treats the vote as not yet published (the end of the list).
   An unrecognized file stops the run cleanly rather than loading bad data.

@@ -36,6 +36,7 @@ class MemberVote:
     raw_position: str
     party: str | None
     state: str | None
+    name: str | None = None  # as the file prints it (House: the surname), for members not in the member list
 
 
 @dataclass
@@ -142,6 +143,7 @@ def parse_house(content: bytes) -> ParsedRollCall:
             raw_position=raw,
             party=leg.get("party"),
             state=leg.get("state"),
+            name=clean(leg.get("unaccented-name") or leg.text),
         ))
     return rc
 
