@@ -260,7 +260,7 @@
       if (v === null || v === undefined || v === false) continue;
       el.setAttribute(k, v === true ? "" : v);
     }
-    for (const c of children.flat()) {
+    for (const c of children.flat(Infinity)) {
       if (c === null || c === undefined || c === false) continue;
       el.append(c instanceof Node ? c : String(c));
     }
@@ -381,10 +381,11 @@
       if (seats.length < 2 && !(seats.length === 1 && seats[0].first_congress < seats[0].last_congress)) return null;
       const year = d => d.slice(0, 4);
       const parties = new Set(seats.map(x => x.party));
-      const spells = seats.map((x, i) => h("span", { class: "spell" },
+      // Each seat stays on one line; the separators between them are where long histories wrap.
+      const spells = seats.map((x, i) => [h("span", { class: "spell" },
         `${x.chamber === "senate" ? "Senator for" : "Representative for"} ${x.seat.replace("-", "\u2011")}`,
         parties.size > 1 ? ` (${x.party})` : "",
-        `, ${year(x.start)}\u2013${x.end ? year(x.end) : "now"}`, i < seats.length - 1 ? " · " : ""));
+        `, ${year(x.start)}\u2013${x.end ? year(x.end) : "now"}`), i < seats.length - 1 ? " · " : ""]);
       const loaded = (m.service || []).map(p => p.congress);
       const earliest = Math.min(...seats.map(x => x.first_congress));
       const note = loaded.length && earliest < Math.min(...loaded)
