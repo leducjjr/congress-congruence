@@ -464,10 +464,9 @@ def load(conn, year: int, local_file: Path | None = None) -> dict:
     else:
         if profiles:
             missing = [k for k in sorted(keys) if k not in profiles]
-            empty = sorted({f for k in keys if k in profiles for f in opinion.PROFILE_FIELDS
-                            if profiles[k].get(f) is None})
+            empty = sum(profiles[k].get(f) is None for k in keys if k in profiles for f in opinion.PROFILE_FIELDS)
             log.warning("Census profiles for the %sth Congress lines don't cover every district "
-                        "(no profile: %s; empty figures: %s); districts are pooled toward their state only",
+                        "(no profile: %s; blank figures: %s); districts are pooled toward their state only",
                         lines, missing[:8] or "none", empty or "none")
         profiles, method = None, opinion.METHOD
     conn.commit()   # end the read-only transaction the lookups opened, so the block below is a real

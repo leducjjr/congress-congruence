@@ -34,6 +34,7 @@ METHOD = "partial-pooling-v1.1"
 METHOD_WITH_PROFILES = "partial-pooling-v2-census"   # districts pulled toward a Census-profile prediction
 PROFILE_FIELDS = ("pct_ba", "median_income", "pct_white_nh", "pct_black", "pct_hispanic", "median_age")
 RIDGE = 0.1              # shrinks the profile coefficients a little, so a few odd districts can't swing them
+MAX_BLANK = 0.02         # at most 2% of the district figures may be blank (filled with the state average)
 MIN_DISTRICTS_PER_FIELD = 10   # fit the profile only with at least this many districts with respondents
                                # per profile figure (60); fewer, and it can chase noise (simulated: worse
                                # than state-only pooling with 20 districts, no worse with 435)
@@ -110,22 +111,35 @@ def pool(raw: float | None, n_eff: float, parent: float, tau2: float,
 def profile_matrix(keys: list[tuple[str, int]], profiles: dict) -> list[list[float]] | None:
     """Census profile of each district, as differences from the average district in its state
     (so the state's own level isn't counted twice), each scaled to a standard deviation of 1.
-    None if any district lacks a profile."""
-    rows = []
+    A figure the Census left blank for a district counts as its state's average (difference 0):
+    a few releases leave the race and ethnicity counts empty for 1-4 districts. None if any
+    district has no profile at all, or more than MAX_BLANK of the figures are blank."""
+    rows, blanks = [], 0
     for k in keys:
         p = profiles.get(k)
-        if not p or any(p.get(f) is None for f in PROFILE_FIELDS):
+        if not p:
             return None
-        rows.append([log(max(p[f], 1.0)) if f == "median_income" else float(p[f]) for f in PROFILE_FIELDS])
+        row = []
+        for f in PROFILE_FIELDS:
+            v = p.get(f)
+            if v is None:
+                blanks += 1
+                row.append(None)
+            else:
+                row.append(log(max(v, 1.0)) if f == "median_income" else float(v))
+        rows.append(row)
+    if blanks > MAX_BLANK * len(keys) * len(PROFILE_FIELDS):
+        return None
     by_state: dict[str, list[int]] = {}
     for i, (st, _) in enumerate(keys):
         by_state.setdefault(st, []).append(i)
-    centered = [row[:] for row in rows]
+    centered = [[0.0] * len(PROFILE_FIELDS) for _ in rows]
     for idx in by_state.values():
         for j in range(len(PROFILE_FIELDS)):
-            m = sum(rows[i][j] for i in idx) / len(idx)
+            known = [rows[i][j] for i in idx if rows[i][j] is not None]
+            m = sum(known) / len(known) if known else 0.0
             for i in idx:
-                centered[i][j] = rows[i][j] - m
+                centered[i][j] = rows[i][j] - m if rows[i][j] is not None else 0.0
     for j in range(len(PROFILE_FIELDS)):
         col = [r[j] for r in centered]
         sd = sqrt(sum(c * c for c in col) / len(col)) or 1.0

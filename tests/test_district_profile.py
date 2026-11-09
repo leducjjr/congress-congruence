@@ -102,3 +102,15 @@ def test_a_congress_with_unchanged_lines_uses_the_earlier_label(monkeypatch):
     conn = type("C", (), {"cursor": lambda self: cur})()
     got = dp.profiles_for(conn, 117)
     assert cur.sql[1][1] == (116,) and got[("TX", 7)]["pct_ba"] == 50.0
+
+
+def test_a_few_blank_figures_count_as_the_state_average():
+    resp, seats, prof, _ = simulated(2)
+    prof[("AA", 3)]["pct_black"] = None                  # e.g. ACS 2013 left 4 districts' race counts blank
+    X = opinion.profile_matrix(sorted(prof), prof)
+    assert X is not None
+    j = opinion.PROFILE_FIELDS.index("pct_black")
+    assert X[sorted(prof).index(("AA", 3))][j] == 0.0
+    for k in prof:                                       # but not when many are blank
+        prof[k]["median_age"] = None
+    assert opinion.profile_matrix(sorted(prof), prof) is None

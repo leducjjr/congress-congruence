@@ -398,7 +398,9 @@ a weighted ridge regression of (raw district share − state estimate) on the di
 expressed as differences from its state's average district and standardized. Each district is then
 pulled toward state estimate + its predicted difference instead of the state estimate alone; the
 prediction's own uncertainty is added to the range. With fewer than 60 districts with respondents
-(10 per figure), or any district missing a profile, it falls back to v1.1 (state only).
+(10 per figure), or any district missing a profile, it falls back to v1.1 (state only). A figure
+the Census left blank counts as the state's average for that district (ACS 2013, 2015 and 2017
+leave the race and ethnicity counts blank for 1–4 districts); more than 2% blank also falls back.
 
 **Why.** v1.1 pulled small district samples so hard toward the state that districts in one state
 came out nearly alike: on party-line bills, Democratic- and Republican-held districts averaged only
