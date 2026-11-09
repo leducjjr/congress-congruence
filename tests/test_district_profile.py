@@ -75,3 +75,20 @@ def test_missing_profile_means_state_only_pooling():
     _, with_gap = opinion.estimate(resp, seats, prof)
     _, v1 = opinion.estimate(resp, seats)
     assert [round(a.support, 6) for a in with_gap] == [round(a.support, 6) for a in v1]
+
+
+def test_a_congress_with_unchanged_lines_uses_the_earlier_label(monkeypatch):
+    """ACS 2021 calls the 117th Congress's districts '116th Congress' (the lines didn't change)."""
+    class Cur:
+        def __init__(self): self.sql = []
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+        def execute(self, sql, args): self.sql.append((sql, args))
+        def fetchone(self): return (116,)
+        description = [type("D", (), {"name": n}) for n in
+                       ("state", "district", "pct_ba", "median_income", "pct_white_nh", "pct_black", "pct_hispanic", "median_age")]
+        def fetchall(self): return [("TX", 7, 50.0, 80000.0, 40.0, 15.0, 30.0, 35.0)]
+    cur = Cur()
+    conn = type("C", (), {"cursor": lambda self: cur})()
+    got = dp.profiles_for(conn, 117)
+    assert cur.sql[1][1] == (116,) and got[("TX", 7)]["pct_ba"] == 50.0

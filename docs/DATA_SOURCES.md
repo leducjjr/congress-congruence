@@ -387,6 +387,7 @@ Special handling:
 | Source | American Community Survey 1-year estimates, api.census.gov (same key as population) |
 | Loaded by | `python -m congress_congruence.ingest.district_profile 2007 2024` (2020 isn't released) |
 | Stored as | `core.district_profile`, one row per district per Congress's lines; the latest ACS year wins |
+| Labels | The Census names a new Congress only when lines change: ACS 2012 is already "113th", ACS 2021 still "116th" (the 117th kept the 116th's lines). A Congress with no rows uses the latest earlier one |
 
 Figures: bachelor's degree or more among adults 25+ (B15002), median household income (B19013),
 non-Hispanic white, non-Hispanic Black and Hispanic shares (B03002), median age (B01002).

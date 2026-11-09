@@ -84,10 +84,21 @@ def load(conn, year: int, http=None) -> dict:
 
 
 def profiles_for(conn, congress: int) -> dict:
-    """{(state, district): profile} for the given Congress's lines, or {} if none are loaded."""
+    """{(state, district): profile} for the given Congress's lines, or {} if none are loaded.
+
+    The Census names a new Congress in its district data only when the lines change; when they
+    don't, it keeps the earlier name (the ACS 2021 release says "116th Congress", because the 117th
+    used the same lines). So a Congress with no rows of its own uses the latest earlier Congress
+    that has them. Load releases in order so a gap really means "unchanged"."""
     with conn.cursor() as cur:
+        cur.execute("select max(congress) from core.district_profile where congress <= %s", (congress,))
+        use = cur.fetchone()[0]
+        if use is None:
+            return {}
+        if use != congress:
+            log.info("No Census profiles labelled the %sth Congress; using the %sth's (same lines)", congress, use)
         cur.execute("""select state, district, pct_ba, median_income, pct_white_nh, pct_black, pct_hispanic,
-                              median_age from core.district_profile where congress = %s""", (congress,))
+                              median_age from core.district_profile where congress = %s""", (use,))
         cols = [d.name for d in cur.description]
         return {(r[0], r[1]): dict(zip(cols[2:], r[2:])) for r in cur.fetchall()}
 
