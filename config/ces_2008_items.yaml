@@ -77,7 +77,7 @@ items:
     match: related
     note: The question asked about extending NAFTA; this is the trade agreement with Peru that Congress approved in 2007.
     votes:
-      house:  {date: 2007-11-08, expect: "285-132"}
+      house:  {find: Peru, questions: *final}
       senate: {bill: [hr, 3688], questions: *final}
 
   CC316i:
