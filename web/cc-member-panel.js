@@ -393,8 +393,14 @@
     }
 
     foldable(key, summary, ...body) {
+      return this.foldableOpen(key, false, summary, ...body);
+    }
+
+    // Like foldable, but starts open unless the reader has closed it.
+    foldableOpen(key, startOpen, summary, ...body) {
       this.folds = this.folds || {};
-      const d = h("details", { class: "more", open: !!this.folds[key] }, h("summary", {}, summary), ...body);
+      const open = key in this.folds ? this.folds[key] : startOpen;
+      const d = h("details", { class: "more", open }, h("summary", {}, summary), ...body);
       d.addEventListener("toggle", () => { this.folds[key] = d.open; });
       return d;
     }
@@ -727,15 +733,14 @@
         sourceLines.length ? h("div", { id: "sources", class: "op-sources", tabindex: "-1" }, sourceLines) : null);
     }
 
-    // Comparisons newest first, one group per Congress of the vote. With several Congresses the
-    // latest is open and earlier ones fold, each summarizing how the member lined up.
+    // Comparisons newest first, one fold per Congress of the vote, each summarizing how the
+    // member lined up; the latest starts open.
     groupByCongress(rows) {
       const groups = new Map();
       for (const li of rows) {
         const c = Number(li.getAttribute("data-congress"));
         groups.set(c, [...(groups.get(c) || []), li]);
       }
-      if (groups.size < 2) return h("ol", { class: "op-list" }, rows);
       const years = c => c ? ` (${2 * c + 1787}–${2 * c + 1788})` : "";
       const tally = lis => {
         const n = a => lis.filter(li => li.getAttribute("data-agreement") === a).length;
@@ -743,13 +748,10 @@
         return `${plural(lis.length, "vote", "votes")} compared` +
           (clear ? `; with the majority on ${n("with")} of ${clear} where it was clear` : "");
       };
-      const [[latest, first], ...rest] = [...groups].sort((a, b) => b[0] - a[0]);
+      // Every Congress is its own fold, the same for every member; the latest starts open.
       return h("div", { class: "op-groups" },
-        h("h4", { class: "op-congress" }, `${ordinal(latest)} Congress${years(latest)}`,
-          h("span", {}, ` · ${tally(first)}`)),
-        h("ol", { class: "op-list" }, first),
-        rest.map(([c, lis]) => this.foldable(`op-congress-${c}`,
-          [`${ordinal(c)} Congress${years(c)}`, h("span", { class: "op-tally" }, ` · ${tally(lis)}`)],
+        [...groups].sort((a, b) => b[0] - a[0]).map(([c, lis], k) => this.foldableOpen(`op-congress-${c}`, k === 0,
+          [c ? `${ordinal(c)} Congress${years(c)}` : "Votes compared", " ", h("span", { class: "op-tally" }, `· ${tally(lis)}`)],
           h("ol", { class: "op-list" }, lis))));
     }
 
