@@ -91,6 +91,11 @@ comparison names its source. When sources agree, that's worth knowing; when they
 - **Voted with their party's majority:** votes where the member voted the same way (Yea or Nay) as most
   members of their party. Ties are left out, and independents are counted with the party they caucus
   with.
+- **Where their party and their state disagreed:** surveyed votes where most of the member's party
+  in that chamber, on that day, took one side and the state's clear survey majority took the other.
+  It's a count with the votes listed, so you can open each one; it isn't a score. Only votes on the
+  same proposal the survey asked about, with a clear majority, are included. It's shown for statewide
+  comparisons (senators) for now, because district estimates are less certain.
 - **Residents:** Census Bureau estimates of the people living in the member's state or district.
 
 ## Limits {#limits}

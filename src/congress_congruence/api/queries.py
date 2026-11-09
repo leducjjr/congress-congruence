@@ -128,7 +128,8 @@ select si.survey, si.variable, si.question, coalesce(siv.reader_note, si.note) a
        r.roll_call_id, r.chamber, r.congress, r.session, r.roll_number, r.vote_date,
        r.question as vote_question, r.result, r.yea_total, r.nay_total,
        mv.position, siv.support_side, siv.match_kind,
-       t.state, t.district as seat_district,
+       t.state, t.district as seat_district, t.party_name,
+       pv.party_yea, pv.party_nay,
        oe.support, oe.support_low, oe.support_high, oe.majority, oe.respondents, oe.district,
        oe.source_url, oe.area_note, s.kind,
        ap.population as residents
@@ -138,10 +139,21 @@ select si.survey, si.variable, si.question, coalesce(siv.reader_note, si.note) a
   join core.survey s on s.survey = si.survey
   join core.roll_call r on r.roll_call_id = mv.roll_call_id
   join lateral (
-        select state, district from core.term t
+        select state, district, coalesce(nullif(t.caucus, t.party), t.party) as party_name from core.term t
          where t.bioguide_id = mv.bioguide_id and t.chamber = r.chamber
            and r.vote_date between t.start_date and t.end_date
          order by t.start_date desc limit 1) t on true
+  -- How the member's own party voted on this roll call (members of that party in that chamber
+  -- on that day), so the panel can show votes where party and constituents disagreed.
+  left join lateral (
+        select count(*) filter (where mv2.position = 'yea') as party_yea,
+               count(*) filter (where mv2.position = 'nay') as party_nay
+          from core.member_vote mv2
+          join lateral (select coalesce(nullif(t2.caucus, t2.party), t2.party) as p from core.term t2
+                         where t2.bioguide_id = mv2.bioguide_id and t2.chamber = r.chamber
+                           and r.vote_date between t2.start_date and t2.end_date
+                         order by t2.start_date desc limit 1) t2 on true
+         where mv2.roll_call_id = r.roll_call_id and t2.p = t.party_name) pv on true
   join core.opinion_estimate oe on oe.survey = si.survey and oe.variable = si.variable
                                and oe.state = t.state
                                and ((r.chamber = 'senate' and oe.district is null)

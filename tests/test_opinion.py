@@ -198,6 +198,16 @@ def test_api_senator_compared_with_state(client):
     assert s["summary"]["clear_majority"] == 0
 
 
+def test_api_reports_how_the_members_party_voted(client):
+    items = client.get("/v1/members/S000001/opinion").json()["items"]
+    # The fixture's senators are the only members of their party in the chamber, so the party's
+    # side is the member's own side on every vote they cast.
+    for i in items:
+        assert i["party"]["name"]
+        if i["sided_with"]:
+            assert i["party"]["sided_with"] == i["sided_with"]
+
+
 def test_api_split_district_is_too_close(client):
     wy = client.get("/v1/members/H000003/opinion").json()
     assert {i["agreement"] for i in wy["items"]} <= {"too_close", "with", "against"}

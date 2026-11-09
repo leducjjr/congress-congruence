@@ -177,6 +177,11 @@
     .op-scale span:last-child { text-align: right; }
     .op-list { list-style: none; margin: 0; padding: 0; }
     .op-congress { font-size: 0.95rem; margin: 14px 0 4px; }
+    .op-party { margin: 6px 0 10px; }
+    .op-party p { margin: 0 0 4px; }
+    .op-party-list { margin: 4px 0 0; padding-left: 1.2em; }
+    .op-party-list li { margin: 2px 0; }
+    .linkish { font: inherit; color: inherit; background: none; border: 0; padding: 0; text-decoration: underline; cursor: pointer; text-align: left; }
     .op-congress span, .op-tally { font-weight: 400; color: var(--ink-soft); font-size: 0.88rem; }
     .op-tally { display: inline-block; text-decoration: none; }
     .op-groups > details { border-top: 1px solid var(--rule); padding: 8px 0; }
@@ -703,6 +708,10 @@
             `${several ? "Surveys" : "A survey"} asked people about a few major bills; this section `,
             "compares the member's vote on each with what people where they live said. ",
             "Only bills a survey asked about can be compared."),
+          h("p", {},
+            "\u201cWhere their party and their state disagreed\u201d lists the surveyed votes on which most of the member's ",
+            "own party took one side and the state's clear majority took the other, and which side the member chose. ",
+            "It's shown for statewide comparisons only for now."),
           o.items.some(i => i.kind === "ballot") ? h("p", {},
             "State ballot measures are not surveys: they are the certified votes of the state's own voters on a ",
             "similar question, so they have no range. They are compared only with members who represent the whole ",
@@ -720,6 +729,7 @@
               ? "Where a survey reached only a few dozen people in the district, its estimate leans on statewide answers, so many of those are too close to call."
               : "")),
         lead,
+        this.partyLine(o, areaOf),
         this.samplesLine(o, surveys, nb),
         h("div", { class: "op-key", "aria-hidden": "true" },
           h("span", {}, mark("yea", 12), "Voted Yea"),
@@ -732,6 +742,36 @@
           h("span", {}, "All oppose"), h("span", {}, "Even split"), h("span", {}, "All support")),
         this.groupByCongress(rows),
         sourceLines.length ? h("div", { id: "sources", class: "op-sources", tabindex: "-1" }, sourceLines) : null);
+    }
+
+    // Votes where the member's own party and their state's clear majority took opposite sides,
+    // and which one the member went with. A count with the votes listed, not a score.
+    // Statewide comparisons only for now (senators): district estimates are less certain.
+    partyLine(o, areaOf) {
+      const state = o.items.filter(i => i.match === "same" && i.kind !== "ballot" && i.constituents.area === "state"
+        && ["support", "oppose"].includes(i.constituents.majority) && i.sided_with);
+      if (!state.length) return null;
+      const xs = state.filter(i => i.party && i.party.sided_with && i.party.sided_with !== i.constituents.majority);
+      const areas = [...new Set(state.map(areaOf))];
+      const place = areas.length === 1 ? areas[0] : "their state";
+      const party = (state.find(i => i.party && i.party.name) || {}).party?.name;
+      const members = party ? ({ Democrat: "Democrats", Republican: "Republicans", Independent: "independents" }[party] || party) : "party";
+      if (!xs.length)
+        return h("p", { class: "op-party" }, `On every surveyed vote where ${place}'s majority was clear, it and the member's party (${members}) were on the same side.`);
+      const sidedPlace = xs.filter(i => i.sided_with === i.constituents.majority);
+      const lines = [...xs].reverse().map(i => {
+        const jump = h("button", { type: "button", class: "linkish" }, i.question);
+        jump.addEventListener("click", () => this.flash(this.root.querySelector(`li[data-op="${CSS.escape(i.vote.roll_call_id)}"]`)));
+        return h("li", {}, jump, ` (${fmtDate(i.vote.date)}): `,
+          h("strong", {}, i.sided_with === i.constituents.majority ? `sided with ${areaOf(i)}` : "sided with their party"));
+      });
+      return h("div", { class: "op-party" },
+        h("p", {}, `Where their party (${members}) and ${place}'s clear majority disagreed: `,
+          h("strong", {}, `${xs.length} ${xs.length === 1 ? "vote" : "votes"}`), `. They sided with ${place} on `,
+          h("strong", {}, String(sidedPlace.length)), " and with their party on ",
+          h("strong", {}, String(xs.length - sidedPlace.length)), "."),
+        this.foldable("party-conflicts", xs.length === 1 ? "Show this vote" : "Show these votes",
+          h("ul", { class: "op-party-list" }, lines)));
     }
 
     // Comparisons newest first, one fold per Congress of the vote, each summarizing how the

@@ -557,6 +557,11 @@ def member_opinion(bioguide_id: str, response: Response):
                                                 r["roll_number"], r["vote_date"]),
         },
         "position": r["position"],
+        # Which side of the proposal most of the member's own party took on this vote (None on a tie).
+        "party": {"name": r["party_name"],
+                  "sided_with": (sided_with("yea" if (r["party_yea"] or 0) > (r["party_nay"] or 0) else "nay",
+                                            r["support_side"])
+                                 if (r["party_yea"] or 0) != (r["party_nay"] or 0) else None)},
         "match": r["match_kind"],                       # same | related (related is never scored)
         "support_side": r["support_side"],              # which vote (yea/nay) supported the proposal
         "sided_with": sided_with(r["position"], r["support_side"]),
