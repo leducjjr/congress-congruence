@@ -200,6 +200,10 @@ def load_roll_call(conn, rc: ParsedRollCall, raw_sha: str | None = None,
 
 MISSING_RETRIES = 2
 MISSING_RETRY_PAUSE_SECONDS = 5.0
+# A finished session's list can have a hole: one vote number with no file (2007's vote 1000,
+# 2020's vote 254), after which the files carry on. For past sessions, look this many numbers
+# ahead before deciding the list has ended.
+LOOKAHEAD_PAST_SESSION = 5
 
 
 def looks_missing(body: bytes) -> bool:
@@ -267,6 +271,17 @@ def is_vacated(rc: ParsedRollCall) -> bool:
     return not rc.votes and not any((rc.yea_total, rc.nay_total, rc.present_total, rc.not_voting_total))
 
 
+def next_existing(conn, chamber: str, congress: int, session_no: int, roll: int, http) -> int | None:
+    """For a session that has ended, the next vote number after `roll` that has a file, if any
+    within LOOKAHEAD_PAST_SESSION. The current session's list simply hasn't grown yet: None."""
+    if (congress, session_no) >= current_session():
+        return None
+    for ahead in range(roll + 1, roll + 1 + LOOKAHEAD_PAST_SESSION):
+        if download(vote_url(chamber, congress, session_no, ahead), http) is not None:
+            return ahead
+    return None
+
+
 def sync(conn, chamber: str, congress: int, session_no: int) -> dict[str, int]:
     """Load every vote of the session not yet loaded from the official feed, from vote 1
     upward, stopping at the first vote number the chamber hasn't posted.
@@ -298,7 +313,14 @@ def sync(conn, chamber: str, congress: int, session_no: int) -> dict[str, int]:
             failed += 1
             break
         if n is None:
-            break
+            nxt = next_existing(conn, chamber, congress, session_no, roll, http)
+            if nxt is None:
+                break
+            log.warning("%s %s-%s: no file for vote %d; the list carries on at %d",
+                        chamber, congress, session_no, roll, nxt)
+            failed += 1
+            roll = nxt
+            continue
         if n == VACATED:
             vacated += 1
         elif n >= 0:

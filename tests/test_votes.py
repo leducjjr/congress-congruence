@@ -223,6 +223,26 @@ def test_vacated_vote_is_skipped_not_failed(conn, tmp_path, monkeypatch):
     assert votes.sync(conn, "house", 119, 1) == {"loaded": 1, "failed": 0, "vacated": 1, "next_roll": 3}
 
 
+@pytest.fixture(autouse=True)
+def session_119_1_is_current(request, monkeypatch):
+    """The sync tests use 119-1 as the session still in progress (no looking past its end)."""
+    if "sync" in request.node.name or "vacated" in request.node.name:
+        monkeypatch.setattr(votes, "current_session", lambda today=None: (119, 1))
+
+
+def test_sync_of_a_finished_session_carries_on_past_a_missing_vote_number(conn, tmp_path, monkeypatch):
+    """2007's list has no file for vote 1000 but carries on to 1186; 2020's skips 254."""
+    monkeypatch.setenv("RAW_DATA_DIR", str(tmp_path))
+    monkeypatch.setattr(votes, "REQUEST_PAUSE_SECONDS", 0)
+    monkeypatch.setattr(votes, "current_session", lambda today=None: (119, 2))
+    def numbered(n):
+        return HOUSE.replace(b"<rollcall-num>362</rollcall-num>", f"<rollcall-num>{n}</rollcall-num>".encode())
+    files = {1: numbered(1), 3: numbered(3)}          # vote 2 has no file; nothing after 3
+    monkeypatch.setattr(votes, "download",
+                        lambda url, session: files.get(int(url.rsplit("roll", 1)[1].split(".")[0])))
+    assert votes.sync(conn, "house", 119, 1) == {"loaded": 2, "failed": 1, "vacated": 0, "next_roll": 4}
+
+
 def test_sync_loads_until_first_missing_vote_and_skips_bad_files(conn, tmp_path, monkeypatch):
     monkeypatch.setenv("RAW_DATA_DIR", str(tmp_path))
     monkeypatch.setattr(votes, "REQUEST_PAUSE_SECONDS", 0)
