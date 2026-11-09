@@ -22,8 +22,15 @@ from .population import CONGRESS_IN_NAME, FIPS, api_get
 log = logging.getLogger(__name__)
 
 BA_PLUS = [f"B15002_{n:03d}E" for n in (15, 16, 17, 18, 32, 33, 34, 35)]
-VARIABLES = ["B15002_001E", *BA_PLUS, "B19013_001E", "B03002_001E", "B03002_003E", "B03002_004E",
-             "B03002_012E", "B01002_001E"]
+# From 2012 the Census also publishes B15003 (educational attainment without the split by sex);
+# some releases leave B15002 empty for districts, so both are asked for and B15003 is preferred.
+BA_PLUS_2012 = [f"B15003_{n:03d}E" for n in (22, 23, 24, 25)]
+OTHER = ["B19013_001E", "B03002_001E", "B03002_003E", "B03002_004E", "B03002_012E", "B01002_001E"]
+VARIABLES = ["B15002_001E", *BA_PLUS, *OTHER]
+
+
+def variables_for(year: int) -> list[str]:
+    return VARIABLES + (["B15003_001E", *BA_PLUS_2012] if year >= 2012 else [])
 NO_RELEASE = {2020}      # the 2020 ACS 1-year estimates weren't released (pandemic data collection)
 
 
@@ -37,7 +44,8 @@ def number(text):
 
 def parse(table: list[list[str]]) -> tuple[int, list[dict]]:
     header, rows = table[0], table[1:]
-    col = {name: header.index(name) for name in ["NAME", "state", "congressional district", *VARIABLES]}
+    wanted = ["NAME", "state", "congressional district", *VARIABLES, "B15003_001E", *BA_PLUS_2012]
+    col = {name: header.index(name) for name in wanted if name in header}
     congresses, out = set(), []
     for r in rows:
         st = FIPS.get(r[col["state"]])
@@ -48,12 +56,18 @@ def parse(table: list[list[str]]) -> tuple[int, list[dict]]:
         code = int(r[col["congressional district"]])
         if code == 98:
             continue                                         # delegate (DC): no voting House seat
-        v = {k: number(r[col[k]]) for k in VARIABLES}
-        adults, people = v["B15002_001E"], v["B03002_001E"]
+        v = {k: number(r[i]) for k, i in col.items() if k not in ("NAME", "state", "congressional district")}
+        people = v["B03002_001E"]
         share = lambda part, whole: round(100 * part / whole, 2) if part is not None and whole else None  # noqa: E731
+        if v.get("B15003_001E") and all(v.get(k) is not None for k in BA_PLUS_2012):
+            ba = share(sum(v[k] for k in BA_PLUS_2012), v["B15003_001E"])
+        elif v.get("B15002_001E") and all(v.get(k) is not None for k in BA_PLUS):
+            ba = share(sum(v[k] for k in BA_PLUS), v["B15002_001E"])
+        else:
+            ba = None
         out.append({
             "state": st, "district": 0 if code == 0 else code,
-            "pct_ba": share(sum(v[k] or 0 for k in BA_PLUS), adults),
+            "pct_ba": ba,
             "median_income": v["B19013_001E"],
             "pct_white_nh": share(v["B03002_003E"], people),
             "pct_black": share(v["B03002_004E"], people),
@@ -66,7 +80,11 @@ def parse(table: list[list[str]]) -> tuple[int, list[dict]]:
 
 
 def load(conn, year: int, http=None) -> dict:
-    congress, rows = parse(api_get(year, VARIABLES, "congressional district:*", "state:*", http))
+    congress, rows = parse(api_get(year, variables_for(year), "congressional district:*", "state:*", http))
+    gaps = {f: sum(r[f] is None for r in rows) for f in ("pct_ba", "median_income", "pct_white_nh",
+                                                          "pct_black", "pct_hispanic", "median_age")}
+    if any(gaps.values()):
+        log.warning("ACS %s: districts missing a figure: %s", year, {f: n for f, n in gaps.items() if n})
     source = f"ACS {year} 1-year estimate"
     with conn.transaction(), conn.cursor() as cur:
         cur.execute("select max(acs_year) from core.district_profile where congress = %s", (congress,))
@@ -80,7 +98,9 @@ def load(conn, year: int, http=None) -> dict:
                values (%(congress)s, %(state)s, %(district)s, %(year)s, %(pct_ba)s, %(median_income)s,
                        %(pct_white_nh)s, %(pct_black)s, %(pct_hispanic)s, %(median_age)s, %(source)s)""",
             [{**r, "congress": congress, "year": year, "source": source} for r in rows])
-    return {"congress": congress, "districts": len(rows), "source": source}
+    return {"congress": congress, "districts": len(rows), "complete": sum(all(
+        r[f] is not None for f in ("pct_ba", "median_income", "pct_white_nh", "pct_black", "pct_hispanic",
+                                   "median_age")) for r in rows), "source": source}
 
 
 def profiles_for(conn, congress: int) -> dict:

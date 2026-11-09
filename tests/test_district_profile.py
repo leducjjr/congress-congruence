@@ -8,6 +8,16 @@ from congress_congruence.ingest import district_profile as dp
 HEADER = ["NAME", *dp.VARIABLES, "state", "congressional district"]
 
 
+def test_newer_releases_read_bachelors_from_b15003_when_b15002_is_empty():
+    header = ["NAME", *dp.variables_for(2014), "state", "congressional district"]
+    vals = {k: "0" for k in dp.variables_for(2014)}
+    vals.update({"B15002_001E": "null", "B15003_001E": "1000", "B15003_022E": "200", "B15003_023E": "100",
+                 "B19013_001E": "50000", "B03002_001E": "2000", "B03002_003E": "1000", "B01002_001E": "40"})
+    row = ["Congressional District 2 (114th Congress), Ohio", *[vals[k] for k in dp.variables_for(2014)], "39", "02"]
+    congress, (oh,) = dp.parse([header, row])
+    assert congress == 114 and oh["pct_ba"] == 30.0
+
+
 def row(name, state, cd, adults=1000, ba=300, income=60000, people=2000, white=1200, black=200, hisp=400, age=38):
     vals = {"B15002_001E": adults, "B19013_001E": income, "B03002_001E": people, "B03002_003E": white,
             "B03002_004E": black, "B03002_012E": hisp, "B01002_001E": age}
