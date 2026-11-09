@@ -734,7 +734,7 @@
     }
 
     // Comparisons newest first, one fold per Congress of the vote, each summarizing how the
-    // member lined up; the latest starts open.
+    // member lined up.
     groupByCongress(rows) {
       const groups = new Map();
       for (const li of rows) {
@@ -748,9 +748,10 @@
         return `${plural(lis.length, "vote", "votes")} compared` +
           (clear ? `; with the majority on ${n("with")} of ${clear} where it was clear` : "");
       };
-      // Every Congress is its own fold, the same for every member; the latest starts open.
+      // Every Congress is its own fold, the same for every member, all closed on arrival:
+      // the tallies are the overview, and a reader opens the Congress they want.
       return h("div", { class: "op-groups" },
-        [...groups].sort((a, b) => b[0] - a[0]).map(([c, lis], k) => this.foldableOpen(`op-congress-${c}`, k === 0,
+        [...groups].sort((a, b) => b[0] - a[0]).map(([c, lis]) => this.foldableOpen(`op-congress-${c}`, false,
           [c ? `${ordinal(c)} Congress${years(c)}` : "Votes compared", " ", h("span", { class: "op-tally" }, `· ${tally(lis)}`)],
           h("ol", { class: "op-list" }, lis))));
     }
