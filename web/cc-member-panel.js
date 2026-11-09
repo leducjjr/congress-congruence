@@ -176,6 +176,13 @@
     .op-scale span:nth-child(2) { text-align: center; }
     .op-scale span:last-child { text-align: right; }
     .op-list { list-style: none; margin: 0; padding: 0; }
+    .op-congress { font-size: 0.95rem; margin: 14px 0 4px; }
+    .op-congress span, .op-tally { font-weight: 400; color: var(--ink-soft); font-size: 0.88rem; }
+    .op-tally { display: inline-block; text-decoration: none; }
+    .op-groups > details { border-top: 1px solid var(--rule); padding: 8px 0; }
+    .op-groups > details > summary { font-weight: 600; font-size: 0.95rem; }
+    .op-sample p { margin: 0 0 4px; }
+    .op-sample-list { margin: 4px 0 0; padding-left: 1.2em; }
     .op-list li { padding: 10px 0; border-top: 1px solid var(--rule); }
     .op-q { margin: 0 0 6px; font-weight: 600; }
     .people { margin: -14px 0 18px; color: var(--ink-soft); font-size: 0.9rem; }
@@ -530,6 +537,8 @@
     // Scroll a row into view and highlight it briefly.
     flash(row) {
       if (!row) return;
+      // A comparison from an earlier Congress sits in a folded group: open it first.
+      for (let d = row.closest("details"); d; d = d.parentElement && d.parentElement.closest("details")) d.open = true;
       const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
       row.scrollIntoView({ behavior: calm ? "auto" : "smooth", block: "center" });
       row.classList.remove("found");
@@ -611,7 +620,7 @@
 
       const surveys = new Map((o.surveys || []).map(sv => [sv.name, sv]));
       const several = surveys.size > 1;
-      const rows = o.items.map(i => {
+      const rows = [...o.items].reverse().map(i => {
         const c = i.constituents;
         const [lo, hi] = c.range_pct;
         const here = areaOf(i);
@@ -643,7 +652,7 @@
                                            : `Opens the questionnaire with ${here}'s results` },
               "See the exact question"),
             i.wording_hint ? ` (in the survey guide, search for ${i.wording_hint})` : ` (questionnaire with ${here}'s results, PDF)`);
-        return h("li", { "data-op": i.vote.roll_call_id },
+        return h("li", { "data-op": i.vote.roll_call_id, "data-congress": i.vote.congress || 0, "data-agreement": related ? "related" : i.agreement },
           h("p", { class: "op-q" }, i.question,
             related ? h("span", { class: "op-related", title: "The vote was on a related bill, not exactly this proposal" },
               "Related vote") : null),
@@ -704,11 +713,7 @@
               ? "Where a survey reached only a few dozen people in the district, its estimate leans on statewide answers, so many of those are too close to call."
               : "")),
         lead,
-        (o.samples || []).length ? h("p", { class: "op-sample" }, "People surveyed: ",
-          o.samples.map((x, k) => [k ? "; " : "",
-            h("strong", {}, x.surveyed.toLocaleString()), ` in ${nb(x.area_label)} (${x.survey})`,
-            x.residents ? `, out of about ${people(x.residents)} residents` : ""]).flat(),
-          ".") : null,
+        this.samplesLine(o, surveys, nb),
         h("div", { class: "op-key", "aria-hidden": "true" },
           h("span", {}, mark("yea", 12), "Voted Yea"),
           h("span", {}, mark("nay", 12), "Voted Nay"),
@@ -718,8 +723,62 @@
           h("span", {}, h("i", { class: "sw unclear" }), "Too close to call")),
         h("div", { class: "op-scale", "aria-hidden": "true" },
           h("span", {}, "All oppose"), h("span", {}, "Even split"), h("span", {}, "All support")),
-        h("ol", { class: "op-list" }, rows),
+        this.groupByCongress(rows),
         sourceLines.length ? h("div", { id: "sources", class: "op-sources", tabindex: "-1" }, sourceLines) : null);
+    }
+
+    // Comparisons newest first, one group per Congress of the vote. With several Congresses the
+    // latest is open and earlier ones fold, each summarizing how the member lined up.
+    groupByCongress(rows) {
+      const groups = new Map();
+      for (const li of rows) {
+        const c = Number(li.getAttribute("data-congress"));
+        groups.set(c, [...(groups.get(c) || []), li]);
+      }
+      if (groups.size < 2) return h("ol", { class: "op-list" }, rows);
+      const years = c => c ? ` (${2 * c + 1787}–${2 * c + 1788})` : "";
+      const tally = lis => {
+        const n = a => lis.filter(li => li.getAttribute("data-agreement") === a).length;
+        const clear = n("with") + n("against");
+        return `${plural(lis.length, "vote", "votes")} compared` +
+          (clear ? `; with the majority on ${n("with")} of ${clear} where it was clear` : "");
+      };
+      const [[latest, first], ...rest] = [...groups].sort((a, b) => b[0] - a[0]);
+      return h("div", { class: "op-groups" },
+        h("h4", { class: "op-congress" }, `${ordinal(latest)} Congress${years(latest)}`,
+          h("span", {}, ` · ${tally(first)}`)),
+        h("ol", { class: "op-list" }, first),
+        rest.map(([c, lis]) => this.foldable(`op-congress-${c}`,
+          [`${ordinal(c)} Congress${years(c)}`, h("span", { class: "op-tally" }, ` · ${tally(lis)}`)],
+          h("ol", { class: "op-list" }, lis))));
+    }
+
+    // "People surveyed": one line per source. A source with many surveys (the CES, every year)
+    // gets a one-line summary, with the year-by-year counts folded underneath.
+    samplesLine(o, surveys, nb) {
+      const samples = o.samples || [];
+      if (!samples.length) return null;
+      const orgOf = x => (surveys.get(x.survey) || {}).organization || x.survey;
+      const byOrg = new Map();
+      for (const x of samples) byOrg.set(orgOf(x), [...(byOrg.get(orgOf(x)) || []), x]);
+      const detail = x => [h("strong", {}, x.surveyed.toLocaleString()), ` in ${nb(x.area_label)} (${x.survey})`,
+        x.residents ? `, out of about ${people(x.residents)} residents` : ""];
+      const lines = [...byOrg].map(([org, xs]) => {
+        if (xs.length <= 2) return h("p", { class: "op-sample" }, "People surveyed: ",
+          xs.map((x, k) => [k ? "; " : "", ...detail(x)]).flat(), ".");
+        const counts = xs.map(x => x.surveyed), areas = [...new Set(xs.map(x => nb(x.area_label)))];
+        const yrs = xs.map(x => (x.survey.match(/(\d{4})$/) || [])[1]).filter(Boolean).sort();
+        const span = yrs.length ? ` (${yrs[0]}–${yrs.at(-1)})` : "";
+        return h("div", { class: "op-sample" },
+          h("p", {}, "People surveyed",
+            areas.length === 1 ? ` in ${areas[0]}` : " where they represented",
+            ": ", h("strong", {}, Math.min(...counts).toLocaleString()), " to ",
+            h("strong", {}, Math.max(...counts).toLocaleString()),
+            ` per survey, in ${xs.length} ${org} surveys${span}.`),
+          this.foldable(`samples-${org}`, "Each survey",
+            h("ul", { class: "op-sample-list" }, xs.map(x => h("li", {}, ...detail(x))))));
+      });
+      return lines.length === 1 ? lines[0] : h("div", {}, lines);
     }
 
     rangeBar(est, lo, hi, label, side, agreement, position) {
@@ -762,6 +821,8 @@
       return h("p", { class: "source" }, text);
     }
   }
+
+  function plural(n, one, many) { return `${n.toLocaleString()} ${n === 1 ? one : many}`; }
 
   function ordinal(n) {
     const s = (n % 100 >= 11 && n % 100 <= 13) ? "th" : ({ 1: "st", 2: "nd", 3: "rd" }[n % 10] || "th");

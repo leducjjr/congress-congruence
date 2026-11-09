@@ -552,6 +552,7 @@ def member_opinion(bioguide_id: str, response: Response):
         "vote": {
             "roll_call_id": r["roll_call_id"], "date": r["vote_date"], "question": r["vote_question"],
             "result": r["result"], "yea_total": r["yea_total"], "nay_total": r["nay_total"],
+            "congress": r["congress"],
             "official_url": q.official_vote_url(r["chamber"], r["congress"], r["session"],
                                                 r["roll_number"], r["vote_date"]),
         },
