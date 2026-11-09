@@ -64,7 +64,10 @@ Principles that apply to every source:
   session can have a hole: 2007 has no file for vote 1000 and 2020 none for vote 254, and the
   first backfill stopped there, missing 2007's votes 1000–1186 and 2020's 254 onward. For past
   sessions the loader now looks up to 5 numbers ahead before deciding the list has ended, and
-  logs the hole.
+  logs the hole. 2007's votes 1000–1186 turned out not to be fetchable from the Clerk's XML address at
+  all (four-digit numbers), so they come from Voteview's House file instead
+  (`voteview house 110`), which uses the Clerk's roll numbers and never overwrites a vote
+  already loaded from the Clerk.
 - **Vacated votes.** A vote vacated by unanimous consent keeps its roll number, but its file
   lists nobody and every total is zero (e.g. h-114-1-300, June 4, 2015; also h-114-2-44,
   h-113-2-275, h-112-1-484, h-112-2-327). These are noted as vacated and skipped, not loaded and
