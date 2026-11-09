@@ -8,3 +8,4 @@ data/raw/*
 logs/
 data/ppc/
 build/
+data/exports/
