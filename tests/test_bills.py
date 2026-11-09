@@ -66,6 +66,19 @@ def test_a_refused_key_stops_with_a_clear_message_that_hides_the_key():
     assert "secret-key" not in str(e.value) and "CONGRESS_API_KEY" in str(e.value)
 
 
+def test_a_reply_cut_off_mid_way_is_retried():
+    """2026-11-09: one dropped connection (ChunkedEncodingError) ended a whole nightly run."""
+    class Flaky(FakeCongressGov):
+        drops = 1
+        def get(self, url, params=None, timeout=None):
+            if self.drops:
+                self.drops -= 1
+                raise bills.requests.exceptions.ChunkedEncodingError("Response ended prematurely")
+            return super().get(url, params, timeout)
+    data = bills.fetch_bill(Flaky(), "test-key", 119, "hr", 1834)
+    assert data["policy_area"] == "Health"
+
+
 def test_missing_key(monkeypatch):
     monkeypatch.delenv("CONGRESS_API_KEY")
     with pytest.raises(bills.KeyProblem):

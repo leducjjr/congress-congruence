@@ -65,11 +65,18 @@ def api_key() -> str:
 
 
 def get_json(http, url: str, key: str, params: dict | None = None) -> dict:
-    """GET a Congress.gov API URL as JSON. Retries once after a rate-limit or server error.
-    Error messages never include the key."""
+    """GET a Congress.gov API URL as JSON. Retries after a rate-limit or server error, or a dropped
+    connection (a reply cut off mid-way). Error messages never include the key."""
     params = {"format": "json", **(params or {})}
     for attempt in range(3):
-        resp = http.get(url, params={**params, "api_key": key}, timeout=60)
+        try:
+            resp = http.get(url, params={**params, "api_key": key}, timeout=60)
+        except (requests.exceptions.ConnectionError, requests.exceptions.ChunkedEncodingError,
+                requests.exceptions.Timeout) as e:
+            wait = 10 * (attempt + 1)
+            log.warning("Connection to Congress.gov dropped (%s); retrying in %ss", type(e).__name__, wait)
+            time.sleep(wait)
+            continue
         if resp.status_code in (401, 403):
             raise KeyProblem(f"Congress.gov refused the API key (HTTP {resp.status_code}). Check CONGRESS_API_KEY in "
                              ".env, or request a new key at https://api.data.gov/signup.")
@@ -148,9 +155,18 @@ def sync(conn, http=None, check_all: bool = False, limit: int | None = None) -> 
     conn.commit()
     if limit:
         todo = todo[:limit]
-    done = missing = 0
+    done = missing = failed = 0
     for congress, bill_type, number in todo:
-        data = fetch_bill(http, key, congress, bill_type, number)
+        try:
+            data = fetch_bill(http, key, congress, bill_type, number)
+        except KeyProblem:
+            raise
+        except Exception as e:          # one bill's trouble shouldn't stop the run; it's retried next time
+            failed += 1
+            log.error("%s %s %s: %s", congress, bill_type, number, e)
+            if failed >= 20:
+                raise RuntimeError("20 bills failed in this run; stopping (is Congress.gov down?)") from e
+            continue
         if data:
             save_raw(congress, bill_type, number, data)
         else:
@@ -161,7 +177,7 @@ def sync(conn, http=None, check_all: bool = False, limit: int | None = None) -> 
         if done % 25 == 0:
             log.info("%s of %s bills checked", done, len(todo))
         time.sleep(PAUSE_SECONDS)
-    return {"loaded": done, "bills_checked": done, "not_found": missing,
+    return {"loaded": done, "bills_checked": done, "not_found": missing, "failed": failed,
             "at": datetime.now(timezone.utc).isoformat(timespec="seconds")}
 
 
