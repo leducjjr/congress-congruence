@@ -74,4 +74,7 @@ items:
         bill: [hr, 244]
         questions: *final
         note: Passed using an unrelated House bill (the HIRE Vets Act) as the vehicle.
-      senate: {date: 2017-05-04, expect: "79-18"}
+      senate:
+        date: 2017-05-04
+        expect: "79-18"
+        note: Passed using an unrelated House bill (the HIRE Vets Act) as the vehicle.

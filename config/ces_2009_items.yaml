@@ -64,7 +64,8 @@ items:
   cc09_59f:
     question: Health care reform (House bill, November 2009)
     votes:
-      house: {bill: [hr, 3962], questions: *final}
+      # On Passage only: H.R. 3962 was later reused for an unrelated Medicare bill (June 2010, 417-1).
+      house: {bill: [hr, 3962], questions: [On Passage]}
 
   cc09_59g:
     question: Confirm Sonia Sotomayor to the Supreme Court

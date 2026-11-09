@@ -58,21 +58,26 @@ items:
   CC316e:
     question: Expand the State Children's Health Insurance Program (SCHIP)
     votes:
-      house:  {bill: [hr, 976], questions: *final}
-      senate: {bill: [hr, 976], questions: *final}
+      # The final votes in September 2007 (vetoed); H.R. 976 began as a small-business tax bill,
+      # whose own February passage the bill-number rule picked up, so these are named by date and tally.
+      house:  {date: 2007-09-25, expect: "265-159"}
+      senate: {date: 2007-09-27, expect: "67-29"}
 
   CC316g:
     question: Federal help for homeowners facing foreclosure (Housing and Economic Recovery Act)
     votes:
       house:  {bill: [hr, 3221], questions: *final}
-      senate: {bill: [hr, 3221], questions: *final}
+      senate:
+        date: 2008-07-26
+        expect: "72-13"
+        note: The Senate's final vote, agreeing to the House's version (its April vote was on an earlier draft).
 
   CC316h:
     question: Extend NAFTA-style free trade to Peru (U.S.-Peru Trade Promotion Agreement)
     match: related
     note: The question asked about extending NAFTA; this is the trade agreement with Peru that Congress approved in 2007.
     votes:
-      house:  {bill: [hr, 3688], questions: *final}
+      house:  {date: 2007-11-08, expect: "285-132"}
       senate: {bill: [hr, 3688], questions: *final}
 
   CC316i:

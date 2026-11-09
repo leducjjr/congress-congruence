@@ -33,7 +33,7 @@ items:
     question: The 2017 tax bill (Tax Cuts and Jobs Act)
     votes:
       house:  {bill: [hr, 1], questions: [Concur, Conference Report]}
-      senate: {bill: [hr, 1], expect: "51-48"}
+      senate: {bill: [hr, 1], date: 2017-12-20, expect: "51-48"}
 
   CC18_327c:
     question: Repeal the entire Affordable Care Act
@@ -49,7 +49,7 @@ items:
     note: The 2017 tax law ended the penalty for not having insurance, along with its tax changes.
     votes:
       house:  {bill: [hr, 1], questions: [Concur, Conference Report]}
-      senate: {bill: [hr, 1], expect: "51-48"}
+      senate: {bill: [hr, 1], date: 2017-12-20, expect: "51-48"}
 
   CC18_327e:
     question: Partly repeal the Affordable Care Act (American Health Care Act)
