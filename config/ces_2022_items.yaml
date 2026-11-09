@@ -64,8 +64,11 @@ items:
   CC22_350e:
     question: $52 billion for U.S. semiconductor manufacturing and research (CHIPS and Science Act)
     votes:
-      house:  {bill: [hr, 4346], questions: *final}
-      senate: {bill: [hr, 4346], questions: *final}
+      house:
+        bill: [hr, 4346]
+        questions: *final
+        note: Passed using an unrelated appropriations bill as the vehicle, so the record's title doesn't match.
+      senate: {date: 2022-07-27, expect: "64-33"}
 
   CC22_350g:
     question: Appoint Ketanji Brown Jackson to the Supreme Court

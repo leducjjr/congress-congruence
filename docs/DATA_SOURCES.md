@@ -220,7 +220,7 @@ House district (`cdid119` for 2025, `cdid118` for 2024), survey weights, and ans
 **Exact wording.** "See the exact question" links to the survey guide on Dataverse, which
 the loader finds automatically. Readers search it for the item's code (e.g. `CC25_340a`).
 
-**Earlier years (2012–2023).** Prepared with `watch --draft`, then matched by hand in
+**Earlier years (2008–2023).** Prepared with `watch --draft`, then matched by hand in
 `config/ces_<year>_items.yaml`. What differs from year to year:
 - **Column names.** District columns are `cdid` (2012: 112th lines; 2014: 113th; 2015: 114th)
   or `cdid<congress>`; weights are `weight_vv` (2012), `weight` (2013–2015), `weights_common`
@@ -240,7 +240,7 @@ the loader finds automatically. Readers search it for the item's code (e.g. `CC2
 - **Left out:** questions with no floor vote (e.g. Merrick Garland, Cuba relations, a $15 minimum
   wage in 2016), general policy questions, and items where several votes could be meant; each
   file lists its omissions and why.
-- **2008–2011** use different column names (V-numbers) and are added once those are confirmed;
+- **2008–2011** use numbered column names (e.g. 2008: V201 weight, V206 state, V250 district);
   **2007** is published only as an SPSS file, which the loader doesn't read.
 
 ## 5. Constituent opinion: Program for Public Consultation (PPC)

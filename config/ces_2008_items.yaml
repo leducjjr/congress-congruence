@@ -1,0 +1,82 @@
+# CES 2008 questions about bills, matched to votes of the 110th Congress (2007-2008).
+# Answer codes: 1 = Support, 2 = Oppose (3 = Not sure is left out, like a skipped answer).
+# `ces link 2008` prints what each rule matched.
+#
+# Columns: this year's file uses numbered names. V201 = case weight, V206 = state (FIPS),
+# V250 = congressional district (110th Congress lines, the 2002 redistricting).
+#
+# Left out on purpose:
+#   CC316f (constitutional amendment to ban gay marriage): last voted on in 2006 (109th Congress),
+#             which isn't loaded.
+
+survey: CES 2008
+weight_preference: [V201]
+district_column: V250
+district_congress: 110
+state_column: V206
+
+source:
+  title: Cooperative Election Study 2008
+  fielded: fall 2008, before the election
+  dataset_url: https://doi.org/10.7910/DVN/YUYIVB
+  about_url: https://cces.gov.harvard.edu/
+
+final_questions: &final
+  - On Passage
+  - Passage of the Bill
+  - Suspend the Rules and Pass
+  - Concur
+  - Conference Report
+  - Agreeing to the Resolution
+  - Joint Resolution
+  - Concurrent Resolution
+
+items:
+  CC316a:
+    question: Withdraw U.S. troops from Iraq within 180 days (Responsible Redeployment from Iraq Act)
+    votes:
+      house: {bill: [hr, 2956], questions: *final}
+
+  CC316b:
+    question: Raise the federal minimum wage to $7.25 an hour (Fair Minimum Wage Act)
+    votes:
+      house:  {bill: [hr, 2], questions: *final}
+      senate: {bill: [hr, 2], questions: *final}
+
+  CC316c:
+    question: Fund research using embryonic stem cells (Stem Cell Research Enhancement Act)
+    votes:
+      house:  {bill: [s, 5], questions: *final}
+      senate: {bill: [s, 5], questions: *final}
+
+  CC316d:
+    question: Allow eavesdropping on overseas communications without a court order (FISA Amendments Act)
+    votes:
+      house:  {bill: [hr, 6304], questions: *final}
+      senate: {bill: [hr, 6304], questions: *final}
+
+  CC316e:
+    question: Expand the State Children's Health Insurance Program (SCHIP)
+    votes:
+      house:  {bill: [hr, 976], questions: *final}
+      senate: {bill: [hr, 976], questions: *final}
+
+  CC316g:
+    question: Federal help for homeowners facing foreclosure (Housing and Economic Recovery Act)
+    votes:
+      house:  {bill: [hr, 3221], questions: *final}
+      senate: {bill: [hr, 3221], questions: *final}
+
+  CC316h:
+    question: Extend NAFTA-style free trade to Peru (U.S.-Peru Trade Promotion Agreement)
+    match: related
+    note: The question asked about extending NAFTA; this is the trade agreement with Peru that Congress approved in 2007.
+    votes:
+      house:  {bill: [hr, 3688], questions: *final}
+      senate: {bill: [hr, 3688], questions: *final}
+
+  CC316i:
+    question: The $700 billion bank bailout (Emergency Economic Stabilization Act)
+    votes:
+      house:  {bill: [hr, 1424], questions: *final}
+      senate: {bill: [hr, 1424], questions: *final}

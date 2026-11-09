@@ -55,7 +55,7 @@ items:
       authority to negotiate it for an up-or-down vote ("fast track").
     votes:
       house:  {bill: [hr, 2146], questions: *final}
-      senate: {bill: [hr, 2146], questions: *final}
+      senate: {date: 2015-06-24, expect: "60-38"}
 
   CC15_327F2:
     question: USA Freedom Act (end bulk collection of phone records)

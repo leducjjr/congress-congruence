@@ -1,0 +1,68 @@
+# CES 2011 questions about bills, all passed in the 110th or 111th Congress. Respondents'
+# districts (112th Congress lines) are the same 2002 lines those Congresses used, so House votes
+# are compared too. Answer codes: 1 = Support, 2 = Oppose. `ces link 2011` prints the matches.
+#
+# Columns: V101 = common content weight, V206 = state (FIPS), V276 = congressional district.
+#
+# Left out on purpose:
+#   CC341E ("DADT") and CC341F ("Don't Ask Don't Tell"): two items with near-identical labels;
+#             add them once the survey guide confirms which wording each one asked.
+
+survey: CES 2011
+weight_preference: [V101]
+district_column: V276
+district_congress: 112
+district_lines_also: [110, 111]
+state_column: V206
+
+source:
+  title: Cooperative Election Study 2011
+  fielded: fall 2011
+  dataset_url: https://doi.org/10.7910/DVN/GLRXZ0
+  about_url: https://cces.gov.harvard.edu/
+
+final_questions: &final
+  - On Passage
+  - Passage of the Bill
+  - Suspend the Rules and Pass
+  - Concur
+  - Conference Report
+  - Agreeing to the Resolution
+  - Joint Resolution
+  - Concurrent Resolution
+
+items:
+  CC341A:
+    question: American Recovery and Reinvestment Act (the 2009 stimulus)
+    votes:
+      house:  {congress: 111, bill: [hr, 1], questions: [Conference Report]}
+      senate: {congress: 111, bill: [hr, 1], questions: [Conference Report]}
+
+  CC341B:
+    question: Expand the State Children's Health Insurance Program (CHIP)
+    votes:
+      house:  {congress: 111, bill: [hr, 2], questions: *final}
+      senate: {congress: 111, bill: [hr, 2], questions: *final}
+
+  CC341C:
+    question: American Clean Energy and Security Act (cap and trade)
+    votes:
+      house: {congress: 111, bill: [hr, 2454], questions: *final}
+
+  CC341D:
+    question: Health care reform (Affordable Care Act)
+    votes:
+      house:  {congress: 111, bill: [hr, 3590], questions: [Concur]}
+      senate: {congress: 111, bill: [hr, 3590], questions: [Passage]}
+
+  CC341G:
+    question: Fund research using embryonic stem cells (Stem Cell Research Enhancement Act)
+    votes:
+      house:  {congress: 110, bill: [s, 5], questions: *final}
+      senate: {congress: 110, bill: [s, 5], questions: *final}
+
+  CC341H:
+    question: The 2008 bank bailout (Troubled Asset Relief Program)
+    votes:
+      house:  {congress: 110, bill: [hr, 1424], questions: *final}
+      senate: {congress: 110, bill: [hr, 1424], questions: *final}

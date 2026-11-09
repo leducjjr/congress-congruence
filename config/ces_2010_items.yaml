@@ -1,0 +1,87 @@
+# CES 2010 questions about bills, matched to votes of the 111th Congress (2009-2010) and, for
+# two items, the 110th (same district lines). Answer codes: 1 = Support, 2 = Oppose.
+# `ces link 2010` prints what each rule matched.
+#
+# Columns: V101 = common content weight, V206 = state (FIPS), V276 = congressional district
+# (111th Congress lines, the same as the 110th's).
+#
+# Left out on purpose:
+#   CC332H ("Fed Intel and Sec Act"): no clear match for this short label.
+
+survey: CES 2010
+weight_preference: [V101]
+district_column: V276
+district_congress: 111
+district_lines_also: [110]
+state_column: V206
+
+source:
+  title: Cooperative Election Study 2010
+  fielded: fall 2010, before the election
+  dataset_url: https://doi.org/10.7910/DVN/VKKRWA
+  about_url: https://cces.gov.harvard.edu/
+
+final_questions: &final
+  - On Passage
+  - Passage of the Bill
+  - Suspend the Rules and Pass
+  - Concur
+  - Conference Report
+  - Agreeing to the Resolution
+  - Joint Resolution
+  - Concurrent Resolution
+
+items:
+  CC332A:
+    question: American Recovery and Reinvestment Act (the 2009 stimulus)
+    votes:
+      house:  {bill: [hr, 1], questions: [Conference Report]}
+      senate: {bill: [hr, 1], questions: [Conference Report]}
+
+  CC332B:
+    question: Expand the State Children's Health Insurance Program (CHIP)
+    votes:
+      house:  {bill: [hr, 2], questions: *final}
+      senate: {bill: [hr, 2], questions: *final}
+
+  CC332C:
+    question: American Clean Energy and Security Act (cap and trade)
+    votes:
+      house: {bill: [hr, 2454], questions: *final}
+
+  CC332D:
+    question: Health care reform (Affordable Care Act)
+    votes:
+      house:  {bill: [hr, 3590], questions: [Concur]}
+      senate: {bill: [hr, 3590], questions: [Passage]}
+
+  CC332E:
+    question: Confirm Elena Kagan to the Supreme Court
+    votes:
+      senate: {find: Kagan, questions: [Nomination]}
+
+  CC332F:
+    question: Financial reform (Dodd-Frank Wall Street Reform and Consumer Protection Act)
+    votes:
+      house:  {bill: [hr, 4173], questions: [Conference Report]}
+      senate: {bill: [hr, 4173], questions: [Conference Report]}
+
+  CC332G:
+    question: Repeal "Don't Ask, Don't Tell" (let gay people serve openly in the military)
+    votes:
+      house:
+        date: 2010-05-27
+        expect: "234-194"
+        note: The House's May 2010 amendment to the defense bill to repeal the policy, the vote before this survey.
+
+  CC332I:
+    question: Fund research using embryonic stem cells (Stem Cell Research Enhancement Act)
+    votes:
+      house:  {congress: 110, bill: [s, 5], questions: *final}
+      senate: {congress: 110, bill: [s, 5], questions: *final}
+
+  CC332J:
+    question: The 2008 bank bailout (Troubled Asset Relief Program)
+    votes:
+      house:  {congress: 110, bill: [hr, 1424], questions: *final}
+      senate: {congress: 110, bill: [hr, 1424], questions: *final}

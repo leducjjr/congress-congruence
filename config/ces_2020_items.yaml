@@ -82,7 +82,9 @@ items:
       senate:
         bill: [hr, 748]
         questions: *final
-        note: The House passed it by voice vote, so there is no House roll call to compare.
+        note: >-
+          The House passed it by voice vote, so there is no House roll call to compare. The Senate
+          used an unrelated House bill as the vehicle, so the record's title doesn't match.
 
   CC20_351b:
     question: HEROES Act ($3 trillion more in coronavirus relief, May 2020)

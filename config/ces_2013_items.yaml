@@ -30,7 +30,10 @@ items:
   CC332A:
     question: Ban abortions after 20 weeks of pregnancy (Pain-Capable Unborn Child Protection Act)
     votes:
-      house: {bill: [hr, 1797], questions: *final}
+      house:
+        bill: [hr, 1797]
+        questions: *final
+        note: The bill was first written for the District of Columbia and widened to the whole country before this vote; its title kept the original wording.
 
   CC332C:
     question: Repeal the Affordable Care Act

@@ -49,8 +49,14 @@ items:
   CC14_325_5:
     question: Raise the debt ceiling
     votes:
-      house:  {bill: [s, 540], questions: *final}
-      senate: {bill: [s, 540], questions: *final}
+      house:
+        bill: [s, 540]
+        questions: *final
+        note: The debt-limit increase was passed using an unrelated Senate bill (about naming an air traffic control center) as the vehicle.
+      senate:
+        date: 2014-02-12
+        expect: "55-43"
+        note: The Senate's final vote, agreeing to the House's debt-limit text.
 
   CC14_331_1:
     question: Agriculture bill (farm programs and food stamps, 2014 Farm Bill)

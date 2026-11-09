@@ -40,4 +40,4 @@ items:
   CC23_340e:
     question: Increase spending on mental health and school safety, and tighten gun background checks for buyers under 21 (Bipartisan Safer Communities Act)
     votes:
-      senate: {congress: 117, bill: [s, 2938], questions: *final}
+      senate: {congress: 117, date: 2022-06-23, expect: "65-33"}

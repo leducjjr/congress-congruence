@@ -100,4 +100,5 @@ items:
     question: End "Don't Ask, Don't Tell" (let gay people serve openly in the military)
     votes:
       house:  {congress: 111, bill: [hr, 2965], questions: [Concur]}
-      senate: {congress: 111, bill: [hr, 2965], questions: [Concur]}
+      # Voteview words this vote differently, so it's named by date and tally.
+      senate: {congress: 111, date: 2010-12-18, expect: "65-31"}

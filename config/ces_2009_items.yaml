@@ -1,0 +1,72 @@
+# CES 2009 questions about bills, matched to votes of the 111th Congress (2009-2010).
+# Answer codes: 1 = Support, 2 = Oppose. `ces link 2009` prints what each rule matched.
+#
+# Columns: v200 = case weight, v259 = state of residence (FIPS), v264 = congressional district
+# (111th Congress lines).
+#
+# Left out on purpose:
+#   cc09_59h (health care for all): no floor vote on a single-payer plan.
+
+survey: CES 2009
+weight_preference: [v200]
+district_column: v264
+district_congress: 111
+state_column: v259
+
+source:
+  title: Cooperative Election Study 2009
+  fielded: fall 2009
+  dataset_url: https://doi.org/10.7910/DVN/KKM9UK
+  about_url: https://cces.gov.harvard.edu/
+
+final_questions: &final
+  - On Passage
+  - Passage of the Bill
+  - Suspend the Rules and Pass
+  - Concur
+  - Conference Report
+  - Agreeing to the Resolution
+  - Joint Resolution
+  - Concurrent Resolution
+
+items:
+  cc09_59a:
+    question: Lilly Ledbetter Fair Pay Act (more time to sue over pay discrimination)
+    votes:
+      house:  {bill: [s, 181], questions: *final}
+      senate: {bill: [s, 181], questions: *final}
+
+  cc09_59b:
+    question: Expand federal hate-crimes law to cover sexual orientation and gender identity
+    votes:
+      house:
+        bill: [hr, 1913]
+        questions: *final
+        note: The House's stand-alone bill; it later became law as part of the 2010 defense bill.
+
+  cc09_59c:
+    question: American Recovery and Reinvestment Act (the 2009 stimulus)
+    votes:
+      house:  {bill: [hr, 1], questions: [Conference Report]}
+      senate: {bill: [hr, 1], questions: [Conference Report]}
+
+  cc09_59d:
+    question: Expand the State Children's Health Insurance Program (CHIP)
+    votes:
+      house:  {bill: [hr, 2], questions: *final}
+      senate: {bill: [hr, 2], questions: *final}
+
+  cc09_59e:
+    question: American Clean Energy and Security Act (cap and trade)
+    votes:
+      house: {bill: [hr, 2454], questions: *final}
+
+  cc09_59f:
+    question: Health care reform (House bill, November 2009)
+    votes:
+      house: {bill: [hr, 3962], questions: *final}
+
+  cc09_59g:
+    question: Confirm Sonia Sotomayor to the Supreme Court
+    votes:
+      senate: {find: Sotomayor, questions: [Nomination]}

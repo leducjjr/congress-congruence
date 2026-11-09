@@ -70,5 +70,8 @@ items:
   CC17_340I:
     question: Consolidated Appropriations Act of 2017 (government funding through September 2017)
     votes:
-      house:  {bill: [hr, 244], questions: *final}
-      senate: {bill: [hr, 244], questions: *final}
+      house:
+        bill: [hr, 244]
+        questions: *final
+        note: Passed using an unrelated House bill (the HIRE Vets Act) as the vehicle.
+      senate: {date: 2017-05-04, expect: "79-18"}
