@@ -15,13 +15,15 @@ Method (v1, "partial pooling"):
    covers 90% in simulation; see Z90). If the range includes 50%, the area's
    majority is "too close" to call.
 
-This is simpler than full MRP (which would also use each district's demographics
-and past election results); it is honest about uncertainty but districts with few
-respondents will mostly show "too close". Nothing here touches the database.
+v2 ("partial-pooling-v2-census"): districts are pulled toward their state's estimate plus a
+prediction from their Census profile (education, income, age, race and ethnicity), fitted
+across all districts, instead of toward the state alone. Used when every district has a profile.
+Still simpler than full MRP (no election results, no individual-level model). Nothing here
+touches the database.
 """
 
 from dataclasses import dataclass
-from math import sqrt
+from math import log, sqrt
 
 # Range multiplier. The textbook 90% value is 1.645, but these estimates treat the
 # pooling strength as known, so ranges built with 1.645 caught the true value only
@@ -29,6 +31,12 @@ from math import sqrt
 # coverage to 91-96% across those scenarios, with about 1% of clear calls wrong.
 Z90 = 1.9
 METHOD = "partial-pooling-v1.1"
+METHOD_WITH_PROFILES = "partial-pooling-v2-census"   # districts pulled toward a Census-profile prediction
+PROFILE_FIELDS = ("pct_ba", "median_income", "pct_white_nh", "pct_black", "pct_hispanic", "median_age")
+RIDGE = 0.1              # shrinks the profile coefficients a little, so a few odd districts can't swing them
+MIN_DISTRICTS_PER_FIELD = 10   # fit the profile only with at least this many districts with respondents
+                               # per profile figure (60); fewer, and it can chase noise (simulated: worse
+                               # than state-only pooling with 20 districts, no worse with 435)
 MIN_TAU2 = 0.0025        # floor on between-area variance: assume areas can differ by at least ~5 points.
                          # Without it, a small apparent spread pools areas so hard that ranges get
                          # unrealistically narrow.
@@ -99,11 +107,68 @@ def pool(raw: float | None, n_eff: float, parent: float, tau2: float,
     return est, max(0.0, est - Z90 * se), min(1.0, est + Z90 * se)
 
 
+def profile_matrix(keys: list[tuple[str, int]], profiles: dict) -> list[list[float]] | None:
+    """Census profile of each district, as differences from the average district in its state
+    (so the state's own level isn't counted twice), each scaled to a standard deviation of 1.
+    None if any district lacks a profile."""
+    rows = []
+    for k in keys:
+        p = profiles.get(k)
+        if not p or any(p.get(f) is None for f in PROFILE_FIELDS):
+            return None
+        rows.append([log(max(p[f], 1.0)) if f == "median_income" else float(p[f]) for f in PROFILE_FIELDS])
+    by_state: dict[str, list[int]] = {}
+    for i, (st, _) in enumerate(keys):
+        by_state.setdefault(st, []).append(i)
+    centered = [row[:] for row in rows]
+    for idx in by_state.values():
+        for j in range(len(PROFILE_FIELDS)):
+            m = sum(rows[i][j] for i in idx) / len(idx)
+            for i in idx:
+                centered[i][j] = rows[i][j] - m
+    for j in range(len(PROFILE_FIELDS)):
+        col = [r[j] for r in centered]
+        sd = sqrt(sum(c * c for c in col) / len(col)) or 1.0
+        for r in centered:
+            r[j] /= sd
+    return centered
+
+
+def profile_predictions(keys, X, raw, state_est, tau2):
+    """Each district's expected share from its state's estimate plus its Census profile:
+    a weighted ridge regression of (raw district share - state estimate) on the profile,
+    fitted across all districts with respondents. Returns ({key: prediction}, {key: variance})."""
+    import numpy as np
+    Xa = np.array(X)
+    use = [i for i, k in enumerate(keys) if raw[k][0] is not None and raw[k][1] > 0]
+    k_ = Xa.shape[1]
+    if len(use) < MIN_DISTRICTS_PER_FIELD * k_:
+        return ({k: state_est[k[0]] for k in keys}, {k: 0.0 for k in keys})
+    y = np.array([raw[keys[i]][0] - state_est[keys[i][0]] for i in use])
+    w = np.array([1.0 / (max(state_est[keys[i][0]] * (1 - state_est[keys[i][0]]), 1e-4) / raw[keys[i]][1] + tau2)
+                  for i in use])
+    Xu = Xa[use]
+    xtwx = Xu.T @ (Xu * w[:, None])
+    lam = RIDGE * np.trace(xtwx) / k_
+    cov = np.linalg.inv(xtwx + lam * np.eye(k_))
+    beta = cov @ (Xu.T @ (w * y))
+    pred, var = {}, {}
+    for i, key in enumerate(keys):
+        x = Xa[i]
+        pred[key] = float(min(max(state_est[key[0]] + x @ beta, 0.02), 0.98))
+        var[key] = float(x @ cov @ x)
+    return pred, var
+
+
 def estimate(responses: list[tuple[str, int | None, int, float]],
-             districts_by_state: dict[str, list[int]]) -> tuple[list[Area], list[Area]]:
+             districts_by_state: dict[str, list[int]],
+             profiles: dict | None = None) -> tuple[list[Area], list[Area]]:
     """responses: (state, district or None, support 1/0, weight) for people who answered.
     districts_by_state: every House district to report, so districts nobody in the sample
     lives in still get an (uncertain) estimate from their state.
+    profiles: optional {(state, district): Census profile} for the survey's district lines. With
+    them, each district is pulled toward what its state's estimate plus its own profile predict
+    (v2) rather than toward the state alone (v1), so districts differ as much as the data supports.
     Returns (state areas, district areas)."""
     by_state: dict[str, list] = {}
     by_district: dict[tuple[str, int], list] = {}
@@ -135,9 +200,19 @@ def estimate(responses: list[tuple[str, int | None, int, float]],
         for d in dists:
             sw, sw2, n, p = summarize(by_district.get((st, d), []))
             dist_raw[(st, d)] = (p, effective_n(sw, sw2), n)
-    tau2_dist = between_variance([(p, n_eff, state_est[st]) for (st, _), (p, n_eff, _) in dist_raw.items()])
+    keys = sorted(dist_raw)
+    parent = {k: state_est[k[0]] for k in keys}
+    parent_var = {k: state_var[k[0]] for k in keys}
+    X = profile_matrix(keys, profiles) if profiles else None
+    if X is not None:
+        tau2_guess = between_variance([(dist_raw[k][0], dist_raw[k][1], parent[k]) for k in keys])
+        pred, pvar = profile_predictions(keys, X, dist_raw, state_est, tau2_guess)
+        parent = pred
+        parent_var = {k: state_var[k[0]] + pvar[k] for k in keys}
+    tau2_dist = between_variance([(dist_raw[k][0], dist_raw[k][1], parent[k]) for k in keys])
     districts = []
-    for (st, d), (p, n_eff, n) in sorted(dist_raw.items()):
-        est, lo, hi = pool(p, n_eff, state_est[st], tau2_dist, state_var[st])
+    for (st, d) in keys:
+        p, n_eff, n = dist_raw[(st, d)]
+        est, lo, hi = pool(p, n_eff, parent[(st, d)], tau2_dist, parent_var[(st, d)])
         districts.append(Area(st, d, n, n_eff, p, est, lo, hi))
     return states, districts

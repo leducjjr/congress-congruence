@@ -380,6 +380,34 @@ Special handling:
 - **2026 measures** go in `config/ballot_2026_items.yaml` once states certify (expected: voter ID in
   NV, NC, OH, CA; citizenship in AK, AR, KS, SD, WV; Colorado Amendment 81 with the Laken Riley Act).
 
+## 6a. District profiles: Census Bureau (for district opinion estimates)
+
+| | |
+| --- | --- |
+| Source | American Community Survey 1-year estimates, api.census.gov (same key as population) |
+| Loaded by | `python -m congress_congruence.ingest.district_profile 2007 2024` (2020 isn't released) |
+| Stored as | `core.district_profile`, one row per district per Congress's lines; the latest ACS year wins |
+
+Figures: bachelor's degree or more among adults 25+ (B15002), median household income (B19013),
+non-Hispanic white, non-Hispanic Black and Hispanic shares (B03002), median age (B01002).
+
+**How they're used** (`opinion.py`, method `partial-pooling-v2-census`). States are pooled toward
+the nation as before. For districts, the loader first fits, across every district with respondents,
+a weighted ridge regression of (raw district share − state estimate) on the district's profile,
+expressed as differences from its state's average district and standardized. Each district is then
+pulled toward state estimate + its predicted difference instead of the state estimate alone; the
+prediction's own uncertainty is added to the range. With fewer than 60 districts with respondents
+(10 per figure), or any district missing a profile, it falls back to v1.1 (state only).
+
+**Why.** v1.1 pulled small district samples so hard toward the state that districts in one state
+came out nearly alike: on party-line bills, Democratic- and Republican-held districts averaged only
+~5 points apart. Election results would predict better, but the complete district-level tables
+come from a partisan-branded publisher, so the official, nonpartisan Census profile was chosen.
+In simulation (435 districts, 40 or 130 respondents each): where the profile explains differences,
+district error fell from 4.5–7.4 points to 3.4–4.6, coverage of the 90% range rose from 91–93% to
+96%, clear calls rose (e.g. 29% → 48%) and wrong clear calls fell (1.4% → 0.4%); where it explains
+nothing, results matched v1.1.
+
 ## 6. Residents per area: Census Bureau
 
 | | |

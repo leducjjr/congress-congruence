@@ -36,7 +36,11 @@ CONGRESS_IN_NAME = re.compile(r"\((\d+)(?:st|nd|rd|th) Congress\)")
 
 
 def fetch(year: int, geography: str, within: str | None = None, http=None) -> list[list[str]]:
-    params = {"get": f"NAME,{TOTAL_POPULATION}", "for": geography}
+    return api_get(year, [TOTAL_POPULATION], geography, within, http)
+
+
+def api_get(year: int, variables: list[str], geography: str, within: str | None = None, http=None) -> list[list[str]]:
+    params = {"get": ",".join(["NAME", *variables]), "for": geography}
     if within:
         params["in"] = within
     if os.environ.get("CENSUS_API_KEY"):

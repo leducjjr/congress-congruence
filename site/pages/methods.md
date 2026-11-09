@@ -49,13 +49,19 @@ The Cooperative Election Study (CES) surveys tens of thousands of people a year,
 dozen in a typical House district: too few to report a district's raw percentage reliably. So we use a
 standard technique called **partial pooling**:
 
-- each state's estimate is pulled toward the national figure, and each district's toward its state's;
+- each state's estimate is pulled toward the national figure;
+- each district's is pulled toward what we'd expect for a district like it: its state's figure, adjusted
+  for the district's Census profile (education, income, age, and racial and ethnic makeup), so a
+  college-town district and a rural one in the same state aren't assumed to think alike. The Census
+  figures are official and nonpartisan; no election results are used;
 - the fewer people surveyed in an area, the stronger the pull;
 - how strong to pull is learned from how much areas genuinely differ in the survey.
 
 Each estimate comes with a **90% range**: the span the true figure very likely falls in. We tested the
 method on simulated surveys where the right answer was known. Pooling cut district errors by about a
 third compared with raw percentages, and our ranges contained the true figure 91–96% of the time.
+Adding the Census profile cut district errors by up to a third again where districts in a state really
+differ, made no difference where they don't, and gave more clear calls with fewer wrong ones.
 Where a district's range crosses 50%, it's too close to call. That's common in House districts and is
 the honest answer when few people were asked.
 

@@ -455,11 +455,23 @@ def load(conn, year: int, local_file: Path | None = None) -> dict:
     df = read_columns(path, [cfg["state_column"], cfg["district_column"], weight_col] + items)
     seats = house_seats(conn, year)
     links = link(conn, year, cfg)
+    from . import district_profile
+    lines = district_congress(cfg, cfg.get("congress") or survey_congress(year))
+    profiles = district_profile.profiles_for(conn, lines)
+    keys = [(st, d) for st, ds in seats.items() for d in ds]
+    if profiles and opinion.profile_matrix(sorted(keys), profiles) is not None:
+        method = opinion.METHOD_WITH_PROFILES
+    else:
+        if profiles:
+            log.warning("Census profiles for the %sth Congress lines don't cover every district; "
+                        "districts are pooled toward their state only", lines)
+        profiles, method = None, opinion.METHOD
     conn.commit()   # end the read-only transaction the lookups opened, so the block below is a real
                     # transaction (inside an open one it would only be a savepoint, committed later)
 
     survey = cfg["survey"]
-    summary = {"respondents": nrows, "weight": weight_col, "items": len(items), "votes_linked": len(links)}
+    summary = {"respondents": nrows, "weight": weight_col, "items": len(items), "votes_linked": len(links),
+               "method": method}
     with conn.transaction(), conn.cursor() as cur:
         src = {"organization": "Cooperative Election Study",
                "description": "a large academic survey of U.S. adults", **cfg.get("source", {})}
@@ -470,14 +482,14 @@ def load(conn, year: int, local_file: Path | None = None) -> dict:
         counts = {"support": 0, "oppose": 0, "too_close": 0}
         for var in items:
             resp = responses_for(df, var, cfg["state_column"], cfg["district_column"], weight_col, seats)
-            states, districts = opinion.estimate(resp, seats)
+            states, districts = opinion.estimate(resp, seats, profiles)
             for a in states + districts:
                 cur.execute(
                     """insert into core.opinion_estimate (survey, variable, state, district, respondents,
                        effective_n, raw_support, support, support_low, support_high, majority, method)
                        values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
                     (survey, var, a.state, a.district, a.respondents, a.effective_n, a.raw_support,
-                     a.support, a.low, a.high, a.majority, opinion.METHOD))
+                     a.support, a.low, a.high, a.majority, method))
                 if a.district is not None:
                     counts[a.majority] += 1
         summary["district_calls"] = counts
