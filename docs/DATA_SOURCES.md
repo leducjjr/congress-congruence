@@ -67,7 +67,9 @@ Principles that apply to every source:
   logs the hole. 2007's votes 1000–1186 turned out not to be fetchable from the Clerk's XML address at
   all (four-digit numbers), so they come from Voteview's House file instead
   (`voteview house 110`), which uses the Clerk's roll numbers and never overwrites a vote
-  already loaded from the Clerk.
+  already loaded from the Clerk. Of those 186, 172 loaded; 13 were refused because Voteview's member
+  list doesn't add up to its own published totals (by 1–4 votes, e.g. h-110-1-1031), so they're
+  left out rather than guessed. They're Nov–Dec 2007 votes; none is linked to a survey question.
 - **Vacated votes.** A vote vacated by unanimous consent keeps its roll number, but its file
   lists nobody and every total is zero (e.g. h-114-1-300, June 4, 2015; also h-114-2-44,
   h-113-2-275, h-112-1-484, h-112-2-327). These are noted as vacated and skipped, not loaded and
