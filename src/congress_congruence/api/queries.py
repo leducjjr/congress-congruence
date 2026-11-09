@@ -128,7 +128,7 @@ select si.survey, si.variable, si.question, coalesce(siv.reader_note, si.note) a
        r.roll_call_id, r.chamber, r.congress, r.session, r.roll_number, r.vote_date,
        r.question as vote_question, r.result, r.yea_total, r.nay_total,
        mv.position, siv.support_side, siv.match_kind,
-       t.state, t.district as seat_district, t.party_name,
+       t.state, t.district as seat_district, t.party_name, t.own_party,
        pv.party_yea, pv.party_nay,
        oe.support, oe.support_low, oe.support_high, oe.majority, oe.respondents, oe.district,
        oe.source_url, oe.area_note, s.kind,
@@ -139,7 +139,8 @@ select si.survey, si.variable, si.question, coalesce(siv.reader_note, si.note) a
   join core.survey s on s.survey = si.survey
   join core.roll_call r on r.roll_call_id = mv.roll_call_id
   join lateral (
-        select state, district, coalesce(nullif(t.caucus, t.party), t.party) as party_name from core.term t
+        select state, district, coalesce(nullif(t.caucus, t.party), t.party) as party_name,
+               t.party as own_party from core.term t
          where t.bioguide_id = mv.bioguide_id and t.chamber = r.chamber
            and r.vote_date between t.start_date and t.end_date
          order by t.start_date desc limit 1) t on true

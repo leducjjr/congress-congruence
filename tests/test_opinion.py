@@ -200,12 +200,23 @@ def test_api_senator_compared_with_state(client):
 
 def test_api_reports_how_the_members_party_voted(client):
     items = client.get("/v1/members/S000001/opinion").json()["items"]
-    # The fixture's senators are the only members of their party in the chamber, so the party's
-    # side is the member's own side on every vote they cast.
+    # The fixture's senator is the only member of their party in the chamber: a "party" of one
+    # isn't a group to compare with, so it has no side.
     for i in items:
-        assert i["party"]["name"]
-        if i["sided_with"]:
-            assert i["party"]["sided_with"] == i["sided_with"]
+        assert i["party"]["name"] and i["party"]["sided_with"] is None
+
+
+def test_party_position_rules():
+    from congress_congruence.api.app import party_position
+    row = lambda yea, nay, party="Democrat", own="Democrat", side="yea": {   # noqa: E731
+        "party_yea": yea, "party_nay": nay, "party_name": party, "own_party": own, "support_side": side}
+    assert party_position(row(40, 5)) == {"name": "Democrat", "sided_with": "support", "caucus_of": None}
+    assert party_position(row(40, 5, side="nay"))["sided_with"] == "oppose"
+    assert party_position(row(20, 20))["sided_with"] is None                 # tie
+    assert party_position(row(1, 0, "Independent", "Independent"))["sided_with"] is None   # a party of one
+    # An independent who caucuses with Democrats is compared with the Democratic caucus, and says so.
+    assert party_position(row(45, 2, "Democrat", "Independent")) == {
+        "name": "Democrat", "sided_with": "support", "caucus_of": "Independent"}
 
 
 def test_api_split_district_is_too_close(client):

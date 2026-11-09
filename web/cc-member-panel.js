@@ -754,21 +754,26 @@
       const xs = state.filter(i => i.party && i.party.sided_with && i.party.sided_with !== i.constituents.majority);
       const areas = [...new Set(state.map(areaOf))];
       const place = areas.length === 1 ? areas[0] : "their state";
-      const party = (state.find(i => i.party && i.party.name) || {}).party?.name;
-      const members = party ? ({ Democrat: "Democrats", Republican: "Republicans", Independent: "independents" }[party] || party) : "party";
+      // Only votes where the member's party (or caucus) had a side of its own: an independent who
+      // caucuses with no one has no group to compare with, and gets no line.
+      const withParty = state.filter(i => i.party && i.party.sided_with);
+      if (!withParty.length) return null;
+      const p = withParty.at(-1).party;
+      const plural = { Democrat: "Democrats", Republican: "Republicans" }[p.name] || p.name;
+      const group = p.caucus_of ? `the ${plural} they caucus with` : `their party (${plural})`;
       if (!xs.length)
-        return h("p", { class: "op-party" }, `On every surveyed vote where ${place}'s majority was clear, it and the member's party (${members}) were on the same side.`);
+        return h("p", { class: "op-party" }, `On every surveyed vote where ${place}'s majority was clear, ${group} and ${place} were on the same side.`);
       const sidedPlace = xs.filter(i => i.sided_with === i.constituents.majority);
       const lines = [...xs].reverse().map(i => {
         const jump = h("button", { type: "button", class: "linkish" }, i.question);
         jump.addEventListener("click", () => this.flash(this.root.querySelector(`li[data-op="${CSS.escape(i.vote.roll_call_id)}"]`)));
         return h("li", {}, jump, ` (${fmtDate(i.vote.date)}): `,
-          h("strong", {}, i.sided_with === i.constituents.majority ? `sided with ${areaOf(i)}` : "sided with their party"));
+          h("strong", {}, i.sided_with === i.constituents.majority ? `sided with ${areaOf(i)}` : `sided with ${p.caucus_of ? "their caucus" : "their party"}`));
       });
       return h("div", { class: "op-party" },
-        h("p", {}, `Where their party (${members}) and ${place}'s clear majority disagreed: `,
+        h("p", {}, `Where ${group} and ${place}'s clear majority disagreed: `,
           h("strong", {}, `${xs.length} ${xs.length === 1 ? "vote" : "votes"}`), `. They sided with ${place} on `,
-          h("strong", {}, String(sidedPlace.length)), " and with their party on ",
+          h("strong", {}, String(sidedPlace.length)), ` and with ${p.caucus_of ? "their caucus" : "their party"} on `,
           h("strong", {}, String(xs.length - sidedPlace.length)), "."),
         this.foldable("party-conflicts", xs.length === 1 ? "Show this vote" : "Show these votes",
           h("ul", { class: "op-party-list" }, lines)));

@@ -519,6 +519,19 @@ def sided_with(position: str, support_side: str = "yea") -> str | None:
     return "support" if position == support_side else "oppose"
 
 
+MIN_PARTY_VOTES = 3    # a party side needs at least this many members voting
+
+
+def party_position(r: dict) -> dict:
+    yea, nay = r["party_yea"] or 0, r["party_nay"] or 0
+    side = None
+    if yea + nay >= MIN_PARTY_VOTES and yea != nay:
+        side = sided_with("yea" if yea > nay else "nay", r["support_side"])
+    return {"name": r["party_name"], "sided_with": side,
+            # elected as an independent (or other party) but counted with the caucus they sit with
+            "caucus_of": r["own_party"] if r["own_party"] and r["own_party"] != r["party_name"] else None}
+
+
 def agreement(position: str, majority: str, support_side: str = "yea") -> str:
     """How a vote lines up with the estimated majority where the member represents."""
     side = sided_with(position, support_side)
@@ -557,11 +570,10 @@ def member_opinion(bioguide_id: str, response: Response):
                                                 r["roll_number"], r["vote_date"]),
         },
         "position": r["position"],
-        # Which side of the proposal most of the member's own party took on this vote (None on a tie).
-        "party": {"name": r["party_name"],
-                  "sided_with": (sided_with("yea" if (r["party_yea"] or 0) > (r["party_nay"] or 0) else "nay",
-                                            r["support_side"])
-                                 if (r["party_yea"] or 0) != (r["party_nay"] or 0) else None)},
+        # Which side of the proposal most of the member's party (or the party they caucus with) took on
+        # this vote. None on a tie, or when the "party" is too small to be a group to compare with
+        # (an independent who caucuses with no one would otherwise be compared with themselves).
+        "party": party_position(r),
         "match": r["match_kind"],                       # same | related (related is never scored)
         "support_side": r["support_side"],              # which vote (yea/nay) supported the proposal
         "sided_with": sided_with(r["position"], r["support_side"]),

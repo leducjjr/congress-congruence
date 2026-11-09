@@ -99,6 +99,8 @@ comparison names its source. When sources agree, that's worth knowing; when they
   with.
 - **Where their party and their state disagreed:** surveyed votes where most of the member's party
   in that chamber, on that day, took one side and the state's clear survey majority took the other.
+  Independents who caucus with a party are compared with that caucus, and the page says so; an
+  independent who caucuses with no one has no group to compare with, so the line isn't shown.
   It's a count with the votes listed, so you can open each one; it isn't a score. Only votes on the
   same proposal the survey asked about, with a clear majority, are included. It's shown for statewide
   comparisons (senators) for now, because district estimates are less certain.
