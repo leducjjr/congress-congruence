@@ -127,7 +127,7 @@ main_class: home
   openFromHash();
 
   // Remember the last few members opened, in this browser only, so search results can show
-  // "how your members voted". Nothing is sent anywhere; the Search page can forget them.
+  // how recently viewed members voted. Kept only in this browser; Search and All votes can forget them.
   panel.addEventListener("cc-member-loaded", e => {
     try {
       const m = e.detail, key = "cc-my-members";

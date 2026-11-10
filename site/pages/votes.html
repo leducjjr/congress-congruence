@@ -49,6 +49,7 @@ main_class: votes-page
   <button type="submit" class="show-more">Apply</button>
 </form>
 
+<p class="mine" id="mine" hidden></p>
 <div id="out" aria-live="polite"><p class="empty">Loading…</p></div>
 
 <details class="more how-filters">
@@ -130,7 +131,12 @@ addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  const run = () => load(false).catch(e => out.replaceChildren(el("p", { class: "empty" }, `The list couldn't load: ${e.message}`)));
+  function showMine() {
+    const note = window.CC.recentNote(run), box = $("mine");
+    box.replaceChildren(...(note ? note.childNodes : []));
+    box.hidden = !note;
+  }
+  const run = () => (showMine(), load(false)).catch(e => out.replaceChildren(el("p", { class: "empty" }, `The list couldn't load: ${e.message}`)));
   form.addEventListener("submit", e => { e.preventDefault(); run(); });
   for (const id of ["chamber", "congress", "kind", "outcome", "topic", "sort", "surveyed"]) $(`f-${id}`).addEventListener("change", run);
   filtersReady.then(run);

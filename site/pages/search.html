@@ -49,13 +49,9 @@ addEventListener("DOMContentLoaded", () => {
   const $ = id => document.getElementById(id);
 
   function showMine() {
-    const mine = myMembers(), box = $("mine");
-    if (!mine.length) { box.hidden = true; return; }
-    const clear = el("button", { type: "button" }, "forget");
-    clear.addEventListener("click", () => { forgetMembers(); run(); });
-    box.replaceChildren("Showing how your members voted: ", mine.map(m => m.name).join(", "),
-      " (members you've looked at on this device, kept only in this browser) ", clear);
-    box.hidden = false;
+    const note = window.CC.recentNote(run), box = $("mine");
+    box.replaceChildren(...(note ? note.childNodes : []));
+    box.hidden = !note;
   }
 
   const params = new URLSearchParams(location.search);

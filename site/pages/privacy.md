@@ -28,10 +28,10 @@ reply or fix what you reported; ask us at the privacy address above to delete yo
 
 ## What stays in your browser {#browser}
 
-So that search results can show how *your* members voted, the site remembers the last three members
-you looked at, in your browser's own storage on your device. It isn't a cookie. Their member IDs are
+So that search results and the All votes list can show how members you recently viewed voted, the
+site remembers the last three members you opened, in your browser's own storage on your device. It isn't a cookie. Their member IDs are
 included in search requests only so the answer can show their votes; they aren't stored on our side.
-The **forget** link on the Search page clears the list, as does clearing your browser's site data.
+The **forget** button on the Search and All votes pages clears the list, as does clearing your browser's site data.
 
 If you turn on **Hide party labels**, your browser remembers that choice the same way, on your device
 only. Nothing about it is sent to us.

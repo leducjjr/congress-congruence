@@ -1,5 +1,5 @@
 // Shared pieces for pages that show survey questions (Search, Surveyed votes): small DOM helper,
-// formatting, "your members", and the question card. Exposed as window.CC.
+// formatting, "recently viewed members", and the question card. Exposed as window.CC.
 (() => {
   const el = (tag, attrs = {}, ...kids) => {
     const n = document.createElement(tag);
@@ -15,13 +15,27 @@
   const slug = t => t.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
   const STORE = "cc-my-members";
 
-  // "Your members": the members most recently opened on this device (kept only in this browser).
+  // "Recently viewed members": the members most recently opened on this device (kept only in this
+  // browser). Not the visitor's own representatives: the site doesn't know where anyone lives.
   function myMembers() { try { return JSON.parse(localStorage.getItem(STORE)) || []; } catch { return []; } }
   function forgetMembers() { try { localStorage.removeItem(STORE); } catch { /* nothing stored */ } }
 
   function yourMembersLine(list) {
     if (!list?.length) return null;
-    return el("p", {}, "Your members: ", list.map((m, i) => [i ? " · " : "", el("strong", {}, m.name), ` ${POS[m.position] || m.position}`]));
+    return el("p", {}, "Recently viewed members: ", list.map((m, i) => [i ? " · " : "", el("strong", {}, m.name), ` ${POS[m.position] || m.position}`]));
+  }
+
+  // The line above a list explaining "Recently viewed members", with a button to forget them.
+  // onForget redraws the page. Returns null when no members have been viewed.
+  function recentNote(onForget) {
+    const mine = myMembers();
+    if (!mine.length) return null;
+    const clear = el("button", { type: "button" }, "forget");
+    const box = el("p", { class: "mine" }, "Showing how members you recently viewed voted: ",
+      el("strong", {}, mine.map(m => m.name).join(", ")),
+      ". These are the last members you opened on this device, kept only in this browser. ", clear);
+    clear.addEventListener("click", () => { forgetMembers(); box.remove(); onForget?.(); });
+    return box;
   }
 
   function spreadLine(label, s) {
@@ -141,6 +155,6 @@
   }
 
   window.CC = { API: "/api", el, date, pct, plural, chamberName, POS, slug, myMembers, forgetMembers,
-                yourMembersLine, spreadLine, voteSummary, questionCard, detailHref,
+                yourMembersLine, recentNote, spreadLine, voteSummary, questionCard, detailHref,
                 partiesHidden, ordinal, memberHref, partySplit, whoVoted, voteCard, KIND };
 })();
