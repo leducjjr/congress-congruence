@@ -4,9 +4,11 @@
 #
 # Columns: V101 = common content weight, V206 = state (FIPS), V276 = congressional district.
 #
-# Left out on purpose:
-#   CC341E ("DADT") and CC341F ("Don't Ask Don't Tell"): two items with near-identical labels;
-#             add them once the survey guide confirms which wording each one asked.
+# CC341E and CC341F: the data file labels both "Don't Ask Don't Tell", but the questionnaire
+# (cces.gov.harvard.edu/resource/cces2011commonpdf) shows CC341E is "End Don't Ask, Don't Tell" and
+# CC341F is the Foreign Intelligence Surveillance Act ("allow U.S. spy agencies to eavesdrop on
+# overseas terrorist suspects without first getting a court order"). Items A-D and G-H follow the
+# questionnaire's order, so E and F are taken in its order too.
 
 survey: CES 2011
 weight_preference: [V101]
@@ -54,6 +56,23 @@ items:
     votes:
       house:  {congress: 111, bill: [hr, 3590], questions: [Concur]}
       senate: {congress: 111, bill: [hr, 3590], questions: [Passage]}
+
+  CC341E:
+    question: End "Don't Ask, Don't Tell" (let gay people serve openly in the military)
+    votes:
+      house:  {congress: 111, bill: [hr, 2965], questions: [Concur]}
+      # Voteview words this vote differently, so it's named by date and tally.
+      senate:
+        congress: 111
+        date: 2010-12-18
+        expect: "65-31"
+        note: The Senate passed the repeal using an unrelated House bill as the vehicle, so the record's title doesn't match.
+
+  CC341F:
+    question: Allow eavesdropping on overseas terrorist suspects without a court order (FISA Amendments Act)
+    votes:
+      house:  {congress: 110, bill: [hr, 6304], questions: *final}
+      senate: {congress: 110, bill: [hr, 6304], questions: *final}
 
   CC341G:
     question: Fund research using embryonic stem cells (Stem Cell Research Enhancement Act)

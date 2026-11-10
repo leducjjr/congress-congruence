@@ -81,6 +81,66 @@
       opts.link ? el("p", {}, el("a", { class: "more-link", href: detailHref(q) }, "See how every member voted →")) : null);
   }
 
+  const partiesHidden = () => document.documentElement.hasAttribute("data-party-blind");
+  const ordinal = n => n + ((n % 100 >= 11 && n % 100 <= 13) ? "th" : ({ 1: "st", 2: "nd", 3: "rd" }[n % 10] || "th"));
+  const memberHref = m => `index.html#${m.state}/${m.bioguide_id}`;
+
+  // "Yea–Nay by party: Democrats 210–2 · Republicans 3–215" (left out in the party-blind view).
+  function partySplit(v) {
+    const parties = Object.entries(v.by_party || {}).sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([p, c]) => `${p}s ${c.yea || 0}–${c.nay || 0}`).join(" · ");
+    return parties ? el("p", { class: "meta party" }, `Yea–Nay by party: ${parties}`) : null;
+  }
+
+  // A folded list of every member's vote, fetched when opened: Yea, Nay, Present, didn't vote.
+  function whoVoted(rollCallId) {
+    const d = el("details", { class: "more who-voted" }, el("summary", {}, "How each member voted"));
+    const box = el("div", {}, el("p", { class: "meta" }, "Loading…"));
+    d.append(box);
+    let loaded = false;
+    d.addEventListener("toggle", async () => {
+      if (!d.open || loaded) return;
+      loaded = true;
+      try {
+        const res = await fetch(`/api/v1/votes/${encodeURIComponent(rollCallId)}`);
+        if (!res.ok) throw new Error(res.status);
+        const v = await res.json();
+        const groups = ["yea", "nay", "present", "not_voting"].map(pos => [pos, v.members.filter(m => m.position === pos)])
+          .filter(([, ms]) => ms.length);
+        box.replaceChildren(...groups.map(([pos, ms]) => el("div", { class: "who-group" },
+          el("h4", {}, `${pos === "not_voting" ? "Didn't vote" : POS[pos]} (${ms.length})`),
+          el("ul", { class: "who-list" }, ms.map(m => el("li", {},
+            el("a", { href: memberHref(m) }, m.name), " ",
+            el("span", { class: "meta" }, m.seat || "", el("span", { class: "party" }, m.party ? ` · ${m.party}${m.caucus ? `, caucuses with ${m.caucus}s` : ""}` : ""))))))));
+      } catch {
+        loaded = false;
+        box.replaceChildren(el("p", { class: "meta" }, "Couldn't load the members' votes just now. Close and reopen to try again."));
+      }
+    });
+    return d;
+  }
+
+  const KIND = { passage: "Passage", amendment: "Amendment", nomination: "Nomination", procedural: "Procedural", other: "Other" };
+
+  // One vote in a list (All votes page): title, what happened, party split, survey links, members.
+  function voteCard(v) {
+    return el("article", { class: "result vote-card" },
+      el("h3", {}, v.bill ? `${v.bill.label}: ` : "", v.description || v.bill_title || v.question || "Vote",
+        v.surveyed?.some(s => s.match === "same") ? el("span", { class: "tag surveyed" }, "Surveyed") : null),
+      el("p", { class: "meta" }, `${chamberName(v.chamber)} · ${date(v.date)} · `, v.question || "",
+        v.result ? ` — ${v.result}` : "", v.yea != null ? ` ${v.yea}–${v.nay}` : "", v.kind ? ` · ${KIND[v.kind] || v.kind}` : "",
+        v.policy_area ? ` · Topic: ${v.policy_area}` : ""),
+      partySplit(v),
+      v.surveyed?.length ? el("p", {}, v.surveyed.map((s, i) => [i ? " " : "",
+        el("a", { class: `tag ${s.match === "same" ? "surveyed" : ""}`, href: detailHref(s) },
+          s.match === "same" ? `Surveyed: ${s.question}` : `Related to a survey question: ${s.question}`)])) : null,
+      yourMembersLine(v.your_members),
+      el("p", { class: "meta" }, el("a", { href: v.official_url }, "Official record"),
+        v.bill ? [" · ", el("a", { href: v.bill.url }, `${v.bill.label} on Congress.gov`)] : ""),
+      whoVoted(v.roll_call_id));
+  }
+
   window.CC = { API: "/api", el, date, pct, plural, chamberName, POS, slug, myMembers, forgetMembers,
-                yourMembersLine, spreadLine, voteSummary, questionCard, detailHref };
+                yourMembersLine, spreadLine, voteSummary, questionCard, detailHref,
+                partiesHidden, ordinal, memberHref, partySplit, whoVoted, voteCard, KIND };
 })();

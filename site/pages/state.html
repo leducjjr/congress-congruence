@@ -1,0 +1,144 @@
+---
+title: States
+description: Each state's members of Congress, how each one's surveyed votes compared with the people they represent, and what the state's residents told independent surveys.
+head: |
+  <script src="cards.js" defer></script>
+  <style>
+    .state-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr)); gap: 6px; margin: 0; padding: 0; list-style: none; }
+    .state-grid a { display: block; padding: 8px 12px; background: var(--surface); border: 1px solid var(--rule);
+      border-radius: 8px; text-decoration: none; }
+    .state-grid a:hover, .state-grid a:focus-visible { border-color: var(--mark); color: var(--mark); }
+    .state-grid small { color: var(--ink-soft); margin-left: 4px; }
+    .member-row td:first-child a { font-weight: 600; }
+    .scores { margin: 0; padding: 0; list-style: none; }
+    .scores li { white-space: nowrap; }
+    .org-head { font-size: 1rem; margin: 18px 0 4px; }
+    .survey-fold > summary { font-weight: 600; font-size: 0.95rem; color: var(--ink); }
+    .op-row td:nth-child(2) { white-space: nowrap; }
+    .jump-state { display: flex; gap: 8px; align-items: center; font-size: 0.9rem; margin: 0 0 16px; }
+    .jump-state select { font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; padding: 5px 8px; }
+  </style>
+main_class: state-page
+---
+<div id="view" aria-live="polite"><p class="empty">Loading…</p></div>
+
+<script>
+addEventListener("DOMContentLoaded", () => {
+  const { API, el, date, pct, plural, POS, memberHref, partiesHidden, detailHref } = window.CC;
+  const view = document.getElementById("view");
+  const STATES = { AL:"Alabama",AK:"Alaska",AZ:"Arizona",AR:"Arkansas",CA:"California",CO:"Colorado",CT:"Connecticut",
+    DE:"Delaware",FL:"Florida",GA:"Georgia",HI:"Hawaii",ID:"Idaho",IL:"Illinois",IN:"Indiana",IA:"Iowa",KS:"Kansas",
+    KY:"Kentucky",LA:"Louisiana",ME:"Maine",MD:"Maryland",MA:"Massachusetts",MI:"Michigan",MN:"Minnesota",MS:"Mississippi",
+    MO:"Missouri",MT:"Montana",NE:"Nebraska",NV:"Nevada",NH:"New Hampshire",NJ:"New Jersey",NM:"New Mexico",NY:"New York",
+    NC:"North Carolina",ND:"North Dakota",OH:"Ohio",OK:"Oklahoma",OR:"Oregon",PA:"Pennsylvania",RI:"Rhode Island",
+    SC:"South Carolina",SD:"South Dakota",TN:"Tennessee",TX:"Texas",UT:"Utah",VT:"Vermont",VA:"Virginia",WA:"Washington",
+    WV:"West Virginia",WI:"Wisconsin",WY:"Wyoming",DC:"District of Columbia",PR:"Puerto Rico",GU:"Guam",
+    VI:"U.S. Virgin Islands",AS:"American Samoa",MP:"Northern Mariana Islands" };
+  const code = (new URLSearchParams(location.search).get("s") || "").toUpperCase();
+  const people = n => n >= 1e6 ? `${(n / 1e6).toFixed(1).replace(/\.0$/, "")} million` : (Math.round(n / 1000) * 1000).toLocaleString();
+
+  function picker() {
+    const sel = el("select", { id: "go-state", "aria-label": "Go to another state" }, el("option", { value: "" }, "Another state…"),
+      Object.entries(STATES).map(([c, n]) => el("option", { value: c }, n)));
+    sel.addEventListener("change", () => { if (sel.value) location.href = `state.html?s=${sel.value}`; });
+    return el("p", { class: "jump-state" }, el("a", { href: "state.html" }, "All states"), " · ", sel);
+  }
+
+  // ------------------------------------------------------------ index of states
+  if (!STATES[code]) {
+    document.title = "States · US Congress vs Voters";
+    view.replaceChildren(el("div", { class: "page-head" }, el("h1", {}, "States"),
+      el("p", { class: "lede" }, "Choose a state to see its members of Congress, how each one's surveyed votes compared with the ",
+        "people they represent, and what the state's residents told independent surveys.")),
+      el("ul", { class: "state-grid" }, Object.entries(STATES).map(([c, n]) =>
+        el("li", {}, el("a", { href: `state.html?s=${c}` }, n, el("small", {}, c))))));
+    return;
+  }
+
+  // ------------------------------------------------------------ one state
+  let data = null;
+  const VERDICT = { with: "with the majority", against: "against the majority", too_close: "too close to call", did_not_vote: "didn't vote" };
+  const MAJ = { support: "Most support", oppose: "Most oppose", too_close: "Too close to call" };
+
+  function scoresCell(m) {
+    if (!m.scores.length) return el("td", { class: "meta" }, "No surveyed votes");
+    return el("td", {}, el("ul", { class: "scores" }, m.scores.map(s => el("li", {},
+      s.clear_majority ? [el("strong", {}, `${s.with_majority} of ${s.clear_majority}`), ` · ${s.organization}`]
+                       : el("span", { class: "meta" }, `${s.organization}: none with a clear majority`)))));
+  }
+
+  function membersTable(ms, former) {
+    return el("div", { class: "table-scroll" }, el("table", { class: "data-table" },
+      el("thead", {}, el("tr", {},
+        el("th", { scope: "col" }, "Member"), el("th", { scope: "col" }, "Seat"), el("th", { scope: "col", class: "party" }, "Party"),
+        former ? el("th", { scope: "col" }, "Left office") : null,
+        el("th", { scope: "col" }, "Surveyed votes that went the way a clear majority where they live wanted"))),
+      el("tbody", {}, ms.map(m => el("tr", { class: "member-row" },
+        el("td", {}, el("a", { href: memberHref(m) }, m.name)),
+        el("td", {}, m.chamber === "senate" ? "Senate" : m.seat),
+        el("td", { class: "party" }, m.caucus && m.caucus !== m.party ? `${m.party} (caucuses with ${m.caucus}s)` : m.party),
+        former ? el("td", {}, m.left_office ? date(m.left_office) : "") : null,
+        scoresCell(m))))));
+  }
+
+  function opinionSection(d) {
+    const sec = el("section", { class: "group", id: "surveys" },
+      el("h2", {}, `What people in ${d.name} told surveys`),
+      el("p", { class: "sub" }, "The estimated share of the state's residents who supported each proposal, with the range it likely falls in, ",
+        "and how the state's senators at the time voted. Each source is shown separately. State ballot measures show the certified vote instead. ",
+        "Open a question for every member's vote. ", el("a", { href: "methods.html" }, "How the estimates are made"), "."));
+    if (!d.opinion.length) { sec.append(el("p", { class: "empty" }, "No survey results for this state yet.")); return sec; }
+    const byOrg = new Map();
+    for (const o of d.opinion) byOrg.set(o.source.organization, [...(byOrg.get(o.source.organization) || []), o]);
+    for (const [org, os] of byOrg) {
+      sec.append(el("h3", { class: "org-head" }, org, " ", el("small", { class: "meta" }, plural(os.length, "question", "questions"))));
+      const bySurvey = new Map();
+      for (const o of os) bySurvey.set(o.source.title, [...(bySurvey.get(o.source.title) || []), o]);
+      for (const [title, qs] of bySurvey) sec.append(el("details", { class: "more survey-fold" },
+        el("summary", {}, `${title} (${qs.length})`),
+        el("div", { class: "table-scroll" }, el("table", { class: "data-table" },
+          el("thead", {}, el("tr", {}, el("th", { scope: "col" }, "Question"),
+            el("th", { scope: "col" }, qs[0].kind === "ballot" ? "Voted yes" : "Support"),
+            el("th", { scope: "col" }, "Senators' votes"))),
+          el("tbody", {}, qs.map(o => el("tr", { class: "op-row" },
+            el("td", {}, el("a", { href: detailHref(o) }, o.question), o.area_note ? el("div", { class: "meta" }, o.area_note) : null),
+            el("td", {}, el("strong", {}, pct(o.support_pct)),
+              o.kind === "ballot" ? "" : el("div", { class: "meta" }, `likely ${pct(o.range_pct[0])}–${pct(o.range_pct[1])}`),
+              el("div", { class: "meta" }, MAJ[o.majority] || "")),
+            el("td", {}, o.senate_votes.length ? el("ul", { class: "scores" }, o.senate_votes.map(s => el("li", {},
+                el("a", { href: memberHref({ state: d.state, bioguide_id: s.bioguide_id }) }, s.name),
+                el("span", { class: "party" }, s.party ? ` (${s.party[0]})` : ""), `: ${POS[s.position] || s.position}`,
+                s.match === "related" ? el("span", { class: "meta" }, " · related vote, not counted")
+                  : [" · ", el("span", { class: `verdict ${s.agreement}` }, VERDICT[s.agreement] || s.agreement)])))
+              : el("span", { class: "meta" }, "No Senate vote compared")))))))));
+    }
+    return sec;
+  }
+
+  function draw() {
+    const d = data;
+    document.title = `${d.name} · US Congress vs Voters`;
+    const senators = d.members.filter(m => m.chamber === "senate"), reps = d.members.filter(m => m.chamber === "house");
+    view.replaceChildren(
+      picker(),
+      el("div", { class: "page-head" }, el("h1", {}, d.name),
+        el("p", { class: "lede" }, d.residents ? `${people(d.residents)} residents (Census Bureau). ` : "",
+          `${plural(senators.length, "senator", "senators")} and ${plural(reps.length, "representative", "representatives")} serving today. `,
+          el("a", { href: `votes.html` }, "All votes"), " · ", el("a", { href: "compare.html" }, "Compare two members"))),
+      el("section", { class: "group" }, el("h2", {}, "Members serving today"),
+        el("p", { class: "sub" }, "For each source separately: of the votes on bills a survey asked about where most people the member ",
+          "represented clearly took a side, how many the member's vote matched. Representatives are compared with their district, ",
+          "senators with the state. Listed by seat, not ranked. Open a member for each vote."),
+        d.members.length ? membersTable(d.members, false) : el("p", { class: "empty" }, "No members found.")),
+      d.former.length ? el("section", { class: "group" }, el("h2", {}, "Former members"),
+        el("details", { class: "more" }, el("summary", {}, `${plural(d.former.length, "former member", "former members")} with votes on this site, most recently in office first`),
+          membersTable(d.former, true))) : null,
+      opinionSection(d));
+  }
+
+  fetch(`${API}/v1/states/${code}`).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then(d => { data = d; draw(); })
+    .catch(e => view.replaceChildren(picker(), el("p", { class: "empty" }, `This state's page couldn't load just now (${e.message}).`)));
+  window.addEventListener("cc-party-blind", () => { if (data) draw(); });
+});
+</script>

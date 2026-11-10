@@ -97,13 +97,18 @@ comparison names its source. When sources agree, that's worth knowing; when they
 - **Voted with their party's majority:** votes where the member voted the same way (Yea or Nay) as most
   members of their party. Ties are left out, and independents are counted with the party they caucus
   with.
-- **Where their party and their state disagreed:** surveyed votes where most of the member's party
-  in that chamber, on that day, took one side and the state's clear survey majority took the other.
+- **Where their party and their state (or district) disagreed:** surveyed votes where most of the
+  member's party in that chamber, on that day, took one side and the clear survey majority where the
+  member's constituents live (their state, or their district for a representative) took the other.
   Independents who caucus with a party are compared with that caucus, and the page says so; an
   independent who caucuses with no one has no group to compare with, so the line isn't shown.
   It's a count with the votes listed, so you can open each one; it isn't a score. Only votes on the
-  same proposal the survey asked about, with a clear majority, are included. It's shown for statewide
-  comparisons (senators) for now, because district estimates are less certain.
+  same proposal the survey asked about, with a clear majority, are included. District estimates are
+  less certain than statewide ones, so fewer districts have a clear majority; a district that's too
+  close to call is left out of this line, not counted either way.
+- **Party-blind view:** the "Hide party labels" switch at the top of every page removes party names,
+  party vote splits and the party figures above, so a member can be judged on their votes alone. It
+  changes only what's shown on your screen; the switch is remembered in your browser only.
 - **Residents:** Census Bureau estimates of the people living in the member's state or district.
 
 ## Limits {#limits}

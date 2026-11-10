@@ -54,10 +54,11 @@ Four commitments to state plainly and keep visible:
 | --- | --- | --- |
 | **Home** | One-line purpose; find-your-members box; coverage line; 2–3 examples of the comparison (e.g. a member who voted against a clear state majority, with the bar); "How it works" in three short steps | Lead with the comparison, not raw vote counts |
 | **Member** (`/member/<id>`) | Today's panel | Clean shareable address instead of `#TX/C001098`; page title and preview text for sharing |
-| **State** (`/state/<XX>`) | The delegation, each with one score line per survey source; which areas each source covered | Map optional; a list works on every screen |
+| **State** (`state.html?s=XX`) | The delegation (and former members), each with their surveyed-vote counts per source; statewide survey results with the senators' votes | Listed by seat, never ranked. Built |
 | **Surveyed votes** (`/surveyed`) | Every survey question linked to a vote: wording, source, vote result, and how each chamber's members lined up with their own area | **The unique view.** Per question: "X of Y members voted with a clear majority where they live" |
 | **Surveyed vote detail** | One question: national support, support by state and district (where surveyed), every member's vote placed against their area's band | A dot plot or table; same visual rules as the panel |
-| **All votes** (`/votes`) | Every roll call, newest first, filter by chamber and date; "Surveyed" tag where a survey asked about it | Support role; link to official records |
+| **Compare** (`compare.html?a=&b=`) | Two members side by side: attendance, how often both voting they voted the same way, the votes where they split, and their surveyed votes per source | Counts only; every split vote opens to the full roll call. Built |
+| **All votes** (`votes.html`) | Every roll call, newest first; filters for words, chamber, Congress, type of vote, result, topic, surveyed only; each vote opens to every member's position | Type and result come from the official wording (`queries.VOTE_KIND`, `VOTE_OUTCOME`). Built |
 | **Data & methods** | Public version of `docs/DATA_SOURCES.md`: each source, how it's fetched, special cases, the estimate method, ranges, related votes, update schedule | Sections linkable from the panel's "How this works" |
 | **Survey sources** | One card per survey organization: who runs it, method, sample, years, what we use, links | Answers "why trust these surveys?" |
 | **Glossary** | Roll call, cloture, suspension of the rules, motion to recommit, self-executing rule, margin of error, too close to call, related vote, at-large, delegate | Short entries; linked from wherever a term first appears |
@@ -65,6 +66,10 @@ Four commitments to state plainly and keep visible:
 | **About** | Who runs it, why, independence, funding (none), contact | Contact by a project email at the domain, not a personal one |
 | **Corrections** | How to report an error; a dated log of corrections | Credibility for a neutral site |
 | **Privacy** | No accounts, no cookies, no analytics that identify visitors; how address lookup works | Short and specific |
+
+**Party-blind view.** A "Hide party labels" switch in the header removes party names, party splits
+and party figures everywhere (pages mark such text `class="party"`, or redraw on the `cc-party-blind`
+event). The choice is kept in the visitor's browser; `?parties=hidden` in a link turns it on.
 
 ## Building it
 

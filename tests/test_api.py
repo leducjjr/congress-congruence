@@ -182,3 +182,96 @@ def test_search_endpoint(client):
     r = client.get("/v1/search", params={"q": "zz"})
     assert r.status_code == 200 and r.json()["members"] == []
     assert client.get("/v1/search", params={"q": "z"}).status_code == 422
+
+
+# ---------------------------------------------------------------- All votes, compare, states
+
+def test_votes_list_filters_and_pages(client):
+    r = client.get("/v1/votes").json()
+    assert r["total"] == 3 and [v["roll_call_id"] for v in r["votes"]] == ["h-119-1-3", "h-119-1-2", "h-119-1-1"]
+    assert r["votes"][0]["kind"] == "passage" and r["votes"][0]["outcome"] == "passed"
+    assert r["votes"][0]["by_party"]["Republican"] == {"yea": 2}
+    assert client.get("/v1/votes", params={"sort": "oldest", "limit": 1}).json()["votes"][0]["roll_call_id"] == "h-119-1-1"
+    page2 = client.get("/v1/votes", params={"limit": 2, "offset": 2}).json()
+    assert page2["total"] == 3 and [v["roll_call_id"] for v in page2["votes"]] == ["h-119-1-1"]
+    for params, n in [({"congress": 119}, 3), ({"congress": 118}, 0), ({"chamber": "senate"}, 0),
+                      ({"kind": "passage"}, 3), ({"kind": "amendment"}, 0), ({"outcome": "failed"}, 0),
+                      ({"surveyed": "true"}, 0), ({"q": "passage"}, 3), ({"topic": "Taxation"}, 0)]:
+        assert client.get("/v1/votes", params=params).json()["total"] == n, params
+    assert client.get("/v1/votes", params={"kind": "bogus"}).status_code == 422
+    f = client.get("/v1/votes/filters").json()
+    assert f["congresses"][0]["congress"] == 119 and f["congresses"][0]["votes"] == {"house": 3}
+
+
+def test_vote_kind_and_outcome_rules(client):
+    """The All votes filters read the official wording; check them on real House and Senate phrasings."""
+    q = client.api.q
+    cases = [  # question, result, kind, outcome
+        ("On Passage", "Passed", "passage", "passed"),
+        ("On Motion to Suspend the Rules and Pass", "Failed", "passage", "failed"),
+        ("On Motion to Suspend the Rules and Agree", "Passed", "passage", "passed"),
+        ("On Concurring in Senate Amendment", "Passed", "passage", "passed"),
+        ("On Motion to Concur in the Senate Amendment", "Agreed to", "passage", "passed"),
+        ("On Agreeing to the Conference Report", "Agreed to", "passage", "passed"),
+        ("On Agreeing to the Resolution", "Passed", "passage", "passed"),
+        ("On Overriding the Veto", "Failed", "passage", "failed"),
+        ("On the Resolution of Ratification", "Resolution of Ratification Agreed to", "passage", "passed"),
+        ("On Passage of the Bill", "Bill Passed", "passage", "passed"),
+        ("On the Joint Resolution", "Joint Resolution Defeated", "passage", "failed"),
+        ("On Agreeing to the Amendment", "Failed", "amendment", "failed"),
+        ("On the Amendment", "Amendment Rejected", "amendment", "failed"),
+        ("On the Motion to Table", "Motion to Table Agreed to", "procedural", "passed"),
+        ("On the Motion to Table the Amendment", "Motion to Table Agreed to", "procedural", "passed"),
+        ("On the Cloture Motion", "Cloture Motion Rejected", "procedural", "failed"),
+        ("On Cloture on the Motion to Proceed", "Cloture on the Motion to Proceed Agreed to", "procedural", "passed"),
+        ("On Ordering the Previous Question", "Passed", "procedural", "passed"),
+        ("On Motion to Recommit", "Failed", "procedural", "failed"),
+        ("On the Motion", "Motion Agreed to", "procedural", "passed"),
+        ("Quorum Call", None, "procedural", "other"),
+        ("On the Nomination", "Nomination Confirmed", "nomination", "passed"),
+        ("On the Cloture Motion (nomination)", "Cloture Motion Agreed to", "procedural", "passed"),
+        ("Election of the Speaker", "Johnson", "other", "other"),
+    ]
+    with client.api.pool.connection() as conn:
+        for question, result, kind, outcome in cases:
+            got = conn.execute(f"select {q.VOTE_KIND} as kind, {q.VOTE_OUTCOME} as outcome "
+                               "from (select %s::text as question, %s::text as result) r", (question, result)).fetchone()
+            assert (got["kind"], got["outcome"]) == (kind, outcome), question
+
+
+def test_vote_detail_lists_every_member(client):
+    r = client.get("/v1/votes/h-119-1-1").json()
+    by_id = {m["bioguide_id"]: m for m in r["members"]}
+    assert len(by_id) == 5 and by_id["I000001"]["position"] == "nay" and (by_id["I000001"]["party"], by_id["I000001"]["caucus"]) == ("Independent", "Democrat")
+    assert by_id["R000002"]["seat"] == "TX-AL"
+    assert client.get("/v1/votes/nope").status_code == 400
+    assert client.get("/v1/votes/h-119-1-99").status_code == 404
+
+
+def test_compare_two_members(client):
+    r = client.get("/v1/compare", params={"a": "D000001", "b": "D000002"}).json()
+    assert (r["both_recorded"], r["both_voted"], r["same_way"]) == (3, 3, 1)
+    assert r["splits_total"] == 2 and [v["roll_call_id"] for v in r["splits"]] == ["h-119-1-3", "h-119-1-2"]
+    assert (r["splits"][0]["position_a"], r["splits"][0]["position_b"]) == ("yea", "nay")
+    r = client.get("/v1/compare", params={"a": "D000001", "b": "I000001"}).json()   # I1 absent from vote 3
+    assert (r["both_recorded"], r["both_voted"], r["same_way"], r["same_way_pct"]) == (2, 2, 0, 0.0)
+    r = client.get("/v1/compare", params={"a": "R000001", "b": "R000002"}).json()   # R2 didn't vote on 2
+    assert (r["both_recorded"], r["both_voted"], r["same_way"]) == (3, 2, 2)
+    assert client.get("/v1/compare", params={"a": "D000001", "b": "Z999999"}).status_code == 404
+
+
+def test_state_page(client):
+    r = client.get("/v1/states/tx").json()
+    assert r["state"] == "TX" and r["name"] == "Texas"
+    assert [m["bioguide_id"] for m in r["members"]] == ["R000002", "D000001", "D000002", "I000001", "R000001"]
+    assert r["members"][0]["scores"] == [] and r["former"] == [] and r["opinion"] == []
+    assert client.get("/v1/states/XX").status_code == 404
+
+
+def test_search_show_more(client):
+    full = client.get("/v1/search", params={"q": "passage"}).json()
+    assert full["votes_total"] == 3 and "members" in full
+    more = client.get("/v1/search", params={"q": "passage", "only": "votes", "limit": 2, "offset": 2}).json()
+    assert "members" not in more and "questions" not in more
+    assert more["votes_total"] == 3 and [v["roll_call_id"] for v in more["votes"]] == [full["votes"][2]["roll_call_id"]]
+    assert client.get("/v1/search", params={"q": "passage", "surveyed": "true"}).json()["votes_total"] == 0

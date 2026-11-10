@@ -1,0 +1,138 @@
+---
+title: All votes
+description: Every recorded House and Senate floor vote on this site, with filters for chamber, Congress, type of vote, result, topic and surveyed votes.
+head: |
+  <script src="cards.js" defer></script>
+main_class: votes-page
+---
+<div class="page-head">
+  <h1>All votes</h1>
+  <p class="lede">Every recorded floor vote in the House and Senate that this site has loaded, newest first.
+    Narrow the list with the filters; open a vote to see how each member voted. Each vote links to the
+    official record.</p>
+</div>
+
+<form class="controls" id="filters" role="search" autocomplete="off">
+  <label>Words in the title
+    <input type="search" name="q" id="f-q" placeholder="e.g. farm, H.R. 1, veteran*" maxlength="80">
+  </label>
+  <label>Chamber
+    <select name="chamber" id="f-chamber">
+      <option value="">Both</option><option value="house">House</option><option value="senate">Senate</option>
+    </select>
+  </label>
+  <label>Congress
+    <select name="congress" id="f-congress"><option value="">All</option></select>
+  </label>
+  <label>Type of vote
+    <select name="kind" id="f-kind">
+      <option value="">All</option>
+      <option value="passage">Passage (bills, resolutions, conference reports)</option>
+      <option value="amendment">Amendments</option>
+      <option value="nomination">Nominations</option>
+      <option value="procedural">Procedural (cloture, motions, quorum)</option>
+      <option value="other">Other</option>
+    </select>
+  </label>
+  <label>Result
+    <select name="outcome" id="f-outcome">
+      <option value="">Any</option><option value="passed">Passed or agreed to</option><option value="failed">Failed or rejected</option>
+    </select>
+  </label>
+  <label>Topic
+    <select name="topic" id="f-topic"><option value="">Any</option></select>
+  </label>
+  <label>Order
+    <select name="sort" id="f-sort"><option value="newest">Newest first</option><option value="oldest">Oldest first</option></select>
+  </label>
+  <label class="check"><input type="checkbox" name="surveyed" id="f-surveyed" value="true"> Only votes a survey asked about</label>
+  <button type="submit" class="show-more">Apply</button>
+</form>
+
+<div id="out" aria-live="polite"><p class="empty">Loading…</p></div>
+
+<details class="more how-filters">
+  <summary>How the type and result filters work</summary>
+  <p class="meta">They're read from the official wording of each vote. <strong>Procedural</strong> covers cloture,
+    motions to table, proceed, recommit, adjourn, reconsider or waive, the previous question, quorum calls and
+    appeals of the chair's ruling. <strong>Passage</strong> covers final passage, motions to suspend the rules and
+    pass, concurring in the other chamber's changes, conference reports, resolutions, veto overrides and treaty
+    ratifications. <strong>Amendments</strong> are votes on amendments themselves; a motion to table an amendment
+    counts as procedural. <strong>Topic</strong> is the policy area Congress.gov assigns to the bill voted on, so
+    votes not tied to a bill (most nominations, for example) have none.</p>
+</details>
+
+<script>
+addEventListener("DOMContentLoaded", () => {
+  const { API, el, plural, ordinal, voteCard, myMembers } = window.CC;
+  const $ = id => document.getElementById(id);
+  const form = $("filters"), out = $("out");
+  const FIELDS = ["q", "chamber", "congress", "kind", "outcome", "topic", "sort"];
+  const PAGE = 25;
+  const params = new URLSearchParams(location.search);
+
+  // Fill the form from the address, so a filtered list can be bookmarked or shared.
+  for (const f of FIELDS) if (params.get(f)) $(`f-${f}`).value = params.get(f);
+  $("f-surveyed").checked = params.get("surveyed") === "true";
+
+  function query(offset = 0) {
+    const p = new URLSearchParams({ limit: PAGE, offset });
+    for (const f of FIELDS) { const v = $(`f-${f}`).value.trim(); if (v && !(f === "sort" && v === "newest")) p.set(f, v); }
+    if ($("f-surveyed").checked) p.set("surveyed", "true");
+    for (const m of myMembers()) p.append("member", m.id);
+    return p;
+  }
+
+  // The Congresses loaded and the bills' topics, for the menus.
+  const filtersReady = fetch(`${API}/v1/votes/filters`).then(r => r.ok ? r.json() : null).then(f => {
+    if (!f) return;
+    const years = c => `${2 * c.congress + 1787}–${String(2 * c.congress + 1789).slice(2)}`;
+    for (const c of f.congresses) $("f-congress").add(new Option(`${ordinal(c.congress)} (${years(c)})`, c.congress));
+    for (const t of f.topics) $("f-topic").add(new Option(t.name, t.name));
+    for (const id of ["congress", "topic"]) if (params.get(id)) $(`f-${id}`).value = params.get(id);
+  }).catch(() => {});
+
+  let shown = 0, total = 0, list = null, moreRow = null;
+
+  async function load(append) {
+    const p = query(append ? shown : 0);
+    if (!append) {
+      out.replaceChildren(el("p", { class: "empty" }, "Loading…"));
+      const shareable = new URLSearchParams(p); shareable.delete("limit"); shareable.delete("offset"); shareable.delete("member");
+      history.replaceState(null, "", shareable.size ? `?${shareable}` : location.pathname);
+    }
+    const res = await fetch(`${API}/v1/votes?${p}`);
+    if (!res.ok) throw new Error(res.status === 422 ? "One of the filters isn't valid." : `the server answered ${res.status}`);
+    const r = await res.json();
+    if (!append) {
+      shown = 0; total = r.total;
+      list = el("div", { class: "vote-list" });
+      moreRow = el("p", { class: "more-row" });
+      out.replaceChildren(el("section", { class: "group" },
+        el("p", { class: "sub", id: "count" }), list, moreRow));
+      if (!total) {
+        out.replaceChildren(el("p", { class: "empty" }, "No votes match these filters. Try removing one."));
+        return;
+      }
+    }
+    list.append(...r.votes.map(voteCard));
+    shown += r.votes.length;
+    $("count").textContent = `${plural(total, "vote", "votes")} match` +
+      (total > shown ? `; showing the ${$("f-sort").value === "oldest" ? "oldest" : "newest"} ${shown.toLocaleString()}.` : ".");
+    moreRow.replaceChildren();
+    if (shown < total) {
+      const btn = el("button", { type: "button", class: "show-more" }, `Show ${Math.min(PAGE, total - shown)} more`);
+      btn.addEventListener("click", () => {
+        btn.disabled = true; btn.textContent = "Loading…";
+        load(true).catch(() => { btn.disabled = false; btn.textContent = "Couldn't load more. Try again"; });
+      });
+      moreRow.append(btn);
+    }
+  }
+
+  const run = () => load(false).catch(e => out.replaceChildren(el("p", { class: "empty" }, `The list couldn't load: ${e.message}`)));
+  form.addEventListener("submit", e => { e.preventDefault(); run(); });
+  for (const id of ["chamber", "congress", "kind", "outcome", "topic", "sort", "surveyed"]) $(`f-${id}`).addEventListener("change", run);
+  filtersReady.then(run);
+});
+</script>

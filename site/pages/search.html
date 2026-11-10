@@ -79,10 +79,18 @@ addEventListener("DOMContentLoaded", () => {
     const oldest = $("sort").value === "oldest";
     const current = members.filter(m => !m.former), former = members.filter(m => m.former);
     if (oldest) former.reverse();
-    const list = ms => el("ul", { class: "plain" }, ms.map(m => el("li", { class: "result" },
+    const list = ms => {
+      const ul = el("ul", { class: "plain" }, ms.slice(0, MEMBERS_SHOWN).map(memberItem));
+      if (ms.length <= MEMBERS_SHOWN) return ul;
+      const btn = el("button", { type: "button", class: "show-more" }, `Show all ${ms.length}`);
+      btn.addEventListener("click", () => { ul.append(...ms.slice(MEMBERS_SHOWN).map(memberItem)); btn.remove(); });
+      return [ul, btn];
+    };
+    const memberItem = m => el("li", { class: "result" },
         el("a", { href: `index.html#${m.state}/${m.bioguide_id}` }, m.name), " ",
-        el("span", { class: "meta" }, `${m.chamber === "senate" ? `${m.former ? "Former senator" : "Senator"}, ${m.state}` : `${m.former ? "Former representative" : "Representative"}, ${m.seat}`} · ${m.party}` +
-          (m.former && m.left_office ? ` · until ${date(m.left_office)}` : "")))));
+        el("span", { class: "meta" }, `${m.chamber === "senate" ? `${m.former ? "Former senator" : "Senator"}, ${m.state}` : `${m.former ? "Former representative" : "Representative"}, ${m.seat}`}`,
+          el("span", { class: "party" }, ` · ${m.party}`),
+          m.former && m.left_office ? ` · until ${date(m.left_office)}` : ""));
     return el("section", { class: "group" }, el("h2", {}, "Members"),
       current.length ? list(current) : null,
       former.length ? [el("h3", { class: "sub-head" }, "Former members",
@@ -95,7 +103,37 @@ addEventListener("DOMContentLoaded", () => {
       el("h2", {}, "Survey questions"),
       el("p", { class: "sub" }, "Questions independent surveys asked, and how members voted compared with a clear majority where they live."),
       questions.map(q => window.CC.questionCard(q, { link: true })),
-      total > questions.length ? el("p", { class: "sub" }, `Showing ${questions.length} of ${total}.`) : null);
+      moreButton("questions", questions.length, total, "survey questions", (box, items) =>
+        box.before(...items.map(q => window.CC.questionCard(q, { link: true })))));
+  }
+
+  // "Show more": fetches the next page of one list and adds it above the button.
+  // add(button-box, items) puts the new items on the page.
+  const PAGE = 40, MEMBERS_SHOWN = 20;
+  function moreButton(part, shown, total, label, add) {
+    if (total <= shown) return null;
+    const note = el("span", { class: "meta" });
+    const btn = el("button", { type: "button", class: "show-more" });
+    const box = el("p", { class: "more-row" }, btn, " ", note);
+    const update = () => {
+      note.textContent = `Showing ${shown.toLocaleString()} of ${total.toLocaleString()}`;
+      btn.textContent = `Show ${Math.min(PAGE, total - shown)} more ${label}`;
+      if (shown >= total) btn.remove();
+    };
+    update();
+    btn.addEventListener("click", async () => {
+      btn.disabled = true; btn.textContent = "Loading…";
+      try {
+        const r = await fetch(`${API}/v1/search?${searchParams({ only: part, offset: shown })}`);
+        if (!r.ok) throw new Error(r.status);
+        const items = (await r.json())[part] || [];
+        add(box, items);
+        shown += items.length;
+        if (!items.length) shown = total;
+      } catch { note.textContent = "Couldn't load more just now. Please try again."; }
+      btn.disabled = false; update();
+    });
+    return box;
   }
 
   // "…the [[Federal]] [[Emergency]] Management Agency…" -> text with the [[marked]] words in bold.
@@ -118,7 +156,7 @@ addEventListener("DOMContentLoaded", () => {
       .map(([p, c]) => `${p}s ${c.yea || 0}–${c.nay || 0}`).join(" · ");
     return [
       el("p", { class: "meta" }, `${chamberName(v.chamber)} · ${date(v.date)} · `, v.question || "", v.result ? ` — ${v.result} ${v.yea}–${v.nay}` : ""),
-      parties ? el("p", { class: "meta" }, `Yea–Nay by party: ${parties}`) : null,
+      parties ? el("p", { class: "meta party" }, `Yea–Nay by party: ${parties}`) : null,
       topicLine(v),
       v.surveyed.length ? el("p", {}, v.surveyed.map((s, i) => [i ? " " : "",
         el("a", { class: `tag ${s.match === "same" ? "surveyed" : ""}`, href: window.CC.detailHref(s) },
@@ -129,23 +167,15 @@ addEventListener("DOMContentLoaded", () => {
     ];
   }
 
-  function votesGroup(votes, total) {
-    if (!votes?.length) return null;
-    // Several votes on one bill (procedural steps, amendments, final passage) are shown together:
-    // the most recent first, the rest folded underneath.
+  // Several votes on one bill (procedural steps, amendments, final passage) are shown together:
+  // the most recent first, the rest folded underneath.
+  function voteArticles(votes) {
     const groups = new Map();
     for (const v of votes) {
       const key = v.bill ? `${v.chamber}|${v.bill.label}` : v.roll_call_id;
       groups.set(key, [...(groups.get(key) || []), v]);
     }
-    return el("section", { class: "group" },
-      el("h2", {}, "Votes"),
-      el("p", { class: "sub" }, (total > votes.length
-        ? `${votes.length} of ${total.toLocaleString()} matching votes`
-        : plural(total, "matching vote", "matching votes")) +
-        ({ newest: ", newest first.", oldest: ", oldest first." }[$("sort").value] ||
-         ": those with your words in the title or main topic first, then those found only by a subject tag; newest first within each.")),
-      [...groups.values()].map(([first, ...rest]) => el("article", { class: "result" },
+    return [...groups.values()].map(([first, ...rest]) => el("article", { class: "result" },
         el("h3", {}, first.bill ? `${first.bill.label}: ` : "",
           first.snippet ? highlighted(first.snippet) : (first.description || first.question || "Vote"),
           first.surveyed.some(s => s.match === "same") ? el("span", { class: "tag surveyed" }, "Surveyed") : null),
@@ -154,7 +184,27 @@ addEventListener("DOMContentLoaded", () => {
         voteLine(first),
         rest.length ? el("details", { class: "more" }, el("summary", {}, `${plural(rest.length, "other vote", "other votes")} on this bill`),
           el("ul", {}, rest.map(v => el("li", {}, `${date(v.date)}: ${v.question || ""} — ${v.result || ""} ${v.yea}–${v.nay} `,
-            el("a", { href: v.official_url }, "record"))))) : null)));
+            el("a", { href: v.official_url }, "record"))))) : null));
+  }
+
+  function votesGroup(votes, total) {
+    if (!votes?.length) return null;
+    return el("section", { class: "group" },
+      el("h2", {}, "Votes"),
+      el("p", { class: "sub" }, plural(total, "matching vote", "matching votes") +
+        ({ newest: ", newest first.", oldest: ", oldest first." }[$("sort").value] ||
+         ": those with your words in the title or main topic first, then those found only by a subject tag; newest first within each.")),
+      voteArticles(votes),
+      moreButton("votes", votes.length, total, "votes", (box, items) => box.before(...voteArticles(items))));
+  }
+
+  function searchParams(extra = {}) {
+    const p = new URLSearchParams({ q: query, limit: PAGE, ...extra });
+    if ($("chamber").value) p.set("chamber", $("chamber").value);
+    if ($("sort").value !== "match") p.set("sort", $("sort").value);
+    if ($("surveyed-only").checked) p.set("surveyed", "true");
+    for (const m of myMembers()) p.append("member", m.id);
+    return p;
   }
 
   async function run() {
@@ -166,18 +216,12 @@ addEventListener("DOMContentLoaded", () => {
       return;
     }
     out.replaceChildren(el("p", { class: "empty" }, "Searching…"));
-    const p = new URLSearchParams({ q: query });
-    if ($("chamber").value) p.set("chamber", $("chamber").value);
-    if ($("sort").value !== "match") p.set("sort", $("sort").value);
-    for (const m of myMembers()) p.append("member", m.id);
     try {
-      const res = await fetch(`${API}/v1/search?${p}`);
+      const res = await fetch(`${API}/v1/search?${searchParams()}`);
       if (!res.ok) throw new Error(res.status);
       const r = await res.json();
-      let votes = r.votes;
-      if ($("surveyed-only").checked) votes = votes.filter(v => v.surveyed.length);
       const parts = [membersGroup(r.members), questionsGroup(r.questions, r.questions_total),
-                     votesGroup(votes, $("surveyed-only").checked ? votes.length : r.votes_total)].filter(Boolean);
+                     votesGroup(r.votes, r.votes_total)].filter(Boolean);
       out.replaceChildren(...(parts.length ? parts : [el("p", { class: "empty" },
         `Nothing matches “${query}”. Try fewer words, a word ending with *, or a member's last name.`)]));
       document.title = `${query} · Search · US Congress vs Voters`;
@@ -186,5 +230,6 @@ addEventListener("DOMContentLoaded", () => {
     }
   }
   run();
+  window.addEventListener("cc-party-blind", run);    // vote rows name parties: redraw
 });
 </script>

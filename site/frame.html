@@ -12,6 +12,20 @@
   <link rel="manifest" href="site.webmanifest">
   <meta name="theme-color" content="#2f6f66">
   <link rel="stylesheet" href="site.css">
+  <script>
+    // Party-blind view, set before anything is drawn. ?parties=hidden (or shown) in a link sets it;
+    // otherwise the visitor's last choice, kept only in this browser.
+    (() => {
+      let on = false;
+      try { on = localStorage.getItem("cc-party-blind") === "1"; } catch { /* storage unavailable */ }
+      const asked = new URLSearchParams(location.search).get("parties");
+      if (asked === "hidden" || asked === "shown") {
+        on = asked === "hidden";
+        try { localStorage.setItem("cc-party-blind", on ? "1" : "0"); } catch { /* not remembered */ }
+      }
+      document.documentElement.toggleAttribute("data-party-blind", on);
+    })();
+  </script>
 {{head}}
 </head>
 <body class="page-{{slug}}">
@@ -31,6 +45,9 @@
              role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="site-q-list">
       <ul id="site-q-list" role="listbox" hidden></ul>
     </form>
+    <label class="party-switch" title="Show members without party names, party splits or party figures">
+      <input type="checkbox" id="party-blind"> Hide party labels
+    </label>
   </div>
 </header>
 
@@ -52,11 +69,13 @@
       Details on the <a href="sources.html">Sources</a> page.</p>
     <p>An independent civic project, not affiliated with the U.S. government, Congress, any political
       party or campaign, or any survey organization. No accounts, no cookies, no tracking.</p>
-    <p>Found an error? <span data-email="corrections">corrections (at) {{email_domain}}</span> ·
+    <p>Found an error? <span data-email="corrections">corrections (at) {{email_domain}}</span>
+      (fixes are listed in the <a href="corrections.html">corrections log</a>) ·
       Everything else: <a href="contact.html">Contact</a>.</p>
     <p class="footer-links">
       <a href="sources.html">Sources</a> · <a href="methods.html">Methods</a> ·
-      <a href="glossary.html">Glossary</a> · <a href="about.html">About</a> ·
+      <a href="glossary.html">Glossary</a> · <a href="faq.html">FAQ</a> · <a href="corrections.html">Corrections</a> ·
+      <a href="about.html">About</a> ·
       <a href="contact.html">Contact</a> · <a href="privacy.html">Privacy</a> ·
       <a href="{{source_url}}">Source code</a></p>
   </div>

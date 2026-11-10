@@ -187,7 +187,8 @@ addEventListener("DOMContentLoaded", () => {
         const a = S("a", { href: `index.html#${m.state}/${m.bioguide_id}` });
         const cls = `dot ${related ? "related" : m.agreement} ${m.position}`;
         a.append(S("circle", { cx: p.x, cy: cy + p.dy, r, class: cls }));
-        a.append(S("title", {}, `${m.name} (${m.seat}, ${m.party}): voted ${POS[m.position]}; ` +
+        const hide = document.documentElement.hasAttribute("data-party-blind");
+        a.append(S("title", {}, `${m.name} (${m.seat}${hide ? "" : `, ${m.party}`}): voted ${POS[m.position]}; ` +
           `${areaText(m)}. ` +
           (related ? "Related vote, not counted." : VERDICT[m.agreement] + ".")));
         svg.append(a);
@@ -231,7 +232,7 @@ addEventListener("DOMContentLoaded", () => {
     const cols = [["name", "Member"], ["seat", v.chamber === "senate" ? "State" : "District"], ["party", "Party"],
                   ["position", "Vote"], ["support", ballot ? "Yes vote in their state" : "Support where they live"], ["agreement", "Compared with their area"]];
     const thead = el("tr", {}, cols.map(([k, label]) => {
-      const th = el("th", { scope: "col" }, el("button", { type: "button" }, label));
+      const th = el("th", { scope: "col", class: k === "party" ? "party" : null }, el("button", { type: "button" }, label));
       th.firstChild.addEventListener("click", () => { dir = sortKey === k ? -dir : 1; sortKey = k; draw(); });
       th.dataset.key = k;
       return th;
@@ -247,7 +248,7 @@ addEventListener("DOMContentLoaded", () => {
                           return (x < y ? -1 : x > y ? 1 : 0) * dir || a.name.localeCompare(b.name); });
       tbody.replaceChildren(...shown.map(m => el("tr", {},
         el("td", {}, el("a", { href: `index.html#${m.state}/${m.bioguide_id}` }, m.name)),
-        el("td", {}, m.seat), el("td", {}, m.party || ""), el("td", {}, POS[m.position] || m.position),
+        el("td", {}, m.seat), el("td", { class: "party" }, m.party || ""), el("td", {}, POS[m.position] || m.position),
         el("td", {}, m.area ? (ballot ? `${pct(m.area.support_pct)} yes (${m.area.area_note || "state measure"})`
                                       : `${pct(m.area.support_pct)} (likely ${pct(m.area.low_pct)}–${pct(m.area.high_pct)})`)
                             : ballot ? "no measure" : "not surveyed"),
@@ -288,6 +289,9 @@ addEventListener("DOMContentLoaded", () => {
                     return [el("div", { class: "chart-wrap" }, c), legend(v, c.dataset.range)]; })(),
         membersTable(v))));
   }
+
+  // The chart's hover text names parties: redraw it when the party-blind switch changes.
+  if (survey && item) window.addEventListener("cc-party-blind", () => showDetail().catch(() => {}));
 
   (survey && item ? showDetail() : showList()).catch(e => {
     view.replaceChildren(el("p", { class: "empty" }, `This page couldn't load: ${e.message}`),

@@ -17,6 +17,7 @@ def configured(monkeypatch):
     monkeypatch.setenv("FEEDBACK_SMTP_PASSWORD", "pw")
     monkeypatch.setenv("FEEDBACK_TO", "contact@uscongressvsvoters.org")
     monkeypatch.setattr(fb, "limiter", fb.RateLimiter(fb.PER_HOUR, fb.GLOBAL_PER_HOUR))
+    monkeypatch.setattr(fb, "copy_limiter", fb.RateLimiter(fb.COPIES_PER_ADDRESS, fb.COPIES_PER_HOUR))
 
 
 def sent_messages(data, client="203.0.113.5"):
@@ -35,9 +36,38 @@ def test_a_good_message_is_emailed_to_the_inbox():
     assert "203.0.113.5" not in msg.as_string()                       # the sender's address isn't passed on
 
 
-def test_reply_address_becomes_reply_to():
-    (msg,) = sent_messages({**GOOD, "reply_to": "pat@example.com"})
+def test_reply_address_becomes_reply_to_and_gets_a_copy():
+    msg, copy = sent_messages({**GOOD, "reply_to": "pat@example.com"})
     assert msg["Reply-To"] == "pat@example.com"
+    assert copy["To"] == "pat@example.com" and copy["Reply-To"] == "contact@uscongressvsvoters.org"
+    assert copy["From"] == "US Congress vs Voters <feedback@uscongressvsvoters.org>"
+    assert copy["Subject"] == "Your message to US Congress vs Voters: Error report about Ted Cruz"
+    body = copy.get_content()
+    assert "wrong date" in body and "Member: Ted Cruz (C001098)" in body and "If you didn't send this" in body
+    assert "203.0.113.5" not in copy.as_string()
+
+
+def test_no_address_no_copy_and_copy_from_setting(monkeypatch):
+    assert len(sent_messages(GOOD)) == 1
+    monkeypatch.setenv("FEEDBACK_COPY_FROM", "contact@uscongressvsvoters.org")
+    _, copy = sent_messages({**GOOD, "reply_to": "pat@example.com"})
+    assert copy["From"] == "US Congress vs Voters <contact@uscongressvsvoters.org>"
+
+
+def test_copies_are_limited_per_address_and_never_block_the_message():
+    data = {**GOOD, "reply_to": "Victim@example.com"}
+    results = []
+    for i in range(fb.COPIES_PER_ADDRESS + 1):
+        out = []
+        results.append(fb.submit({**data, "reply_to": data["reply_to"] if i % 2 else "victim@EXAMPLE.com"},
+                                 f"203.0.113.{i}", sender=lambda m, c: out.append(m)))
+        assert out[0]["To"] == "contact@uscongressvsvoters.org"            # the message itself always goes
+    assert [r["copy_sent"] for r in results] == [True] * fb.COPIES_PER_ADDRESS + [False]
+
+    def copy_fails(msg, cfg):
+        if msg["To"] != "contact@uscongressvsvoters.org":
+            raise smtplib.SMTPRecipientsRefused({})
+    assert fb.submit({**GOOD, "reply_to": "other@example.com"}, "x", sender=copy_fails) == {"copy_sent": False}
 
 
 @pytest.mark.parametrize("change, status", [
@@ -90,6 +120,6 @@ def test_endpoint(monkeypatch):
     monkeypatch.setattr(fb, "send", lambda msg, cfg: sent.append(msg))
     client = TestClient(api.app)                       # no "with": the database pool isn't needed
     ok = client.post("/v1/feedback", json=GOOD)
-    assert ok.status_code == 200 and ok.json() == {"ok": True} and len(sent) == 1
+    assert ok.status_code == 200 and ok.json() == {"ok": True, "copy_sent": None} and len(sent) == 1
     bad = client.post("/v1/feedback", json={**GOOD, "seconds_open": 0})
     assert bad.status_code == 400 and "quick" in bad.json()["message"]

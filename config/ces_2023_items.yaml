@@ -3,9 +3,12 @@
 # Congress lines (drawn after the 2020 census), which don't fit 117th Congress House seats.
 # Answer codes: 1 = Support, 2 = Oppose. `ces link 2023` prints what each rule matched.
 #
+# CC23_340b, CC23_340c: two versions of "prohibit government restrictions on abortion", each asked
+# of part of the sample. There was no 118th Congress floor vote; both are compared with the Senate's
+# May 2022 vote on taking up the Women's Health Protection Act, as CES 2022's question is. Only the
+# first is counted, so senators aren't scored twice on one vote; the second is shown as related.
+#
 # Left out on purpose:
-#   CC23_340b, CC23_340c (two versions of "prohibit government restrictions on abortion"): no
-#             118th Congress vote, and the Senate's 2022 votes were procedural; add if wanted.
 #   CC23_328d: general question, not tied to a vote.
 
 survey: CES 2023
@@ -31,6 +34,28 @@ items:
     question: Spend $150 billion a year for 8 years on roads, bridges, transit, water systems and broadband (Infrastructure Investment and Jobs Act)
     votes:
       senate: {congress: 117, bill: [hr, 3684], questions: *final}
+
+  CC23_340b:
+    question: Prohibit government restrictions on access to abortion services (Women's Health Protection Act)
+    votes:
+      senate:
+        congress: 117
+        bill: [s, 4132]
+        questions: [Cloture]
+        note: The Senate voted only on whether to take up the bill (May 2022); it fell short of 60.
+
+  CC23_340c:
+    question: Prohibit government restrictions on access to abortion services (second wording)
+    match: related
+    note: >-
+      The same question in a second wording, asked of a different part of the sample. Shown but not
+      counted, so senators aren't scored twice on one vote.
+    votes:
+      senate:
+        congress: 117
+        bill: [s, 4132]
+        questions: [Cloture]
+        note: The Senate voted only on whether to take up the bill (May 2022); it fell short of 60.
 
   CC23_340d:
     question: Require all federal agencies to recognize same-sex marriages (Respect for Marriage Act)

@@ -248,8 +248,9 @@ select r.roll_call_id, r.chamber, r.congress, r.session, r.roll_number, r.vote_d
   from core.roll_call r{VOTE_BILL_JOIN}
  where {VOTE_DOC} @@ to_tsquery('english', %(tsq)s)
    and (%(chamber)s::text is null or r.chamber = %(chamber)s)
+   and (not %(surveyed)s or exists (select 1 from core.survey_item_vote siv where siv.roll_call_id = r.roll_call_id))
  order by {{order}}
- limit %(limit)s
+ limit %(limit)s offset %(offset)s
 """
 
 # Sort orders a visitor can pick (whitelisted: the chosen text is put into the query).
@@ -306,7 +307,7 @@ select si.survey, si.variable, si.question, si.note, s.title, s.fielded,
        @@ to_tsquery('english', %(tsq)s)
    and exists (select 1 from core.survey_item_vote v where v.survey = si.survey and v.variable = si.variable)
  order by si.survey desc, si.variable
- limit %(limit)s
+ limit %(limit)s offset %(offset)s
 """
 
 # For each matching question and chamber: the vote it's compared with, and how many members voted
@@ -438,4 +439,162 @@ select distinct on (t.bioguide_id)
                     and %(on)s between c.start_date and c.end_date)
    and exists (select 1 from core.member_vote v where v.bioguide_id = t.bioguide_id)
  order by t.bioguide_id, t.start_date desc
+"""
+
+
+# ---------------------------------------------------------------- All votes page
+
+# The kind of vote, from the official wording of the question. Checked in this order, so
+# "Motion to Table the Amendment" is procedural and "Concurring in the Senate Amendment" is passage.
+VOTE_KIND = """(case
+    when r.question ~* '(cloture|motion to (table|proceed|recommit|adjourn|reconsider|instruct|commit|discharge|postpone|waive)|previous question|quorum|journal|point of order|appeal|ruling of the chair|^on the motion$)' then 'procedural'
+    when r.question ~* 'nomination' then 'nomination'
+    when r.question ~* '(passage|and pass|concur|conference report|veto|ratification|resolution|suspend the rules and agree)' then 'passage'
+    when r.question ~* 'amendment' then 'amendment'
+    else 'other' end)"""
+
+# Passed or failed, from the official result wording ("Bill Passed", "Amendment Rejected", "Agreed to").
+VOTE_OUTCOME = """(case
+    when r.result ~* '(fail|reject|not agreed|defeat|not sustained|veto sustained|not confirmed|not well taken)' then 'failed'
+    when r.result ~* '(pass|agreed|confirm|adopt|ratif|overrid|sustained|well taken)' then 'passed'
+    else 'other' end)"""
+
+VOTE_LIST = f"""
+select r.roll_call_id, r.chamber, r.congress, r.session, r.roll_number, r.vote_date, r.question,
+       r.description, r.result, r.yea_total, r.nay_total, r.present_total, r.not_voting_total,
+       r.bill_congress, r.bill_type, r.bill_number, r.amendment_number,
+       b.title as bill_title, b.policy_area, bs.subjects, null as snippet, true as title_match,
+       {VOTE_KIND} as kind, {VOTE_OUTCOME} as outcome,
+       count(*) over () as total
+  from core.roll_call r{VOTE_BILL_JOIN}
+ where (%(chamber)s::text is null or r.chamber = %(chamber)s)
+   and (%(congress)s::int is null or r.congress = %(congress)s)
+   and (%(kind)s::text is null or {VOTE_KIND} = %(kind)s)
+   and (%(outcome)s::text is null or {VOTE_OUTCOME} = %(outcome)s)
+   and (%(topic)s::text is null or b.policy_area = %(topic)s)
+   and (not %(surveyed)s or exists (select 1 from core.survey_item_vote siv where siv.roll_call_id = r.roll_call_id))
+   and (%(tsq)s::text is null or {VOTE_DOC} @@ to_tsquery('english', %(tsq)s))
+ order by {{order}}
+ limit %(limit)s offset %(offset)s
+"""
+
+# What the filters can offer: the Congresses loaded in each chamber, and the bills' main topics.
+VOTE_CONGRESSES = """
+select congress, chamber, count(*) as votes, min(vote_date) as first_vote, max(vote_date) as last_vote
+  from core.roll_call group by congress, chamber order by congress desc, chamber
+"""
+
+VOTE_TOPICS = """
+select b.policy_area, count(*) as votes
+  from core.roll_call r join core.bill b on b.congress = coalesce(r.bill_congress, r.congress)
+                                        and b.bill_type = r.bill_type and b.bill_number = r.bill_number
+ where b.policy_area is not null
+ group by 1 order by 1
+"""
+
+VOTE_ONE = """
+select r.roll_call_id, r.chamber, r.congress, r.session, r.roll_number, r.vote_date, r.question,
+       r.description, r.result, r.yea_total, r.nay_total, r.present_total, r.not_voting_total,
+       r.bill_congress, r.bill_type, r.bill_number
+  from core.roll_call r where r.roll_call_id = %(id)s
+"""
+
+# Every member's position on one vote, with the seat and party of their term on the vote date.
+VOTE_MEMBERS = """
+select v.bioguide_id, v.position, coalesce(m.official_full, m.first_name || ' ' || m.last_name) as name,
+       m.last_name, t.state, t.district, t.party, t.caucus
+  from core.member_vote v
+  join core.roll_call r using (roll_call_id)
+  join core.member m using (bioguide_id)
+  left join lateral (select t.state, t.district, t.party, t.caucus from core.term t
+                      where t.bioguide_id = v.bioguide_id and t.chamber = r.chamber
+                        and r.vote_date between t.start_date and t.end_date
+                      order by t.start_date desc limit 1) t on true
+ where v.roll_call_id = %(id)s
+ order by t.state, t.district nulls first, m.last_name
+"""
+
+# ---------------------------------------------------------------- Compare two members
+
+# Votes both members were recorded on, and how often they voted the same way.
+COMPARE_COUNTS = """
+select count(*)                                                                   as both_recorded,
+       count(*) filter (where a.position in ('yea', 'nay') and b.position in ('yea', 'nay')) as both_voted,
+       count(*) filter (where a.position in ('yea', 'nay') and a.position = b.position)      as same_way,
+       min(r.vote_date) as first_vote, max(r.vote_date) as last_vote
+  from core.member_vote a
+  join core.member_vote b on b.roll_call_id = a.roll_call_id and b.bioguide_id = %(b)s
+  join core.roll_call r on r.roll_call_id = a.roll_call_id
+ where a.bioguide_id = %(a)s
+"""
+
+# Votes where one voted Yea and the other Nay, newest first.
+COMPARE_SPLITS = """
+select r.roll_call_id, r.chamber, r.congress, r.session, r.roll_number, r.vote_date, r.question,
+       r.description, r.result, r.yea_total, r.nay_total, r.present_total, r.not_voting_total,
+       r.bill_congress, r.bill_type, r.bill_number,
+       a.position as position_a, b.position as position_b, count(*) over () as total
+  from core.member_vote a
+  join core.member_vote b on b.roll_call_id = a.roll_call_id and b.bioguide_id = %(b)s
+  join core.roll_call r on r.roll_call_id = a.roll_call_id
+ where a.bioguide_id = %(a)s and a.position in ('yea', 'nay') and b.position in ('yea', 'nay')
+   and a.position <> b.position
+ order by r.vote_date desc, r.roll_number desc
+ limit %(limit)s offset %(offset)s
+"""
+
+# ---------------------------------------------------------------- State pages
+
+# For each member: surveyed votes (same proposal as asked), how many had a clear majority where they
+# represented on the vote date, and how many of those they voted with. Per survey organization, the
+# same counts the member panel shows (sources are never added together).
+MEMBER_SCORES = """
+select mv.bioguide_id, coalesce(s.organization, s.survey) as organization,
+       count(*) as surveyed_votes,
+       count(*) filter (where mv.position in ('yea', 'nay') and oe.majority in ('support', 'oppose')) as clear_majority,
+       count(*) filter (where mv.position in ('yea', 'nay') and oe.majority in ('support', 'oppose')
+                          and (mv.position = siv.support_side) = (oe.majority = 'support'))       as with_majority
+  from core.member_vote mv
+  join core.survey_item_vote siv on siv.roll_call_id = mv.roll_call_id and siv.match_kind = 'same'
+  join core.survey s on s.survey = siv.survey
+  join core.roll_call r on r.roll_call_id = mv.roll_call_id
+  cross join lateral (select t.state, t.district from core.term t
+                       where t.bioguide_id = mv.bioguide_id and t.chamber = r.chamber
+                         and r.vote_date between t.start_date and t.end_date
+                       order by t.start_date desc limit 1) t
+  join core.opinion_estimate oe on oe.survey = siv.survey and oe.variable = siv.variable and oe.state = t.state
+                               and ((r.chamber = 'senate' and oe.district is null)
+                                 or (r.chamber = 'house' and oe.district = t.district))
+ where mv.bioguide_id = any(%(ids)s)
+ group by 1, 2
+"""
+
+# Statewide estimates for one state, for every question compared with a vote.
+STATE_OPINION = """
+select si.survey, si.variable, si.question, coalesce(s.organization, s.survey) as organization,
+       s.title, s.fielded, s.kind, oe.support, oe.support_low, oe.support_high, oe.majority,
+       oe.respondents, oe.area_note, oe.source_url
+  from core.opinion_estimate oe
+  join core.survey_item si on si.survey = oe.survey and si.variable = oe.variable
+  join core.survey s on s.survey = si.survey
+ where oe.state = %(state)s and oe.district is null
+   and exists (select 1 from core.survey_item_vote v where v.survey = si.survey and v.variable = si.variable)
+ order by coalesce(s.organization, s.survey), si.survey desc, si.variable
+"""
+
+# How the state's senators (on the vote date) voted on each surveyed Senate vote.
+STATE_SENATE_VOTES = """
+select siv.survey, siv.variable, siv.roll_call_id, siv.match_kind, siv.support_side, r.vote_date,
+       v.bioguide_id, v.position, coalesce(m.official_full, m.first_name || ' ' || m.last_name) as name,
+       coalesce(nullif(t.caucus, t.party), t.party) as party
+  from core.survey_item_vote siv
+  join core.roll_call r on r.roll_call_id = siv.roll_call_id and r.chamber = 'senate'
+  join core.member_vote v on v.roll_call_id = r.roll_call_id
+  join core.member m on m.bioguide_id = v.bioguide_id
+  cross join lateral (select t.state, t.party, t.caucus from core.term t
+                       where t.bioguide_id = v.bioguide_id and t.chamber = 'senate'
+                         and r.vote_date between t.start_date and t.end_date
+                       order by t.start_date desc limit 1) t
+ where t.state = %(state)s
+ order by r.vote_date, m.last_name
 """

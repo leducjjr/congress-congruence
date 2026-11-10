@@ -193,6 +193,9 @@
     .people { margin: -14px 0 18px; color: var(--ink-soft); font-size: 0.9rem; }
     .people-src { font-size: 0.8rem; }
     .history { margin: -14px 0 18px; color: var(--ink-soft); font-size: 0.9rem; }
+    .tools { margin: -10px 0 18px; font-size: 0.9rem; }
+    .tools a { color: inherit; text-decoration-color: var(--mark); text-underline-offset: 2px; }
+    .tools a:hover { color: var(--mark); }
     .history .spell { white-space: nowrap; }
     .op-sample { margin: 2px 0 0; font-size: 0.85rem; color: var(--ink-soft); }
     .op-sample strong { color: var(--ink); font-variant-numeric: tabular-nums; }
@@ -300,17 +303,21 @@
   const fmtDate = (iso, opts = { month: "short", day: "numeric", year: "numeric" }) =>
     new Date(iso + "T12:00:00").toLocaleDateString("en-US", opts);
 
+  // Party-blind view: the host page sets <html data-party-blind> (site switch "Hide party labels").
+  const partiesHidden = () => document.documentElement.hasAttribute("data-party-blind");
+
   function seatSentence(m) {
     const role = m.chamber === "senate" ? "Senator for" : "Representative for";
     const where = m.chamber === "senate" ? m.state : m.seat;
-    const party = m.caucus && m.caucus !== m.party ? `${m.party}, caucuses with the ${m.caucus}s` : m.party;
+    const party = partiesHidden() ? "" :
+      `, ${m.caucus && m.caucus !== m.party ? `${m.party}, caucuses with the ${m.caucus}s` : m.party}`;
     // Former members: say so plainly, with when they left. No reason is given (retired, defeated,
     // resigned...) because the member data doesn't reliably include one.
     if (!m.serving) {
       const until = m.left_office ? `; served until ${fmtDate(m.left_office)}` : "";
-      return `Former ${role.toLowerCase()} ${where}, ${party}${until}`;
+      return `Former ${role.toLowerCase()} ${where}${party}${until}`;
     }
-    return `${role} ${where}, ${party}`;
+    return `${role} ${where}${party}`;
   }
 
   const SOURCE_TEXT = {
@@ -332,7 +339,13 @@
       this.request = 0;
     }
 
-    connectedCallback() { this.load(); }
+    connectedCallback() {
+      this.load();
+      // Redraw when the party-blind switch changes (no new data needed).
+      this.onBlind = () => { if (this.member) this.render(); };
+      window.addEventListener("cc-party-blind", this.onBlind);
+    }
+    disconnectedCallback() { window.removeEventListener("cc-party-blind", this.onBlind); }
     attributeChangedCallback(_name, oldV, newV) { if (this.isConnected && oldV !== newV) this.load(); }
 
     get apiBase() { return (this.getAttribute("api-base") || "/api").replace(/\/$/, ""); }
@@ -389,7 +402,7 @@
       // Each seat stays on one line; the separators between them are where long histories wrap.
       const spells = seats.map((x, i) => [h("span", { class: "spell" },
         `${x.chamber === "senate" ? "Senator for" : "Representative for"} ${x.seat.replace("-", "\u2011")}`,
-        parties.size > 1 ? ` (${x.party})` : "",
+        parties.size > 1 && !partiesHidden() ? ` (${x.party})` : "",
         `, ${year(x.start)}\u2013${x.end ? year(x.end) : "now"}`), i < seats.length - 1 ? " · " : ""]);
       const loaded = (m.service || []).map(p => p.congress);
       const earliest = Math.min(...seats.map(x => x.first_congress));
@@ -419,6 +432,12 @@
       ];
       const history = this.historyLine(m);
       if (history) parts.push(history);
+      // Links to the site's other views of this member (left out when the panel is embedded elsewhere
+      // with no site-base: those pages only exist on the site).
+      const siteBase = this.getAttribute("site-base") || SCRIPT_BASE;
+      parts.push(h("p", { class: "tools" },
+        h("a", { href: `${siteBase}compare.html?${new URLSearchParams({ a: m.bioguide_id })}` }, "Compare with another member"), " · ",
+        h("a", { href: `${siteBase}state.html?s=${encodeURIComponent(m.state)}` }, `All members from ${stateName(m.state)}`)));
       const pop = m.population;
       if (pop) {
         const where = pop.area.replace("-", "\u2011");
@@ -478,7 +497,7 @@
         const line = p => h("li", {},
             h("strong", {}, `${p.chamber === "senate" ? "Senate" : "House"}${p.seat ? ` (${p.seat})` : ""}, ${ordinal(p.congress)} Congress`),
             `: missed ${p.missed_pct}% of ${p.votes_total.toLocaleString()} ${p.votes_total === 1 ? "vote" : "votes"}`,
-            p.party_votes ? `; voted with their party's majority on ${p.with_party_pct}% of ${p.party_votes.toLocaleString()}` : "",
+            p.party_votes && !partiesHidden() ? `; voted with their party's majority on ${p.with_party_pct}% of ${p.party_votes.toLocaleString()}` : "",
             p.first_vote && p.last_vote ? ` (${fmtDate(p.first_vote)} to ${fmtDate(p.last_vote)})` : "", ".");
         const shown = periods.length > 3 ? periods.slice(0, 2) : periods;
         facts.push(...shown.map(line));
@@ -495,7 +514,7 @@
             ? ` (${fmtDate(s.first_vote)} to ${fmtDate(s.last_vote)})` : "",
           "."));
       }
-      if (periods.length <= 1 && s.party_votes) {
+      if (periods.length <= 1 && s.party_votes && !partiesHidden()) {
         facts.push(h("li", {}, "Voted with the majority of their party on ",
           h("strong", {}, `${s.with_party_pct}%`), ` of ${s.party_votes.toLocaleString()} votes.`));
       }
@@ -709,9 +728,9 @@
             "compares the member's vote on each with what people where they live said. ",
             "Only bills a survey asked about can be compared."),
           h("p", {},
-            "\u201cWhere their party and their state disagreed\u201d lists the surveyed votes on which most of the member's ",
-            "own party took one side and the state's clear majority took the other, and which side the member chose. ",
-            "It's shown for statewide comparisons only for now."),
+            "\u201cWhere their party and ", m.chamber === "senate" ? "their state" : "their district",
+            " disagreed\u201d lists the surveyed votes on which most of the member's ",
+            "own party took one side and the clear majority where they live took the other, and which side the member chose."),
           o.items.some(i => i.kind === "ballot") ? h("p", {},
             "State ballot measures are not surveys: they are the certified votes of the state's own voters on a ",
             "similar question, so they have no range. They are compared only with members who represent the whole ",
@@ -744,16 +763,17 @@
         sourceLines.length ? h("div", { id: "sources", class: "op-sources", tabindex: "-1" }, sourceLines) : null);
     }
 
-    // Votes where the member's own party and their state's clear majority took opposite sides,
-    // and which one the member went with. A count with the votes listed, not a score.
-    // Statewide comparisons only for now (senators): district estimates are less certain.
+    // Votes where the member's own party and the clear majority where they live (state or district)
+    // took opposite sides, and which one the member went with. A count with the votes listed, not a score.
+    // Hidden in the party-blind view.
     partyLine(o, areaOf) {
-      const state = o.items.filter(i => i.match === "same" && i.kind !== "ballot" && i.constituents.area === "state"
+      if (partiesHidden()) return null;
+      const state = o.items.filter(i => i.match === "same" && i.kind !== "ballot"
         && ["support", "oppose"].includes(i.constituents.majority) && i.sided_with);
       if (!state.length) return null;
       const xs = state.filter(i => i.party && i.party.sided_with && i.party.sided_with !== i.constituents.majority);
       const areas = [...new Set(state.map(areaOf))];
-      const place = areas.length === 1 ? areas[0] : "their state";
+      const place = areas.length === 1 ? areas[0] : "the people they represented";
       // Only votes where the member's party (or caucus) had a side of its own: an independent who
       // caucuses with no one has no group to compare with, and gets no line.
       const withParty = state.filter(i => i.party && i.party.sided_with);
@@ -762,7 +782,9 @@
       const plural = { Democrat: "Democrats", Republican: "Republicans" }[p.name] || p.name;
       const group = p.caucus_of ? `the ${plural} they caucus with` : `their party (${plural})`;
       if (!xs.length)
-        return h("p", { class: "op-party" }, `On every surveyed vote where ${place}'s majority was clear, ${group} and ${place} were on the same side.`);
+        return h("p", { class: "op-party" }, areas.length === 1
+          ? `On every surveyed vote where ${place}'s majority was clear, ${group} and ${place} were on the same side.`
+          : `On every surveyed vote where the majority was clear, ${group} and the people they represented were on the same side.`);
       const sidedPlace = xs.filter(i => i.sided_with === i.constituents.majority);
       const lines = [...xs].reverse().map(i => {
         const jump = h("button", { type: "button", class: "linkish" }, i.question);
@@ -770,8 +792,9 @@
         return h("li", {}, jump, ` (${fmtDate(i.vote.date)}): `,
           h("strong", {}, i.sided_with === i.constituents.majority ? `sided with ${areaOf(i)}` : `sided with ${p.caucus_of ? "their caucus" : "their party"}`));
       });
+      const placeMajority = areas.length === 1 ? `${place}'s clear majority` : "the clear majority where they represented";
       return h("div", { class: "op-party" },
-        h("p", {}, `Where ${group} and ${place}'s clear majority disagreed: `,
+        h("p", {}, `Where ${group} and ${placeMajority} disagreed: `,
           h("strong", {}, `${xs.length} ${xs.length === 1 ? "vote" : "votes"}`), `. They sided with ${place} on `,
           h("strong", {}, String(sidedPlace.length)), ` and with ${p.caucus_of ? "their caucus" : "their party"} on `,
           h("strong", {}, String(xs.length - sidedPlace.length)), "."),

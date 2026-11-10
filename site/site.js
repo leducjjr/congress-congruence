@@ -39,9 +39,10 @@
   // Keyboard: Up/Down move through suggestions, Enter opens, Escape closes.
   const input = $("site-q"), list = $("site-q-list");
   const memberHref = m => `index.html#${m.state}/${m.bioguide_id}`;
+  const hidden = () => document.documentElement.hasAttribute("data-party-blind");
   const describe = m => (m.former ? "Former " : "") +
-    (m.chamber === "senate" ? `${m.former ? "senator" : "Senator"}, ${m.state} · ${m.party}`
-                            : `${m.former ? "representative" : "Representative"}, ${m.seat} · ${m.party}`);
+    (m.chamber === "senate" ? `${m.former ? "senator" : "Senator"}, ${m.state}` : `${m.former ? "representative" : "Representative"}, ${m.seat}`) +
+    (hidden() ? "" : ` · ${m.party}`);
   if (input && list) {
     let results = [], active = -1, timer = null, lastQuery = "";
     const close = () => { list.hidden = true; input.setAttribute("aria-expanded", "false");
@@ -96,6 +97,18 @@
     input.addEventListener("blur", () => setTimeout(close, 100));
   }
 
+  // Party-blind switch in the header. Pages and the member panel listen for "cc-party-blind" and
+  // redraw; anything marked class="party" is hidden by the stylesheet straight away.
+  const blind = $("party-blind");
+  if (blind) {
+    blind.checked = document.documentElement.hasAttribute("data-party-blind");
+    blind.addEventListener("change", () => {
+      document.documentElement.toggleAttribute("data-party-blind", blind.checked);
+      try { localStorage.setItem("cc-party-blind", blind.checked ? "1" : "0"); } catch { /* not remembered */ }
+      window.dispatchEvent(new CustomEvent("cc-party-blind", { detail: { hidden: blind.checked } }));
+    });
+  }
+
   // Email addresses: written in pages as "contact (at) example.org" so they aren't harvested from the
   // page source; turned into links here. data-email holds the part before the @.
   for (const span of document.querySelectorAll("[data-email]")) {
@@ -138,7 +151,9 @@
         const replying = form.reply_to.value.trim();
         form.reset();
         status.textContent = "Thank you. Your message was sent to our inbox." +
-          (replying ? " We'll reply to the address you gave." : "");
+          (out.copy_sent === true ? ` A copy is on its way to ${replying}; reply to it if you'd like to add anything.`
+           : out.copy_sent === false ? " We couldn't send you a copy just now, but we have your message and will reply to the address you gave."
+           : replying ? " We'll reply to the address you gave." : "");
       } catch (err) {
         status.textContent = err.message; status.classList.add("bad");
       } finally { button.disabled = false; }

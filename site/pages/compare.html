@@ -1,0 +1,267 @@
+---
+title: Compare two members
+description: Put two members of Congress side by side - their attendance, how often they voted the same way, where they split, and how each compared with the people they represent on surveyed votes.
+head: |
+  <script src="cards.js" defer></script>
+  <style>
+    .pickers { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 20px; margin: 0 0 20px; }
+    @media (max-width: 640px) { .pickers { grid-template-columns: 1fr; } }
+    .picker { position: relative; display: grid; gap: 4px; font-size: 0.85rem; color: var(--ink-soft); }
+    .picker input { font: inherit; font-size: 1rem; color: var(--ink); background: var(--surface);
+      border: 1px solid var(--rule); border-radius: 8px; padding: 8px 12px; width: 100%; }
+    .picker ul { position: absolute; z-index: 20; left: 0; right: 0; top: 100%; margin: 4px 0 0; padding: 4px; list-style: none;
+      background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; box-shadow: 0 8px 24px rgb(0 0 0 / 0.12);
+      max-height: 20rem; overflow-y: auto; }
+    .picker li { padding: 7px 10px; border-radius: 6px; cursor: pointer; color: var(--ink); line-height: 1.3; }
+    .picker li small { display: block; color: var(--ink-soft); }
+    .picker li[aria-selected="true"], .picker li:hover { background: var(--page); }
+    .side-by-side { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin: 0 0 18px; }
+    @media (max-width: 640px) { .side-by-side { grid-template-columns: 1fr; } }
+    .who { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 14px 16px; }
+    .who h2 { font-size: 1.1rem; margin: 0 0 2px; }
+    .who .label { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-soft); }
+    .who ul { margin: 8px 0 0; padding-left: 1.1em; font-size: 0.9rem; }
+    .who li { margin: 2px 0; }
+    .big { font-size: 1.05rem; }
+    .src-head { font-size: 1rem; margin: 18px 0 6px; }
+    .pos { white-space: nowrap; }
+  </style>
+main_class: compare-page
+---
+<div class="page-head">
+  <h1>Compare two members</h1>
+  <p class="lede">Choose two members of Congress, current or former, to see them side by side: how often they missed
+    votes, how often they voted the same way when both voted, the votes where they split, and how each one's
+    surveyed votes compared with the people they represent. Every figure here is a count from the voting records;
+    open any vote to check it.</p>
+</div>
+
+<div class="pickers">
+  <div class="picker" data-side="a">
+    <label for="pick-a">First member</label>
+    <input id="pick-a" type="search" placeholder="Name, state or seat (TX-7)" role="combobox"
+           aria-autocomplete="list" aria-expanded="false" aria-controls="pick-a-list" autocomplete="off">
+    <ul id="pick-a-list" role="listbox" hidden></ul>
+  </div>
+  <div class="picker" data-side="b">
+    <label for="pick-b">Second member</label>
+    <input id="pick-b" type="search" placeholder="Name, state or seat (TX-7)" role="combobox"
+           aria-autocomplete="list" aria-expanded="false" aria-controls="pick-b-list" autocomplete="off">
+    <ul id="pick-b-list" role="listbox" hidden></ul>
+  </div>
+</div>
+
+<div id="out" aria-live="polite"></div>
+
+<script>
+addEventListener("DOMContentLoaded", () => {
+  const { API, el, date, pct, plural, chamberName, POS, ordinal, memberHref, partiesHidden, whoVoted } = window.CC;
+  const $ = id => document.getElementById(id);
+  const out = $("out");
+  const params = new URLSearchParams(location.search);
+  const chosen = { a: params.get("a"), b: params.get("b") };
+  const BIO = /^[A-Z]\d{6}$/;
+  const PAGE = 25;
+
+  async function get(path) {
+    const res = await fetch(API + path);
+    if (!res.ok) { let d = ""; try { d = (await res.json()).detail; } catch {} throw new Error(d || `the server answered ${res.status}`); }
+    return res.json();
+  }
+
+  const roleLine = m => {
+    const role = m.chamber === "senate" ? `Senator for ${m.state}` : `Representative for ${m.seat}`;
+    return (m.serving === false ? `Former ${role.charAt(0).toLowerCase()}${role.slice(1)}` : role);
+  };
+  const partyText = m => m.caucus && m.caucus !== m.party ? `${m.party}, caucuses with the ${m.caucus}s` : m.party;
+
+  // ------------------------------------------------------------ pickers (suggestions as you type)
+  for (const box of document.querySelectorAll(".picker")) {
+    const side = box.dataset.side, input = box.querySelector("input"), list = box.querySelector("ul");
+    let timer = null, items = [], active = -1;
+    const close = () => { list.hidden = true; input.setAttribute("aria-expanded", "false"); active = -1; };
+    const pick = m => { chosen[side] = m.bioguide_id; input.value = m.name; close(); update(); };
+    const highlight = i => { active = i; [...list.children].forEach((li, k) => li.setAttribute("aria-selected", String(k === i))); };
+    input.addEventListener("input", () => {
+      clearTimeout(timer);
+      const q = input.value.trim();
+      if (q.length < 2) { close(); return; }
+      timer = setTimeout(async () => {
+        try {
+          const { members } = await get(`/v1/search?only=members&q=${encodeURIComponent(q)}`);
+          if (input.value.trim() !== q) return;
+          items = members;
+          list.replaceChildren(...(members.length ? members.map((m, i) => {
+            const li = el("li", { role: "option", id: `pick-${side}-${i}`, "aria-selected": "false" }, m.name,
+              el("small", {}, `${m.former ? "Former " : ""}${m.chamber === "senate" ? `senator, ${m.state}` : `representative, ${m.seat}`}`,
+                partiesHidden() ? "" : ` · ${m.party}`));
+            li.addEventListener("mousedown", e => { e.preventDefault(); pick(m); });
+            return li;
+          }) : [el("li", { "aria-disabled": "true" }, "No member matches")]));
+          list.hidden = false; input.setAttribute("aria-expanded", "true"); active = -1;
+        } catch { close(); }
+      }, 180);
+    });
+    input.addEventListener("keydown", e => {
+      if (list.hidden) return;
+      if (e.key === "ArrowDown") { e.preventDefault(); highlight(Math.min(active + 1, items.length - 1)); }
+      else if (e.key === "ArrowUp") { e.preventDefault(); highlight(Math.max(active - 1, 0)); }
+      else if (e.key === "Escape") close();
+      else if (e.key === "Enter") { e.preventDefault(); const m = items[active >= 0 ? active : 0]; if (m) pick(m); }
+    });
+    input.addEventListener("blur", () => setTimeout(close, 120));
+  }
+
+  function update() {
+    const p = new URLSearchParams();
+    for (const k of ["a", "b"]) if (chosen[k]) p.set(k, chosen[k]);
+    history.replaceState(null, "", p.size ? `?${p}` : location.pathname);
+    render().catch(e => out.replaceChildren(el("p", { class: "empty" }, `This comparison couldn't load: ${e.message}`)));
+  }
+
+  // ------------------------------------------------------------ the comparison
+  let data = null;
+
+  async function render() {
+    const ids = ["a", "b"].map(k => chosen[k]).filter(x => x && BIO.test(x));
+    if (!ids.length) {
+      out.replaceChildren(el("p", { class: "empty" }, "Choose two members to compare. Tip: from any member's page, use ",
+        el("em", {}, "Compare with another member"), "."));
+      return;
+    }
+    out.replaceChildren(el("p", { class: "empty" }, "Loading…"));
+    const [A, B] = await Promise.all(ids.map(id => Promise.all([get(`/v1/members/${id}`), get(`/v1/members/${id}/opinion`).catch(() => null)])));
+    for (const [k, pair] of [["a", A], ["b", B]]) if (pair) $(`pick-${k}`).value = pair[0].name;
+    if (!B) {
+      out.replaceChildren(cardsRow([A]), el("p", { class: "empty" }, "Now choose a second member."));
+      return;
+    }
+    if (A[0].bioguide_id === B[0].bioguide_id) {
+      out.replaceChildren(el("p", { class: "empty" }, "Those are the same member. Choose someone else for one side."));
+      return;
+    }
+    const together = await get(`/v1/compare?a=${A[0].bioguide_id}&b=${B[0].bioguide_id}&limit=${PAGE}`);
+    data = { A, B, together };
+    draw();
+  }
+
+  function draw() {
+    if (!data) return render();
+    const { A, B, together } = data;
+    out.replaceChildren(cardsRow([A, B]), togetherSection(A[0], B[0], together), surveyedSection(A, B));
+  }
+
+  function cardsRow(pairs) {
+    return el("div", { class: "side-by-side" }, pairs.map(([m, o], i) => {
+      const periods = (m.service || []).filter(p => p.votes_total);
+      const latest = periods[0];
+      return el("section", { class: "who" },
+        el("div", { class: "label" }, i ? "Second member" : "First member"),
+        el("h2", {}, el("a", { href: memberHref(m) }, m.name)),
+        el("p", { class: "meta" }, roleLine(m), partiesHidden() ? "" : `, ${partyText(m)}`,
+          m.left_office ? `; served until ${date(m.left_office)}` : ""),
+        el("ul", {},
+          latest ? el("li", {}, `Missed ${latest.missed_pct}% of ${latest.votes_total.toLocaleString()} votes in the `,
+            `${ordinal(latest.congress)} Congress (${chamberName(latest.chamber)})`, ".") : el("li", {}, "No recorded votes yet."),
+          periods.length > 1 ? el("li", {}, `Has votes on this site in ${periods.length} Congress-and-chamber periods, back to the ${ordinal(periods.at(-1).congress)}.`) : null,
+          latest && latest.party_votes && !partiesHidden()
+            ? el("li", {}, `Voted with their party's majority on ${latest.with_party_pct}% of ${latest.party_votes.toLocaleString()} votes in the ${ordinal(latest.congress)} Congress.`) : null,
+          o && o.by_source?.length ? o.by_source.map(s => el("li", {}, `${s.organization}: `,
+            s.clear_majority ? [el("strong", {}, `${s.with_majority} of ${s.clear_majority}`),
+              " surveyed votes with a clear majority where they live went their way"] : "no surveyed votes with a clear majority",
+            s.related_votes ? ` (${plural(s.related_votes, "related vote", "related votes")} not counted)` : "", ".")) : null));
+    }));
+  }
+
+  // Votes both were recorded on: how often both voting they agreed, and where they split.
+  function togetherSection(a, b, t) {
+    const sec = el("section", { class: "group" }, el("h2", {}, "Votes they both cast"));
+    if (!t.both_recorded) {
+      sec.append(el("p", {}, "These two members never voted on the same roll call in the records on this site: ",
+        (a.seats || []).every(x => (b.seats || []).every(y => x.chamber !== y.chamber))
+          ? "they served in different chambers." : "they didn't serve in the same chamber at the same time.",
+        " Their surveyed votes can still be compared below when a survey asked about votes in each chamber."));
+      return sec;
+    }
+    sec.append(
+      el("p", { class: "big" }, "Both voted Yea or Nay on ", el("strong", {}, t.both_voted.toLocaleString()), " votes",
+        t.first_vote ? ` between ${date(t.first_vote)} and ${date(t.last_vote)}` : "", ". They voted the same way on ",
+        el("strong", {}, t.same_way.toLocaleString()), t.same_way_pct != null ? ` (${t.same_way_pct}%)` : "",
+        " and opposite ways on ", el("strong", {}, (t.both_voted - t.same_way).toLocaleString()), "."),
+      t.both_recorded > t.both_voted ? el("p", { class: "meta" }, `${plural(t.both_recorded - t.both_voted, "other vote", "other votes")} where at least one of them didn't vote, or voted Present, aren't counted.`) : null);
+    if (!t.splits_total) return sec;
+    const list = el("ol", { class: "plain" });
+    const more = el("p", { class: "more-row" });
+    const add = splits => list.append(...splits.map(v => el("li", { class: "result" },
+      el("h3", {}, v.bill ? `${v.bill.label}: ` : "", v.description || v.question || "Vote"),
+      el("p", { class: "meta" }, `${chamberName(v.chamber)} · ${date(v.date)} · ${v.question || ""}`,
+        v.result ? ` — ${v.result}` : "", v.yea != null ? ` ${v.yea}–${v.nay}` : ""),
+      el("p", {}, el("span", { class: "pos" }, `${a.name}: `, el("strong", {}, POS[v.position_a])), " · ",
+        el("span", { class: "pos" }, `${b.name}: `, el("strong", {}, POS[v.position_b]))),
+      el("p", { class: "meta" }, el("a", { href: v.official_url }, "Official record"),
+        v.bill ? [" · ", el("a", { href: v.bill.url }, `${v.bill.label} on Congress.gov`)] : ""),
+      whoVoted(v.roll_call_id))));
+    add(t.splits);
+    let shown = t.splits.length;
+    const button = () => {
+      more.replaceChildren();
+      if (shown >= t.splits_total) return;
+      const btn = el("button", { type: "button", class: "show-more" }, `Show ${Math.min(PAGE, t.splits_total - shown)} more`);
+      btn.addEventListener("click", async () => {
+        btn.disabled = true; btn.textContent = "Loading…";
+        try {
+          const r = await get(`/v1/compare?a=${a.bioguide_id}&b=${b.bioguide_id}&limit=${PAGE}&offset=${shown}`);
+          add(r.splits); shown += r.splits.length || t.splits_total; button();
+        } catch { btn.disabled = false; btn.textContent = "Couldn't load more. Try again"; }
+      });
+      more.append(btn, " ", el("span", { class: "meta" }, `Showing ${shown} of ${t.splits_total.toLocaleString()}`));
+    };
+    button();
+    sec.append(el("details", { class: "more" }, el("summary", {}, `Show the ${plural(t.splits_total, "vote", "votes")} where they split, newest first`),
+      list, more));
+    return sec;
+  }
+
+  // Surveyed questions either member was compared on, one table per source (never added together).
+  const VERDICT = { with: "with the majority", against: "against the majority", too_close: "too close to call", did_not_vote: "didn't vote" };
+  function cell(i) {
+    if (!i) return el("td", { class: "meta" }, "—");
+    const c = i.constituents;
+    return el("td", {}, el("strong", {}, POS[i.position] || i.position), ` (${c.area === "state" ? "Senate" : "House"}, ${date(i.vote.date)})`,
+      el("br"), el("span", { class: "meta" }, i.kind === "ballot" ? `${pct(c.support_pct)} voted yes in ${c.area_label}` : `${pct(c.support_pct)} support in ${c.area_label}`),
+      el("br"), i.match === "related" ? el("span", { class: "meta" }, "related vote, not counted")
+        : el("span", { class: `verdict ${i.agreement}` }, VERDICT[i.agreement] || i.agreement));
+  }
+
+  function surveyedSection([a, oa], [b, ob]) {
+    const sec = el("section", { class: "group" }, el("h2", {}, "Surveyed votes, compared with the people each represents"),
+      el("p", { class: "sub" }, "Each member is compared with their own state (senators) or district (representatives) on the day of the vote. ",
+        "Where both voted on the same roll call they're on one row. ", el("a", { href: "methods.html" }, "How the comparison works"), "."));
+    const items = [...(oa?.items || []).map(i => ["a", i]), ...(ob?.items || []).map(i => ["b", i])];
+    if (!items.length) { sec.append(el("p", { class: "empty" }, "Neither member voted on a bill a survey asked about.")); return sec; }
+    const orgOf = new Map([...(oa?.surveys || []), ...(ob?.surveys || [])].map(s => [s.name, s.organization]));
+    const rows = new Map();
+    for (const [side, i] of items) {
+      const key = `${i.survey}|${i.item}|${i.vote.roll_call_id}`;
+      const r = rows.get(key) || { i, org: orgOf.get(i.survey) || i.survey };
+      r[side] = i; rows.set(key, r);
+    }
+    const byOrg = new Map();
+    for (const r of rows.values()) byOrg.set(r.org, [...(byOrg.get(r.org) || []), r]);
+    for (const [org, rs] of byOrg) {
+      rs.sort((x, y) => y.i.vote.date.localeCompare(x.i.vote.date));
+      sec.append(el("h3", { class: "src-head" }, org),
+        el("div", { class: "table-scroll" }, el("table", { class: "data-table" },
+          el("thead", {}, el("tr", {}, el("th", { scope: "col" }, "Question"), el("th", { scope: "col" }, a.name), el("th", { scope: "col" }, b.name))),
+          el("tbody", {}, rs.map(r => el("tr", {},
+            el("td", {}, el("a", { href: window.CC.detailHref({ survey: r.i.survey, item: r.i.item }) }, r.i.question),
+              el("br"), el("span", { class: "meta" }, r.i.survey)),
+            cell(r.a), cell(r.b)))))));
+    }
+    return sec;
+  }
+
+  window.addEventListener("cc-party-blind", () => { if (data) draw(); });
+  render().catch(e => out.replaceChildren(el("p", { class: "empty" }, `This comparison couldn't load: ${e.message}`)));
+});
+</script>

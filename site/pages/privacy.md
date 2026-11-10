@@ -19,17 +19,22 @@ Questions about privacy: <span data-email="privacy">privacy (at) {{email_domain}
 ## The feedback form {#feedback}
 
 When you use the form on the [Contact](contact.html) page, your message, the kind of message, the page
-you came from and, only if you give it, your email address are sent by email to our inbox. Nothing is
+you came from and, only if you give it, your email address are sent by email to our inbox. If you give
+your address, the same message is also emailed to you, so you have a copy and can reply to it. Nothing is
 saved on this site's server or in its database. To stop the form being flooded, the server counts how
-many messages come from each connection in the last hour; that count is kept in memory only, never
-written down, and forgotten after an hour. Messages stay in our inbox only as long as we need them to
+many messages come from each connection, and how many copies go to each email address, in the last
+hour; those counts are kept in memory only, never written down, and forgotten after an hour. Messages stay in our inbox only as long as we need them to
 reply or fix what you reported; ask us at the privacy address above to delete yours.
 
 ## What stays in your browser {#browser}
 
 So that search results can show how *your* members voted, the site remembers the last three members
-you looked at, in your browser's own storage on your device. It is never sent to us and isn't a cookie.
-The **forget** link on the Search page clears it, as does clearing your browser's site data.
+you looked at, in your browser's own storage on your device. It isn't a cookie. Their member IDs are
+included in search requests only so the answer can show their votes; they aren't stored on our side.
+The **forget** link on the Search page clears the list, as does clearing your browser's site data.
+
+If you turn on **Hide party labels**, your browser remembers that choice the same way, on your device
+only. Nothing about it is sent to us.
 
 ## What any web server records {#server-logs}
 

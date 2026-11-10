@@ -36,6 +36,14 @@ a:hover { color: var(--mark); }
   .site-header nav a { padding: 4px 10px; font-size: 0.9rem; }
 }
 
+/* Party-blind switch */
+.party-switch { display: inline-flex; align-items: center; gap: 6px; font-size: 0.88rem; color: var(--ink-soft);
+  white-space: nowrap; cursor: pointer; user-select: none; }
+.party-switch input { accent-color: var(--mark); width: 1rem; height: 1rem; margin: 0; }
+[data-party-blind] .party-switch { color: var(--ink); font-weight: 600; }
+[data-party-blind] .party { display: none !important; }
+@media (max-width: 560px) { .party-switch { order: 5; } }
+
 /* Header search: suggestions appear under the box as you type */
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .site-search { position: relative; margin-left: auto; flex: 0 1 20rem; min-width: 12rem; }
@@ -118,6 +126,34 @@ a.tag { white-space: normal; max-width: 100%; margin: 2px 4px 2px 0; border-radi
 .card-vote { margin-top: 6px; }
 
 /* Footer */
+/* "Show more" buttons and shared controls on the data pages */
+.show-more { font: inherit; font-size: 0.9rem; font-weight: 600; color: var(--mark); background: var(--surface);
+  border: 1px solid var(--rule); border-radius: 8px; padding: 6px 14px; cursor: pointer; }
+.show-more:hover { border-color: var(--mark); }
+.show-more:disabled { opacity: 0.6; cursor: default; }
+.more-row { margin: 12px 0 0; }
+.page-head h1 { font-size: 1.35rem; margin: 0 0 4px; }
+.page-head .lede { color: var(--ink-soft); margin: 0 0 18px; max-width: 48rem; }
+.controls { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: end; margin: 0 0 18px; font-size: 0.9rem; }
+.controls label { display: grid; gap: 3px; color: var(--ink-soft); }
+.controls label.check { display: flex; align-items: center; gap: 6px; }
+.controls input[type=search], .controls input[type=text], .controls select { font: inherit; color: var(--ink);
+  background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; padding: 6px 8px; min-width: 9rem; }
+.controls input[type=search] { min-width: 14rem; }
+.controls input[type=search], .controls input[type=text], .controls select { height: 2.3rem; }
+.data-table { border-collapse: collapse; width: 100%; font-size: 0.9rem; }
+.data-table th, .data-table td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+.data-table th { font-weight: 600; }
+.table-scroll { overflow-x: auto; }
+.verdict.with { color: var(--mark); font-weight: 600; }
+.verdict.against { color: var(--against); font-weight: 600; }
+.verdict.too_close, .verdict.did_not_vote, .verdict.not_surveyed { color: var(--ink-soft); }
+
+.who-voted { margin-top: 6px; }
+.who-group h4 { font-size: 0.9rem; margin: 10px 0 4px; }
+.who-voted .who-list { columns: 16rem; column-gap: 24px; margin: 0; padding: 0; list-style: none; font-size: 0.88rem; }
+.who-voted .who-list li { break-inside: avoid; padding: 1px 0; }
+
 .site-footer { border-top: 1px solid var(--rule); background: var(--surface); color: var(--ink-soft); font-size: 0.85rem; }
 .site-footer .wrap { padding-top: 20px; padding-bottom: 28px; }
 .site-footer p { margin: 0 0 10px; }

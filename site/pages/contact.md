@@ -22,11 +22,12 @@ one of the addresses below. We read everything.</p>
   <label>Your message
     <textarea name="message" rows="6" maxlength="4000" required></textarea>
   </label>
-  <label>Your email, if you'd like a reply <span class="optional">(optional)</span>
+  <label>Your email, if you'd like a reply and a copy <span class="optional">(optional)</span>
     <input name="reply_to" type="email" autocomplete="email" maxlength="254">
   </label>
-  <p class="note">Leave the email blank to stay anonymous. Your message is emailed to our inbox and
-    isn't stored on this site. See <a href="privacy.html#feedback">Privacy</a>.</p>
+  <p class="note">If you give your email, we'll send you a copy of your message; reply to it to add
+    anything. Leave it blank to stay anonymous. Your message is emailed to our inbox and isn't stored on
+    this site. See <a href="privacy.html#feedback">Privacy</a>.</p>
   <div class="hp" aria-hidden="true"><label>Leave this empty <input name="website" tabindex="-1" autocomplete="off"></label></div>
   <button type="submit">Send</button>
   <p class="form-status" role="status" aria-live="polite"></p>

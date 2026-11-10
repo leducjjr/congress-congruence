@@ -263,6 +263,30 @@ it on for `admin@` and `contact@`. To test the login without sending anything:
 python -c "from congress_congruence import config; import os, smtplib, ssl; s = smtplib.SMTP_SSL('smtp.titan.email', 465, context=ssl.create_default_context(), timeout=20); s.login(os.environ['FEEDBACK_SMTP_USER'], os.environ['FEEDBACK_SMTP_PASSWORD']); print('login OK'); s.quit()"
 ```
 
+**Copies to visitors.** When a visitor gives their email address, the form also emails them a copy
+of what they sent, from "US Congress vs Voters", with replies going to `contact@` (Reply-To), so
+their reply starts a thread in the inbox. Copies are limited to 2 an hour per address and 30 an hour in
+all, so the form can't be used to flood someone.
+
+The copy is sent from `feedback@` by default. To show `contact@` as the From address instead, the mail
+service must let `feedback@` send as `contact@` (signing in as `contact@` itself isn't an option while it
+has two-factor authentication, which it should keep). Test whether Titan allows it by sending one email
+to yourself (replace the To address):
+
+```bash
+python - <<'PY'
+from congress_congruence import config; import os, smtplib, ssl
+from email.message import EmailMessage
+m = EmailMessage(); m["From"] = "US Congress vs Voters <contact@uscongressvsvoters.org>"
+m["To"] = "YOUR-OWN-ADDRESS@example.com"; m["Subject"] = "Send-as test"; m.set_content("Test of sending as contact@.")
+s = smtplib.SMTP_SSL('smtp.titan.email', 465, context=ssl.create_default_context(), timeout=20)
+s.login(os.environ['FEEDBACK_SMTP_USER'], os.environ['FEEDBACK_SMTP_PASSWORD']); s.send_message(m); s.quit(); print('accepted')
+PY
+```
+
+If it prints `accepted` and the email arrives (check spam too), add `FEEDBACK_COPY_FROM=contact@uscongressvsvoters.org`
+to `.env` and restart the API. If Titan refuses ("sender address rejected" or similar), leave it unset.
+
 Save the password with a prompt (not in shell history), quoted so any character works:
 
 ```bash

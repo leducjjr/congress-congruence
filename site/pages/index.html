@@ -62,13 +62,30 @@ main_class: home
     if (!code) return;
     try {
       const { members } = await getJSON(`/v1/members?state=${code}&include=former`);
+      lastMembers = members;
+      fillMembers(members);
+      memberSel.disabled = false;
+      status.textContent = "";
+      if (selectId) { memberSel.value = selectId; showMember(selectId); }
+    } catch (e) {
+      memberSel.replaceChildren(new Option("Couldn't load members", ""));
+      status.textContent = `Couldn't load members for ${STATES[code]}: ${e.message}. Reload to try again.`;
+    }
+  }
+
+  // The member list, with party names unless the party-blind switch is on.
+  let lastMembers = [];
+  const hidden = () => document.documentElement.hasAttribute("data-party-blind");
+  function fillMembers(members) {
+      const keep = memberSel.value;
       memberSel.replaceChildren(new Option("Choose", ""));
       for (const chamber of ["senate", "house"]) {
         const group = document.createElement("optgroup");
         group.label = chamber === "senate" ? "Senators" : "Representatives";
         for (const m of members.filter(x => x.chamber === chamber && !x.former)) {
           const where = chamber === "house" ? `${m.seat}, ` : "";
-          group.append(new Option(`${m.name} (${where}${m.party})`, m.bioguide_id));
+          const label = hidden() ? where.slice(0, -2) : `${where}${m.party}`;
+          group.append(new Option(label ? `${m.name} (${label})` : m.name, m.bioguide_id));
         }
         if (group.children.length) memberSel.append(group);
       }
@@ -84,14 +101,9 @@ main_class: home
         }
         memberSel.append(group);
       }
-      memberSel.disabled = false;
-      status.textContent = "";
-      if (selectId) { memberSel.value = selectId; showMember(selectId); }
-    } catch (e) {
-      memberSel.replaceChildren(new Option("Couldn't load members", ""));
-      status.textContent = `Couldn't load members for ${STATES[code]}: ${e.message}. Reload to try again.`;
-    }
+      memberSel.value = keep;
   }
+  window.addEventListener("cc-party-blind", () => { if (lastMembers.length) fillMembers(lastMembers); });
 
   function showMember(id) {
     if (!id) { panel.hidden = true; history.replaceState(null, "", location.pathname); return; }
