@@ -42,19 +42,31 @@ if [ "${1:-}" = "pages" ]; then
   exit 0
 fi
 
-# Ask for the sudo password now, not after the few minutes the member pages take to build.
-sudo -v
+# sudo is needed only if a web folder isn't this user's. After a one-time
+#     sudo chown -R "$USER": /var/www/congress /var/www/congress-dev
+# publishing never asks for a password. Otherwise it asks once, up front, and keeps sudo from
+# timing out while the member pages build (that takes several minutes).
+SUDO=""
+for dir in $targets; do
+  [ -d "$dir" ] && [ -w "$dir" ] && [ -z "$(find "$dir" ! -user "$me" -print -quit)" ] || SUDO=sudo
+done
+if [ -n "$SUDO" ]; then
+  sudo -v
+  ( while sleep 50; do sudo -n -v 2>/dev/null || exit; done ) &
+  keepalive=$!
+  trap 'kill $keepalive 2>/dev/null' EXIT INT TERM
+fi
+
 rm -rf build/site
 "$py" scripts/build_site.py --out build/site --version "$version"
 pages=yes
 build_pages build/site || { pages=no; echo "WARNING: couldn't build the member and state pages (is the API running?). Publishing the rest; the pages already there are kept." >&2; }
-sudo -v      # asks again only if the build outlasted sudo's timeout
 for dir in $targets; do
-  sudo mkdir -p "$dir"
-  sudo cp -r build/site/. "$dir/"          # includes .well-known/
-  sudo find "$dir" -type d -exec chmod 755 {} +
-  sudo find "$dir" -type f -exec chmod 644 {} +
-  if [ "$pages" = yes ]; then
+  $SUDO mkdir -p "$dir"
+  $SUDO cp -r build/site/. "$dir/"          # includes .well-known/
+  $SUDO find "$dir" -type d -exec chmod 755 {} +
+  $SUDO find "$dir" -type f -exec chmod 644 {} +
+  if [ -n "$SUDO" ] && [ "$pages" = yes ]; then
     # Owned by this user, so the weekly `pages` job can refresh them without sudo.
     sudo chown -R "$me" "$dir/members" "$dir/states" "$dir/sitemap.xml"
   fi
