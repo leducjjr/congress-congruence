@@ -17,7 +17,9 @@ def test_builds_every_page_in_the_frame(tmp_path):
     assert (tmp_path / "cards.js").exists() and 'src="cards.js?v=abc123"' in (tmp_path / "surveyed.html").read_text()
     for name in built:
         page = (tmp_path / name).read_text()
-        assert page.count('aria-current="page"') == (1 if name in dict(build_site.NAV) else 0), name
+        # The current page is marked once: its menu link, or the header's Features button.
+        current = name in dict(build_site.NAV) or name == "features.html"
+        assert page.count('aria-current="page"') == (1 if current else 0), name
         assert 'href="site.css?v=abc123"' in page and 'src="site.js?v=abc123"' in page
         assert "{{" not in page, f"{name}: unfilled placeholder"
         assert 'href="https://github.com/leducjjr/congress-congruence">Source code</a>' in page
