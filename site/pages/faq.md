@@ -76,8 +76,10 @@ split, and their surveyed votes. Both pages only count what's in the records; op
 
 ## How current is the information? {#current}
 
-House votes are checked every two hours. Senate votes come from Voteview, which can trail the official
-record by days or weeks. Surveys are added when their data is published. The footer of every page shows
+House votes are checked every two hours and Senate votes daily, both from each chamber's official
+files. A Senate vote not yet loaded from the Senate's files comes from Voteview, which can trail the
+official record by days or weeks; see [Sources](sources.html#senate). Surveys are added when their
+data is published. The footer of every page shows
 the latest vote loaded.
 
 ## Do you collect information about me? {#privacy}

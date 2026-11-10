@@ -29,13 +29,20 @@ must add up to the Clerk's published totals.
 **Official source:** the U.S. Senate's roll-call records:
 [senate.gov](https://www.senate.gov/legislative/votes_new.htm).
 
-**Source we use for now:** [Voteview](https://voteview.com), a long-running research project at UCLA
-that republishes every Senate and House roll call. The Senate's website doesn't currently allow
-automated downloads from our server, so we load Senate votes from Voteview instead. Voteview can be
-days to weeks behind the official record; the footer of every page shows how current each chamber is.
+**What we use:** the Senate's own roll-call files, the same official record, for each vote: the
+question, the result, the date, the bill, and how each senator voted. Each vote is checked before it
+is stored: every senator's vote must add up to the Senate's published totals.
 
-**How often:** checked daily. If we load a vote from the Senate's own record later, it replaces the
-Voteview copy.
+**How often:** checked daily. We download them slowly, a few seconds apart, as the Senate's website
+asks of automated downloads. Since November 2026 we've been catching up on the votes of 2026 so far
+this way, a few dozen a day.
+
+**Votes not yet loaded from the Senate's files** come from [Voteview](https://voteview.com), a
+long-running research project at UCLA that republishes every Senate and House roll call. Voteview can
+be days to weeks behind the official record. When the Senate's own file for a vote is loaded, it
+replaces the Voteview copy. Earlier Senate votes, from 2007, also come from Voteview. Each vote on
+this site says which record it came from, and the footer of every page shows how current each
+chamber is.
 
 **Paired and announced votes:** a senator who is absent can "pair" with one on the other side or
 announce a position. These aren't counted in the official tally, so we treat them as not voting, as the

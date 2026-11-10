@@ -7,7 +7,7 @@
     { month: "long", day: "numeric", year: "numeric" });
   const ordinal = n => n + ((n % 100 >= 11 && n % 100 <= 13) ? "th" : ({ 1: "st", 2: "nd", 3: "rd" }[n % 10] || "th"));
   const CADENCE = { house: "checked every 2 hours",
-                    senate: "updated daily from Voteview, which can trail the official record by days to weeks" };
+                    senate: "checked daily, from the Senate's own files" };
 
   async function getJSON(path) {
     const res = await fetch(API + path);
