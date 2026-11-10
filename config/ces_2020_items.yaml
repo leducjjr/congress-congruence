@@ -14,7 +14,7 @@ source:
   title: Cooperative Election Study 2020
   fielded: fall 2020, before the election
   dataset_url: https://doi.org/10.7910/DVN/E9N6PH
-  about_url: https://cces.gov.harvard.edu/
+  about_url: https://tischcollege.tufts.edu/ces
 
 final_questions: &final
   - On Passage

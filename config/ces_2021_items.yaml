@@ -13,7 +13,7 @@ source:
   title: Cooperative Election Study 2021
   fielded: fall 2021
   dataset_url: https://doi.org/10.7910/DVN/OPQOCU
-  about_url: https://cces.gov.harvard.edu/
+  about_url: https://tischcollege.tufts.edu/ces
 
 final_questions: &final
   - On Passage

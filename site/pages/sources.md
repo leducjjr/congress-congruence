@@ -84,7 +84,8 @@ We only compare a vote with a survey question when both are about the same propo
 ### Cooperative Election Study {#cooperative-election-study}
 
 **Who runs it:** a consortium of universities led by Harvard University and Tufts University, fielded by
-YouGov. [cces.gov.harvard.edu](https://cces.gov.harvard.edu/)
+YouGov. Its website is at [Tufts University](https://tischcollege.tufts.edu/ces) (formerly
+cces.gov.harvard.edu); its data are published on [Harvard Dataverse](https://dataverse.harvard.edu/dataverse/cces).
 
 **What it is:** one of the largest academic surveys of U.S. adults, run every year since 2006. Each
 year it asks whether people support specific actions Congress has voted on.

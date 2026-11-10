@@ -19,7 +19,7 @@ source:
   title: Cooperative Election Study 2012
   fielded: fall 2012, before the election
   dataset_url: https://doi.org/10.7910/DVN/HQEVPK
-  about_url: https://cces.gov.harvard.edu/
+  about_url: https://tischcollege.tufts.edu/ces
 
 final_questions: &final
   - On Passage

@@ -10,7 +10,7 @@ source:
   title: Cooperative Election Study 2017
   fielded: fall 2017
   dataset_url: https://doi.org/10.7910/DVN/3STEZY
-  about_url: https://cces.gov.harvard.edu/
+  about_url: https://tischcollege.tufts.edu/ces
 
 final_questions: &final
   - On Passage

@@ -21,7 +21,7 @@ source:
   respondents: 17000
   dataset_url: https://doi.org/10.7910/DVN/DFUGJR
   guide_url: https://dataverse.harvard.edu/file.xhtml?fileId=13600925
-  about_url: https://cces.gov.harvard.edu/
+  about_url: https://tischcollege.tufts.edu/ces
 weight_preference: [commonpostweight, commonweight]
 district_column: cdid119
 state_column: inputstate

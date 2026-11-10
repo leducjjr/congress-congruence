@@ -224,7 +224,7 @@ def draft_items(conn, year: int, rel: dict, columns, labels, values, nrows) -> s
         "  fielded: CHECK",
         f"  dataset_url: https://doi.org/{rel['id'].removeprefix('doi:')}" if (rel.get("id") or "").startswith("doi:")
         else "  dataset_url: CHECK",
-        "  about_url: https://cces.gov.harvard.edu/",
+        "  about_url: https://tischcollege.tufts.edu/ces",
         "",
         "final_questions: &final",
         "  - On Passage", "  - Passage of the Bill", "  - Suspend the Rules and Pass", "  - Concur",

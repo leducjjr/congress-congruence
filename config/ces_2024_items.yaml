@@ -19,7 +19,7 @@ source:
   title: Cooperative Election Study 2024
   fielded: fall 2024, before the election
   dataset_url: https://doi.org/10.7910/DVN/X11EP6
-  about_url: https://cces.gov.harvard.edu/
+  about_url: https://tischcollege.tufts.edu/ces
   # guide_url is found automatically from the dataset's file list on load.
 
 final_questions: &final
