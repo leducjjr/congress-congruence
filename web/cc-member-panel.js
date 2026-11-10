@@ -33,7 +33,7 @@
   // Where the reference pages live, unless the page says otherwise (site-base attribute).
   const SCRIPT_BASE = (() => { try { return new URL(".", document.currentScript.src).href; } catch { return ""; } })();
 
-  const STRIP_SIZE = 100; // votes fetched for the strip; narrow screens show the newest that fit
+  const STRIP_SIZE = 100; // votes fetched for the strip; it wraps onto more rows on narrow screens
 
   const css = `
     :host {
@@ -83,11 +83,10 @@
     }
     .seat { color: var(--ink-soft); margin: 0 0 18px; }
 
-    /* The vote strip: the panel's signature. Oldest at left, newest at right. */
+    /* The vote strip: the panel's signature. Oldest first, newest last. */
     .strip-wrap { margin: 0 0 6px; }
-    /* Right-aligned: when space runs out the oldest marks (left) are the ones hidden. */
-    .strip { display: flex; gap: 3px; flex-wrap: nowrap; overflow: hidden; height: 18px;
-             align-items: center; justify-content: flex-end; }
+    /* Wraps onto more rows when there are more marks than fit: oldest first, newest last. */
+    .strip { display: flex; gap: 3px 3px; flex-wrap: wrap; align-items: center; }
     .strip svg { flex: 0 0 auto; }
     .dot { all: unset; flex: 0 0 auto; display: inline-flex; cursor: pointer; padding: 2px 0; border-radius: 3px; }
     .dot:hover svg { transform: scale(1.35); }
@@ -490,7 +489,7 @@
         const summary = Object.entries(counts).map(([p, n]) => `${n} ${POSITION_TEXT[p] || p}`).join(", ");
         parts.push(
           h("div", { class: "strip-wrap" },
-            h("p", { class: "caption", "aria-hidden": "true" }, "Recent votes, newest at the right"),
+            h("p", { class: "caption", "aria-hidden": "true" }, "Recent votes, oldest first, newest last"),
             h("p", { class: "sr" }, `Last ${ordered.length} votes, oldest first: ${summary}.`),
             // Mouse and touch shortcut into the list below; the list itself is the accessible version.
             h("div", { class: "strip", "aria-hidden": "true" }, ordered.map(v => {
