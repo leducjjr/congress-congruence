@@ -9,9 +9,20 @@ items:
     title: Decide on asking AP-NORC for permission to use AP VoteCast
     due: 2026-11-16
     lead_days: [0]
+    done: true          # sent Nov 10, 2026 to info@apnorc.org
     details: |
       VoteCast's terms allow non-commercial research use and bar using the data to support AI responses.
       If you want it on the site, ask Claude to draft the permission request to AP-NORC.
+
+  - id: votecast-follow-up
+    title: Follow up with AP-NORC if there's no reply about VoteCast
+    due: 2026-11-24
+    lead_days: [0]
+    details: |
+      The permission request went to info@apnorc.org on November 10, 2026. If there's no reply, a
+      short follow-up can also go to Jennifer Benz, AP-NORC director (benz-jennifer@norc.org).
+      When they answer, ask Claude to record their terms in docs/DATA_SOURCES.md before any VoteCast
+      file is used. Set done: true here once you have an answer.
 
   - id: senate-access-email
     title: Send the Senate webmaster access request
