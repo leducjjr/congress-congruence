@@ -33,8 +33,8 @@ site remembers the last three members you opened, in your browser's own storage 
 included in search requests only so the answer can show their votes; they aren't stored on our side.
 The **forget** button on the Search and All votes pages clears the list, as does clearing your browser's site data.
 
-If you turn on **Hide party labels**, your browser remembers that choice the same way, on your device
-only. Nothing about it is sent to us.
+If you turn on **Hide party labels**, or choose how many recent votes a member's page shows, your
+browser remembers that choice the same way, on your device only. Nothing about it is sent to us.
 
 ## What any web server records {#server-logs}
 

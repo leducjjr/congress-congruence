@@ -33,7 +33,14 @@
   // Where the reference pages live, unless the page says otherwise (site-base attribute).
   const SCRIPT_BASE = (() => { try { return new URL(".", document.currentScript.src).href; } catch { return ""; } })();
 
-  const STRIP_SIZE = 100; // votes fetched for the strip; it wraps onto more rows on narrow screens
+  // How many recent votes the strip shows: the reader picks one of these (remembered in their
+  // browser only); it wraps onto more rows as needed. The list below shows the same votes.
+  const STRIP_SIZES = [50, 100, 250, 500];
+  const STRIP_KEY = "cc-strip-size";
+  const stripSize = () => {
+    try { const n = Number(localStorage.getItem(STRIP_KEY)); if (STRIP_SIZES.includes(n)) return n; } catch (e) {}
+    return 100;
+  };
 
   const css = `
     :host {
@@ -155,6 +162,8 @@
     .detail { grid-column: 2; color: var(--ink-soft); font-size: 0.85rem; }
     .detail a { color: var(--ink-soft); white-space: nowrap; }
     .caption { font-size: 0.8rem; color: var(--ink-soft); margin: 0 0 4px; }
+    .caption select { font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--rule);
+      border-radius: 6px; padding: 0 2px; margin: 0 2px; }
     .their { color: var(--ink); font-weight: 600; }
 
     button.more {
@@ -375,7 +384,7 @@
       try {
         const [member, votes, opinion] = await Promise.all([
           this.get(`/v1/members/${encodeURIComponent(id)}`),
-          this.get(`/v1/members/${encodeURIComponent(id)}/votes?limit=${STRIP_SIZE}`),
+          this.get(`/v1/members/${encodeURIComponent(id)}/votes?limit=${stripSize()}`),
           // Optional: if this part fails, show the rest of the panel without it.
           this.get(`/v1/members/${encodeURIComponent(id)}/opinion`).catch(() => null),
         ]);
@@ -489,7 +498,7 @@
         const summary = Object.entries(counts).map(([p, n]) => `${n} ${POSITION_TEXT[p] || p}`).join(", ");
         parts.push(
           h("div", { class: "strip-wrap" },
-            h("p", { class: "caption", "aria-hidden": "true" }, "Recent votes, oldest first, newest last"),
+            this.stripCaption(ordered),
             h("p", { class: "sr" }, `Last ${ordered.length} votes, oldest first: ${summary}.`),
             // Mouse and touch shortcut into the list below; the list itself is the accessible version.
             h("div", { class: "strip", "aria-hidden": "true" }, ordered.map(v => {
@@ -566,6 +575,34 @@
       const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
       heading.scrollIntoView({ behavior: calm ? "auto" : "smooth", block: "start" });
       heading.focus({ preventScroll: true });
+    }
+
+    // "Last [100] votes, June 3 to November 6, 2026, oldest first", with the number to choose.
+    stripCaption(ordered) {
+      const chosen = stripSize();
+      const pick = h("select", { "aria-label": "How many recent votes to show" },
+        STRIP_SIZES.map(n => { const o = h("option", { value: n }, String(n)); if (n === chosen) o.selected = true; return o; }));
+      pick.addEventListener("change", () => this.changeStripSize(Number(pick.value)));
+      const span = ordered.length ? ` ${fmtDate(ordered[0].date, { month: "long", day: "numeric", year: "numeric" })} to ${
+        fmtDate(ordered.at(-1).date, { month: "long", day: "numeric", year: "numeric" })},` : "";
+      const all = ordered.length < chosen;     // the member has cast fewer votes than asked for
+      return h("p", { class: "caption" },
+        all ? `All ${ordered.length.toLocaleString()} votes (show up to ` : "Last ", pick,
+        all ? ")," : " votes,", span, " oldest first");
+    }
+
+    async changeStripSize(n) {
+      try { localStorage.setItem(STRIP_KEY, String(n)); } catch (e) {}
+      const id = this.member && this.member.bioguide_id;
+      if (!id) return;
+      try {
+        const got = await this.get(`/v1/members/${encodeURIComponent(id)}/votes?limit=${n}`);
+        if (!this.member || this.member.bioguide_id !== id) return;
+        this.votes = got.votes;
+        this.showing = Math.min(this.listSize, this.votes.length);
+        this.render();
+        this.shadowRoot.querySelector(".caption select")?.focus();
+      } catch (err) { /* keep what's shown */ }
     }
 
     jumpTo(rollCallId) {

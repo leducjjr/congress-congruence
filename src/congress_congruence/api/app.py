@@ -509,7 +509,7 @@ def member(bioguide_id: str, response: Response):
 
 
 @app.get("/v1/members/{bioguide_id}/votes")
-def member_votes(bioguide_id: str, response: Response, limit: int = Query(20, ge=1, le=100)):
+def member_votes(bioguide_id: str, response: Response, limit: int = Query(20, ge=1, le=500)):
     get_member_row(bioguide_id)
     rows = fetch(q.RECENT_VOTES, {"id": bioguide_id, "limit": limit})
     response.headers["Cache-Control"] = CACHE

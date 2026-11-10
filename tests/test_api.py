@@ -122,7 +122,7 @@ def test_recent_votes_newest_first_with_links(client):
 
 @pytest.mark.parametrize("path, code", [
     ("/v1/members/not-an-id", 400), ("/v1/members/Z999999", 404),
-    ("/v1/members?state=ZZ", 400), ("/v1/members/D000001/votes?limit=500", 422),
+    ("/v1/members?state=ZZ", 400), ("/v1/members/D000001/votes?limit=501", 422),
 ])
 def test_bad_requests(client, path, code):
     assert client.get(path).status_code == code
