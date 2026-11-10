@@ -84,6 +84,7 @@ main.prose { max-width: none; }
 .prose-body code { font-size: 0.9em; background: var(--page); padding: 1px 4px; border-radius: 4px; }
 .prose-body .toc { font-size: 0.92rem; color: var(--ink-soft); }
 .prose-body .toc ul { padding-left: 1.2em; margin: 4px 0; }
+.prose-body .toc a { display: inline-block; min-height: 24px; line-height: 24px; }   /* easy to tap */
 .prose-body .note, .prose-body .coverage { color: var(--ink-soft); font-size: 0.9rem; }
 .prose-body .coverage:empty { display: none; }
 .survey-table td:first-child { white-space: nowrap; }
@@ -95,7 +96,7 @@ main.prose { max-width: none; }
 .feedback select, .feedback textarea, .feedback input { font: inherit; font-weight: 400; color: var(--ink);
   background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: 8px 10px; width: 100%; }
 .feedback textarea { resize: vertical; min-height: 7rem; }
-.feedback button { justify-self: start; font: inherit; font-weight: 600; color: #fff; background: var(--mark);
+.feedback button { justify-self: start; font: inherit; font-weight: 600; color: var(--surface); background: var(--mark);
   border: 0; border-radius: 8px; padding: 9px 22px; cursor: pointer; }
 .feedback button[disabled] { opacity: 0.6; cursor: default; }
 .feedback .about-line { margin: 0; padding: 8px 12px; background: var(--page); border-radius: 8px; font-size: 0.92rem; }

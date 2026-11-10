@@ -109,7 +109,8 @@ addEventListener("DOMContentLoaded", () => {
       shown = 0; total = r.total;
       list = el("div", { class: "vote-list" });
       moreRow = el("p", { class: "more-row" });
-      out.replaceChildren(el("section", { class: "group" },
+      out.replaceChildren(el("section", { class: "group", "aria-labelledby": "results-h" },
+        el("h2", { id: "results-h" }, "Matching votes"),
         el("p", { class: "sub", id: "count" }), list, moreRow));
       if (!total) {
         out.replaceChildren(el("p", { class: "empty" }, "No votes match these filters. Try removing one."));

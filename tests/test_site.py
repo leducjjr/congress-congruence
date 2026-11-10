@@ -102,3 +102,14 @@ def test_updates_feed(tmp_path):
     assert 'href="https://uscongressvsvoters.org/sources.html#senate"' in first   # links work in a reader
     home = (tmp_path / "index.html").read_text()
     assert 'type="application/rss+xml"' in home and 'href="feed.xml"' in home
+
+
+def test_text_on_the_accent_colour_follows_dark_mode():
+    """In dark mode the accent (--mark) is light, so text on it must use --surface, not white
+    (white on it measured 2:1 contrast; 4.5:1 is the minimum)."""
+    site = ROOT / "site"
+    files = [site / "site.css", *(site / "pages").glob("*.html"), ROOT / "web" / "cc-member-panel.js"]
+    for f in files:
+        for rule in re.findall(r"\{[^{}]*\}", f.read_text()):
+            if re.search(r"background(-color)?\s*:\s*var\(--mark\)", rule):
+                assert not re.search(r"(?<![-\w])color\s*:\s*(#fff\b|#ffffff\b|white\b)", rule), (f.name, rule)
