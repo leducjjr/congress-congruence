@@ -51,7 +51,7 @@ See `docs/SITE_PLAN.md`: header, footer and reference pages, leading with the vo
 
 ## Launch (Nov 10, 2026)
 - Done: repository public under the AGPL v3; ruleset "Protect main" (no deletions or force pushes,
-  pull requests required, repository admin bypasses); GitHub Actions disabled; commit emails
+  pull requests required, repository admin bypasses); GitHub Actions disabled; secret scanning and push protection on; commit emails
   use the GitHub private address. Public site on uscongressvsvoters.org (deploy/nginx-prod.conf),
   www/.com/.online redirect to it; dev site unchanged.
 - Still open: DMARC on .org from `p=none` to `p=quarantine` once reports are clean; renew
@@ -64,8 +64,7 @@ See `docs/SITE_PLAN.md`: header, footer and reference pages, leading with the vo
 
 ## Next candidates (agreed order)
 1. Done: state ballot-measure results, 2024 (docs/DATA_SOURCES.md 5a). Add 2026 once states certify.
-2. Nationscape (2019-2021): loader built (ingest/nationscape.py); confirm variable names from the
-   inspect report, then link and load. AP VoteCast: on hold pending AP-NORC's written permission
+2. Done: Nationscape 2019-2021 loaded Nov 10 (18 items, 20 votes; docs/DATA_SOURCES.md 5b). AP VoteCast: on hold pending AP-NORC's written permission
    (its terms bar AI tools from processing the data).
 Also open: send the Senate access email; healthchecks.io and NOTIFY_URL;
 an "About this data" page; separate production server; stock-trading overlay.
