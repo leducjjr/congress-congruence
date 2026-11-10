@@ -7,7 +7,7 @@ compared with what their constituents say in public surveys, now and historicall
 - Both chambers from the start; Python; PostgreSQL schema `core`; Bioguide ID is the member key.
 - Primary domain: **uscongressvsvoters.org** (a non-profit exercise, so .org). Sister domain
   uscongressvsvoters.com and uscongressvsvoters.online (all registered Nov 2026 at Bluehost) should
-  forward to .org at launch.
+  redirect to .org (live since Nov 10, 2026).
   Dev site: https://dev.uscongressvsvoters.org (dev. on .com and .online, and
   congress-dev.monkeyinfinitum.com, also answer; same nginx site and certificate). The bare
   domains and www are kept for the public launch.
@@ -49,22 +49,25 @@ must be public for visitors to open it.
 Pages live in `site/pages/` (Markdown for reference pages), built by `scripts/build_site.py`.
 See `docs/SITE_PLAN.md`: header, footer and reference pages, leading with the vote-vs-survey comparison.
 
-## Before public launch (checklist)
-- Decide how to open the source: make the repo public (the site already links to it; until then
-  visitors get GitHub's "not found") and choose a license (e.g. MIT, or AGPL to keep modified copies open).
-- Production copy without the dev password, on the bare uscongressvsvoters.org (+ www); .com and
-  .online forward to .org. Consider a separate production server.
-- Email: DMARC on .org from `p=none` to `p=quarantine` once reports are clean; renew security.txt
-  Expires yearly (now 2027-11-01).
-- Optional: host the Public Sans font on the server instead of Google Fonts (Privacy page mentions it).
-- Send the Senate webmaster access request (can link the public repo).
+## Launch (Nov 10, 2026)
+- Done: repository public under the AGPL v3; ruleset "Protect main" (no deletions or force pushes,
+  pull requests required, repository admin bypasses); GitHub Actions disabled; commit emails
+  use the GitHub private address. Public site on uscongressvsvoters.org (deploy/nginx-prod.conf),
+  www/.com/.online redirect to it; dev site unchanged.
+- Still open: DMARC on .org from `p=none` to `p=quarantine` once reports are clean; renew
+  security.txt Expires yearly (now 2027-11-01); send the Senate webmaster access request (can
+  link the public repo); optional: host the Public Sans font on the server instead of Google Fonts;
+  consider a separate production server.
+- Later, if wanted: automated AI review of pull requests (Claude Code GitHub Action), triggered
+  only by a maintainer comment, with the site's rules as its checklist; needs Actions back on and
+  an API key secret.
 
 ## Next candidates (agreed order)
 1. Done: state ballot-measure results, 2024 (docs/DATA_SOURCES.md 5a). Add 2026 once states certify.
 2. Nationscape (2019-2021): loader built (ingest/nationscape.py); confirm variable names from the
    inspect report, then link and load. AP VoteCast: on hold pending AP-NORC's written permission
    (its terms bar AI tools from processing the data).
-Also open: make the repo public + send the Senate access email; healthchecks.io and NOTIFY_URL;
+Also open: send the Senate access email; healthchecks.io and NOTIFY_URL;
 an "About this data" page; separate production server; stock-trading overlay.
 Earlier Congresses: built (ingest/backfill.py, seat history on the panel); load with the deploy steps.
 
