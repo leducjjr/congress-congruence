@@ -151,7 +151,8 @@
         const replying = form.reply_to.value.trim();
         form.reset();
         status.textContent = "Thank you. Your message was sent to our inbox." +
-          (out.copy_sent === true ? ` A copy is on its way to ${replying}; reply to it if you'd like to add anything.`
+          (out.copy_sent === true ? ` A copy is on its way to ${replying}; reply to it if you'd like to add anything. ` +
+             "If it isn't in your inbox in a few minutes, check your spam or junk folder."
            : out.copy_sent === false ? " We couldn't send you a copy just now, but we have your message and will reply to the address you gave."
            : replying ? " We'll reply to the address you gave." : "");
       } catch (err) {

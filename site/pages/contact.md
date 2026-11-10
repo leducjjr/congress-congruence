@@ -26,7 +26,7 @@ one of the addresses below. We read everything.</p>
     <input name="reply_to" type="email" autocomplete="email" maxlength="254">
   </label>
   <p class="note">If you give your email, we'll send you a copy of your message; reply to it to add
-    anything. Leave it blank to stay anonymous. Your message is emailed to our inbox and isn't stored on
+    anything. If the copy doesn't arrive, please check your spam or junk folder. Leave it blank to stay anonymous. Your message is emailed to our inbox and isn't stored on
     this site. See <a href="privacy.html#feedback">Privacy</a>.</p>
   <div class="hp" aria-hidden="true"><label>Leave this empty <input name="website" tabindex="-1" autocomplete="off"></label></div>
   <button type="submit">Send</button>
