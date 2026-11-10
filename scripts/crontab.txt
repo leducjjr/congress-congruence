@@ -21,3 +21,6 @@
 
 # New survey releases: monthly (1st of the month). Drafts for review; never loads anything.
 25 7 1 * *      $HOME/congress-congruence/scripts/run_job.sh survey-watch
+
+# Reminder emails for dated chores (config/reminders.yaml): daily at 13:00 UTC (7 a.m. Central).
+0 13 * * *      $HOME/congress-congruence/scripts/run_job.sh reminders

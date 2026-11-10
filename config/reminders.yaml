@@ -1,0 +1,82 @@
+# Dated chores. The server emails a reminder on each lead day (default 14, 3 and 0 days before the
+# due date) and, once overdue, every 7 days until `done: true` is set. `repeat: yearly` items move on
+# to next year by themselves. See src/congress_congruence/reminders.py.
+#
+# Check what's coming:  python -m congress_congruence.reminders --list
+
+items:
+  - id: votecast-permission
+    title: Decide on asking AP-NORC for permission to use AP VoteCast
+    due: 2026-11-16
+    lead_days: [0]
+    details: |
+      VoteCast's terms allow non-commercial research use and bar using the data to support AI responses.
+      If you want it on the site, ask Claude to draft the permission request to AP-NORC.
+
+  - id: senate-access-email
+    title: Send the Senate webmaster access request
+    due: 2026-11-20
+    lead_days: [3, 0]
+    details: |
+      senate.gov refuses the server's requests, so Senate votes come from Voteview, which can trail by
+      days to weeks. The request asks the Senate to allow the server; it can link the public code.
+
+  - id: ballot-2026-certified
+    title: Finish loading the 2026 ballot measures
+    due: 2026-12-15
+    details: |
+      Most states certify by late November; California by December 11. The weekly check opens a pull
+      request as states certify. Once all are in: merge it, then on the server
+        git pull && python -m congress_congruence.ingest.ballots load 2026
+      and delete the weekly check (or ask Claude to).
+
+  - id: dmarc-quarantine
+    title: Review DMARC reports and tighten the .org email policy
+    due: 2026-12-10
+    lead_days: [0]
+    details: |
+      DMARC for uscongressvsvoters.org is p=none (report only). If the reports show only your own
+      mail service sending as the domain, change the _dmarc TXT record in Bluehost to p=quarantine.
+
+  - id: new-congress-2027
+    title: Check the new Congress loaded
+    due: 2027-01-06
+    lead_days: [0]
+    details: |
+      The 120th Congress begins January 3, 2027. Check that the members job picked up new members
+      (logs/members.log), that the first House and Senate votes of the new Congress appear on
+      All votes, and that departed members show under former members.
+
+  - id: ces-2026-release
+    title: Look for the 2026 Cooperative Election Study release
+    due: 2027-04-15
+    lead_days: [0]
+    details: |
+      The CES usually publishes the year after each election, in the spring. The monthly survey-watch
+      job drafts new releases (logs/survey-watch.log); ask Claude to match its questions to votes.
+
+  - id: census-acs-2026
+    title: Load the Census ACS 2026 district figures
+    due: 2027-09-20
+    lead_days: [0]
+    details: |
+      The Census Bureau releases ACS 1-year estimates each September. They update district populations
+      and the profiles behind district opinion estimates (docs/DATA_SOURCES.md, 6a).
+
+  - id: domain-renewal
+    title: Check the domains' renewal in Bluehost
+    due: 2027-10-15
+    repeat: yearly
+    lead_days: [30, 7]
+    details: |
+      uscongressvsvoters.org, .com and .online were registered in November 2026. Check each one's
+      renewal date and that auto-renew and the payment method are current.
+
+  - id: security-txt
+    title: Renew the security.txt expiry date
+    due: 2027-11-01
+    repeat: yearly
+    lead_days: [30, 7, 0]
+    details: |
+      site/static/.well-known/security.txt has "Expires:" set to this date. Ask Claude to move it a
+      year ahead, then publish (scripts/publish_web.sh both).

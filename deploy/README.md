@@ -268,6 +268,20 @@ python -m congress_congruence.ingest.ballots load 2024
 sudo systemctl restart congress-api && scripts/publish_web.sh
 ```
 
+## Reminder emails
+
+A daily job (13:00 UTC, in `scripts/crontab.txt`) emails any chores falling due, listed in
+`config/reminders.yaml`, through the contact form's mailbox. No outside service is involved.
+
+1. Choose where they go: add `REMINDERS_TO=<address>` to `.env` (hidden prompt, as for passwords, if
+   it's private). Without it they go to `FEEDBACK_TO`.
+2. Preview today's email without sending: `python -m congress_congruence.reminders --dry-run`;
+   see everything coming up: `python -m congress_congruence.reminders --list`.
+3. Install the updated schedule: `crontab scripts/crontab.txt`.
+
+To stop a reminder, set `done: true` on it in `config/reminders.yaml` (yearly ones move on by
+themselves); to add one, add an item there with a title, due date and what to do.
+
 ## Feedback form
 
 The Contact page's form posts to `/api/v1/feedback`, which emails the message from a send-only

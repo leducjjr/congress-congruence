@@ -10,6 +10,7 @@
 #   backup           nightly database backup (scripts/backup_db.sh)
 #   survey-watch     monthly check for new survey releases; drafts them for review, never loads
 #   bills            daily: titles, policy areas and subject tags from Congress.gov for voted-on bills
+#   reminders        daily: emails any reminders due (config/reminders.yaml) to REMINDERS_TO
 #
 # Each job holds a lock, so a slow run is never started twice at once.
 #
@@ -68,8 +69,12 @@ case "$job" in
         exec >>"$log" 2>&1
         run flock -n "$lock" python -m congress_congruence.ingest.bills sync
         ;;
+    reminders)
+        exec >>"$log" 2>&1
+        run flock -n "$lock" python -m congress_congruence.reminders
+        ;;
     *)
-        echo "usage: $0 members|house|senate-voteview|backup|survey-watch|bills" >&2
+        echo "usage: $0 members|house|senate-voteview|backup|survey-watch|bills|reminders" >&2
         exit 2
         ;;
 esac
