@@ -435,9 +435,17 @@
       // Links to the site's other views of this member (left out when the panel is embedded elsewhere
       // with no site-base: those pages only exist on the site).
       const siteBase = this.getAttribute("site-base") || SCRIPT_BASE;
+      // The member's own page (members/<name>/), the address to share: it opens with a preview.
+      const slug = this.slugs && this.slugs[m.bioguide_id];
       parts.push(h("p", { class: "tools" },
         h("a", { href: `${siteBase}compare.html?${new URLSearchParams({ a: m.bioguide_id })}` }, "Compare with another member"), " · ",
-        h("a", { href: `${siteBase}state.html?s=${encodeURIComponent(m.state)}` }, `All members from ${stateName(m.state)}`)));
+        h("a", { href: `${siteBase}state.html?s=${encodeURIComponent(m.state)}` }, `All members from ${stateName(m.state)}`),
+        slug ? [" · ", h("a", { href: `${siteBase}members/${slug}/` }, "Page to share")] : null));
+      if (this.slugs === undefined && this.getAttribute("site-base") !== "") {
+        this.slugs = null;
+        fetch(`${siteBase}members/slugs.json`).then(r => r.ok ? r.json() : {}).catch(() => ({}))
+          .then(s => { this.slugs = s; if (this.member && s[this.member.bioguide_id]) this.render(); });
+      }
       const pop = m.population;
       if (pop) {
         const where = pop.area.replace("-", "\u2011");

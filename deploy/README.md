@@ -268,6 +268,19 @@ python -m congress_congruence.ingest.ballots load 2024
 sudo systemctl restart congress-api && scripts/publish_web.sh
 ```
 
+## Member and state pages, sitemap and link previews
+
+`scripts/publish_web.sh` also builds a plain page for every member (`/members/<name>/`) and state
+(`/states/<name>/`), `/sitemap.xml`, and a preview image for each page that shows when a link is
+shared. They're built from the API on this server, so it must be running. Preview images need
+Pillow: `.venv/bin/pip install -r requirements.txt`. The weekly `pages` cron job refreshes them
+(`scripts/run_job.sh pages`, which runs `scripts/publish_web.sh pages`).
+
+To have Google list them: in [Google Search Console](https://search.google.com/search-console), add
+`uscongressvsvoters.org` as a Domain property (it gives a TXT record to add in Bluehost DNS), then
+under Sitemaps submit `sitemap.xml`. Search Console reports which searches find the site; it adds
+nothing to the pages and doesn't track visitors.
+
 ## Reminder emails
 
 A daily job (13:00 UTC, in `scripts/crontab.txt`) emails any chores falling due, listed in

@@ -80,9 +80,45 @@ def stamp(text: str, version: str) -> str:
     return text
 
 
+def load_settings() -> dict:
+    return yaml.safe_load((SITE / "site.yaml").read_text(encoding="utf-8")) or {}
+
+
+def wrap(frame: str, settings: dict, meta: dict, body_html: str, name: str, version: str,
+         slug: str | None = None, main_class: str = "", url_path: str | None = None,
+         image: str | None = None, base: bool = False) -> str:
+    """One page in the shared header and footer. url_path is the page's address on the site
+    (default: its file name; "" for the home page); image is its link-preview picture (default:
+    the site's own). base=True is for pages in folders (members/..., states/...): every relative
+    link then resolves from the site root, so the shared header, footer and scripts work there too."""
+    site_url = str(settings.get("site_url", "")).rstrip("/")
+    if url_path is None:
+        url_path = "" if name == "index.html" else name
+    canonical = f"{site_url}/{url_path}"
+    image = image or "preview.png"
+    page = (frame
+            .replace("{{title}}", html.escape(meta["title"]))
+            .replace("{{description}}", html.escape(meta["description"], quote=True))
+            .replace("{{head}}", meta.get("head", "").rstrip())
+            .replace("{{base}}", '  <base href="/">' if base else "")
+            .replace("{{canonical}}", html.escape(canonical, quote=True))
+            .replace("{{og_image}}", html.escape(f"{site_url}/{image}", quote=True))
+            .replace("{{og_image_alt}}", html.escape(meta.get("image_alt", f"{meta['title']} · US Congress vs Voters"), quote=True))
+            .replace("{{slug}}", slug or Path(name).stem)
+            .replace("{{main_class}}", main_class)
+            .replace("{{nav}}", nav_html(name))
+            .replace("{{features_current}}", ' aria-current="page"' if name == "features.html" else "")
+            .replace("{{body}}", body_html))
+    if base:      # with <base href="/">, the skip link must name this page or it jumps to the home page
+        page = page.replace('href="#main"', f'href="/{html.escape(url_path, quote=True)}#main"')
+    for key, value in settings.items():                  # {{source_url}} etc. from site/site.yaml
+        page = page.replace("{{" + key + "}}", html.escape(str(value), quote=True))
+    return stamp(page, version)
+
+
 def build(out: Path, version: str) -> list[str]:
     frame = (SITE / "frame.html").read_text(encoding="utf-8")
-    settings = yaml.safe_load((SITE / "site.yaml").read_text(encoding="utf-8")) or {}
+    settings = load_settings()
     out.mkdir(parents=True, exist_ok=True)
     built = []
     for path in sorted((SITE / "pages").glob("*")):
@@ -92,18 +128,9 @@ def build(out: Path, version: str) -> list[str]:
         if meta.get("draft"):
             continue
         name = path.stem + ".html"
-        page = (frame
-                .replace("{{title}}", html.escape(meta["title"]))
-                .replace("{{description}}", html.escape(meta["description"], quote=True))
-                .replace("{{head}}", meta.get("head", "").rstrip())
-                .replace("{{slug}}", path.stem)
-                .replace("{{main_class}}", meta.get("main_class", "prose" if path.suffix == ".md" else ""))
-                .replace("{{nav}}", nav_html(name))
-                .replace("{{features_current}}", ' aria-current="page"' if name == "features.html" else "")
-                .replace("{{body}}", render_body(path, body)))
-        for key, value in settings.items():                  # {{source_url}} etc. from site/site.yaml
-            page = page.replace("{{" + key + "}}", html.escape(str(value), quote=True))
-        (out / name).write_text(stamp(page, version), encoding="utf-8")
+        page = wrap(frame, settings, meta, render_body(path, body), name, version,
+                    main_class=meta.get("main_class", "prose" if path.suffix == ".md" else ""))
+        (out / name).write_text(page, encoding="utf-8")
         built.append(name)
     for name, src in ASSETS.items():
         shutil.copyfile(src, out / name)

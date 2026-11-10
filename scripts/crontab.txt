@@ -24,3 +24,6 @@
 
 # Reminder emails for dated chores (config/reminders.yaml): daily at 13:00 UTC (7 a.m. Central).
 0 13 * * *      $HOME/congress-congruence/scripts/run_job.sh reminders
+
+# Member and state pages and the sitemap: weekly (Sunday), after the daily vote jobs.
+50 7 * * 0      $HOME/congress-congruence/scripts/run_job.sh pages

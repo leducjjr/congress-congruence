@@ -12,3 +12,4 @@ pandas>=2.2
 pyreadstat>=1.2
 pypdf>=4.0
 markdown>=3.5
+Pillow>=10.0

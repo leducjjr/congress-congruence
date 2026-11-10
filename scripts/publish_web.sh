@@ -4,25 +4,56 @@
 #     scripts/publish_web.sh          # the password-protected dev site (/var/www/congress-dev)
 #     scripts/publish_web.sh prod     # the public site, uscongressvsvoters.org (/var/www/congress)
 #     scripts/publish_web.sh both
+#     scripts/publish_web.sh pages    # only refresh the member and state pages and the sitemap on
+#                                     # both sites (the weekly cron job; needs no sudo)
+#
+# The member and state pages (members/, states/, sitemap.xml) are built from the API running on
+# this server (scripts/build_profiles.py). If the API isn't answering, the rest of the site is
+# still published and the pages already there are kept.
 #
 # Pages load their scripts and styles as e.g. cc-member-panel.js?v=<code version>, so
 # browsers fetch the new copy after each update instead of reusing a cached one.
 set -eu
 cd "$(dirname "$0")/.."
 case "${1:-dev}" in
-  dev)  targets="/var/www/congress-dev" ;;
-  prod) targets="/var/www/congress" ;;
-  both) targets="/var/www/congress-dev /var/www/congress" ;;
-  *) echo "usage: $0 [dev|prod|both]" >&2; exit 2 ;;
+  dev)   targets="/var/www/congress-dev" ;;
+  prod)  targets="/var/www/congress" ;;
+  both|pages) targets="/var/www/congress-dev /var/www/congress" ;;
+  *) echo "usage: $0 [dev|prod|both|pages]" >&2; exit 2 ;;
 esac
 version=$(git rev-parse --short HEAD 2>/dev/null || date +%s)
-rm -rf build/site
 py=python3; [ -x .venv/bin/python ] && py=.venv/bin/python     # the project Python has markdown + yaml
+me=$(id -un)
+
+build_pages() {   # build_pages <dir>: member and state pages into <dir>; fails if the API is down
+  "$py" scripts/build_profiles.py --out "$1" --version "$version"
+}
+
+if [ "${1:-}" = "pages" ]; then
+  rm -rf build/pages
+  "$py" scripts/build_site.py --out build/pages --version "$version" >/dev/null   # so the sitemap lists every page
+  build_pages build/pages
+  for dir in $targets; do
+    [ -w "$dir/members" ] || { echo "$dir/members isn't writable: run scripts/publish_web.sh both once" >&2; exit 1; }
+    cp -r build/pages/members build/pages/states "$dir/"
+    cp build/pages/sitemap.xml "$dir/sitemap.xml"
+    echo "Refreshed the member and state pages in $dir"
+  done
+  exit 0
+fi
+
+rm -rf build/site
 "$py" scripts/build_site.py --out build/site --version "$version"
+pages=yes
+build_pages build/site || { pages=no; echo "WARNING: couldn't build the member and state pages (is the API running?). Publishing the rest; the pages already there are kept." >&2; }
 for dir in $targets; do
   sudo mkdir -p "$dir"
   sudo cp -r build/site/. "$dir/"          # includes .well-known/
   sudo find "$dir" -type d -exec chmod 755 {} +
   sudo find "$dir" -type f -exec chmod 644 {} +
+  if [ "$pages" = yes ]; then
+    # Owned by this user, so the weekly `pages` job can refresh them without sudo.
+    sudo chown -R "$me" "$dir/members" "$dir/states" "$dir/sitemap.xml"
+  fi
   echo "Published the site to $dir (version $version)"
 done

@@ -43,6 +43,9 @@ republished, and only its questions about proposals Congress actually voted on a
 
 ## Recently added {#recent}
 
+- **A page for every member and every state,** with addresses you can share, such as
+  [All members](members/) and [All states](states/). Shared links show a preview of the figures.
+- **[Press and researchers](press.html)** and a **[classroom guide](classroom.html)** for teachers.
 - **Nationscape, 2019-2021:** nearly half a million interviews from the Democracy Fund Voter Study
   Group and UCLA, compared with House and Senate votes on background checks, the minimum wage, the
   Dream Act, marijuana, DC statehood, both impeachments and more. Shown as its own source.
