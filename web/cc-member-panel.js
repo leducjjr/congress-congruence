@@ -196,6 +196,10 @@
     .tools { margin: -10px 0 18px; font-size: 0.9rem; }
     .tools a { color: inherit; text-decoration-color: var(--mark); text-underline-offset: 2px; }
     .tools a:hover { color: var(--mark); }
+    .view-label { color: var(--ink-soft); }
+    .view-switch { display: inline-flex; border: 1px solid var(--mark); border-radius: 999px; overflow: hidden; vertical-align: middle; }
+    .tools .view-switch > * { padding: 2px 12px; text-decoration: none; color: var(--mark); }
+    .tools .view-switch > [aria-current] { background: var(--mark); color: var(--surface, #fff); font-weight: 600; }
     .history .spell { white-space: nowrap; }
     .op-sample { margin: 2px 0 0; font-size: 0.85rem; color: var(--ink-soft); }
     .op-sample strong { color: var(--ink); font-variant-numeric: tabular-nums; }
@@ -440,7 +444,9 @@
       parts.push(h("p", { class: "tools" },
         h("a", { href: `${siteBase}compare.html?${new URLSearchParams({ a: m.bioguide_id })}` }, "Compare with another member"), " · ",
         h("a", { href: `${siteBase}state.html?s=${encodeURIComponent(m.state)}` }, `All members from ${stateName(m.state)}`),
-        slug ? [" · ", h("a", { href: `${siteBase}members/${slug}/` }, "Page to share")] : null));
+        slug ? [" · ", h("span", { class: "view-label" }, "View:"), " ", h("span", { class: "view-switch" },
+          h("span", { "aria-current": "page", title: "The full page: every vote, with filters" }, "Interactive"),
+          h("a", { href: `${siteBase}members/${slug}/`, title: "A plain summary page, quick to load, with a preview when the link is shared" }, "Summary"))] : null));
       if (this.slugs === undefined && this.getAttribute("site-base") !== "") {
         this.slugs = null;
         fetch(`${siteBase}members/slugs.json`).then(r => r.ok ? r.json() : {}).catch(() => ({}))

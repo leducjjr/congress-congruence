@@ -167,3 +167,11 @@ a.tag { white-space: normal; max-width: 100%; margin: 2px 4px 2px 0; border-radi
 .site-footer .coverage:empty { display: none; }
 .footer-links a { white-space: nowrap; }
 .prose-body td a { overflow-wrap: anywhere; }
+
+/* Interactive | Summary switch, on member and state pages (the panel has its own copy). */
+.view-switch { display: inline-flex; align-items: stretch; border: 1px solid var(--mark); border-radius: 999px;
+  overflow: hidden; font-size: 0.9rem; vertical-align: middle; }
+.view-switch > * { padding: 4px 14px; text-decoration: none; color: var(--mark); }
+.view-switch > [aria-current] { background: var(--mark); color: var(--surface); font-weight: 600; }
+.view-switch a:hover, .view-switch a:focus-visible { background: color-mix(in srgb, var(--mark) 12%, transparent); }
+.view-switch-label { font-size: 0.85rem; color: var(--ink-soft); margin-right: 6px; }

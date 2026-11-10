@@ -122,6 +122,11 @@ addEventListener("DOMContentLoaded", () => {
     view.replaceChildren(
       picker(),
       el("div", { class: "page-head" }, el("h1", {}, d.name),
+        // Interactive | Summary: the summary page is states/<name>/, the address to share.
+        el("p", {}, el("span", { class: "view-switch-label" }, "View:"), el("span", { class: "view-switch" },
+          el("span", { "aria-current": "page", title: "The full page: every vote, with filters" }, "Interactive"),
+          el("a", { href: `states/${d.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}/`,
+                    title: "A plain summary page, quick to load, with a preview when the link is shared" }, "Summary"))),
         el("p", { class: "lede" }, d.residents ? `${people(d.residents)} residents (Census Bureau). ` : "",
           `${plural(senators.length, "senator", "senators")} and ${plural(reps.length, "representative", "representatives")} serving today. `,
           el("a", { href: `votes.html` }, "All votes"), " · ", el("a", { href: "compare.html" }, "Compare two members"))),

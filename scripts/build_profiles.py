@@ -106,6 +106,13 @@ def member_hash(m: dict) -> str:
     return f"index.html#{m['state']}/{m['bioguide_id']}_{tag}"
 
 
+def view_switch(interactive: str, current: str = "summary") -> str:
+    """The Interactive | Summary switch (the same one is on the interactive pages)."""
+    return ('<span><span class="view-switch-label">View:</span><span class="view-switch">'
+            f'<a href="{e(interactive)}" title="The full page: every vote, with filters">Interactive</a>'
+            f'<span aria-current="page" title="A plain summary page, quick to load, with a preview when the link is shared">Summary</span></span></span>')
+
+
 def state_slug(code: str) -> str:
     return slugify(STATE_NAMES.get(code, code))
 
@@ -196,7 +203,7 @@ def member_page(m: dict, opinion: dict | None, votes: list[dict], slugs: dict, t
          f'<p class="lede">{e(role)}<span class="party">{" · " + e(party_text(m)) if party_text(m) else ""}</span>'
          + (f"; served until {fmt_date(m.get('left_office'))}" if not serving and m.get("left_office") else "")
          + "</p>",
-         f'<p class="profile-actions"><a class="button" href="{e(live)}">Open the full interactive page</a> '
+         f'<p class="profile-actions">{view_switch(live, "summary")} '
          f'<a href="compare.html?a={e(sid)}">Compare with another member</a> · '
          f'<a href="states/{state_slug(state)}/">All members from {e(sname)}</a></p>',
          "</div>"]
@@ -318,7 +325,7 @@ def state_page(st: dict, slugs: dict, today: date) -> tuple[dict, str]:
          f"<h1>{e(name)}</h1>",
          f'<p class="lede">{"About " + people(st["residents"]) + " residents. " if st.get("residents") else ""}'
          f"{len(senators)} senator{'s' if len(senators) != 1 else ''} and {len(house)} House member{'s' if len(house) != 1 else ''} serving now.</p>",
-         f'<p class="profile-actions"><a class="button" href="state.html?s={e(code)}">Open the interactive state page</a></p>',
+         f'<p class="profile-actions">{view_switch(f"state.html?s={code}", "summary")}</p>',
          "</div>"]
     if senators:
         p += ['<h2 id="senate">Senators</h2>', members_table(senators, slugs)]
