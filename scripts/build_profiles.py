@@ -100,6 +100,12 @@ def assign_slugs(members: list[dict]) -> dict[str, str]:
     return out
 
 
+def member_hash(m: dict) -> str:
+    """The interactive page's link: index.html#TX/C001098_Ted_Cruz (the name is for readers)."""
+    tag = re.sub(r"[^A-Za-z0-9]+", "_", unicodedata.normalize("NFKD", m["name"]).encode("ascii", "ignore").decode()).strip("_")
+    return f"index.html#{m['state']}/{m['bioguide_id']}_{tag}"
+
+
 def state_slug(code: str) -> str:
     return slugify(STATE_NAMES.get(code, code))
 
@@ -183,7 +189,7 @@ def member_page(m: dict, opinion: dict | None, votes: list[dict], slugs: dict, t
     meta = {"title": f"{m['name']}: voting record vs. what voters said", "description": desc,
             "image_alt": f"{m['name']}, {role}" + (f": {scores[0]}" if scores else "")}
 
-    live = f"index.html#{state}/{sid}"
+    live = member_hash(m)
     p = [f'<div class="page-head profile-head">',
          f'<p class="crumbs"><a href="members/">All members</a> › <a href="states/{state_slug(state)}/">{e(sname)}</a></p>',
          f"<h1>{e(m['name'])}</h1>",
@@ -285,7 +291,7 @@ def member_row(m: dict, slugs: dict, former: bool = False) -> str:
             "<br>".join(f"<strong>{s['with_majority']} of {s['clear_majority']}</strong> · {e(s['organization'])}"
                         if s.get("clear_majority") else f'<span class="meta">{e(s["organization"])}: none with a clear majority</span>'
                         for s in scores))
-    href = f"members/{slugs[m['bioguide_id']]}/" if m["bioguide_id"] in slugs else f"index.html#{m['state']}/{m['bioguide_id']}"
+    href = f"members/{slugs[m['bioguide_id']]}/" if m["bioguide_id"] in slugs else member_hash(m)
     left = f'<td data-label="Left office">{fmt_date(m.get("left_office"))}</td>' if former else ""
     return (f'<tr><td class="lead"><a href="{e(href)}">{e(m["name"])}</a></td><td data-label="Seat">{e(m.get("seat") or "")}</td>'
             f'<td class="party" data-label="Party">{e(party_text(m))}</td>{left}<td data-label="Surveyed votes">{cell}</td></tr>')
@@ -331,7 +337,7 @@ def state_page(st: dict, slugs: dict, today: date) -> tuple[dict, str]:
             lo, hi = o["range_pct"]
             support = f"{o['support_pct']:g}%" + ("" if o.get("kind") == "ballot" else f" (likely {lo:g}–{hi:g}%)")
             sen = "; ".join(
-                f'<a href="{e("members/" + slugs[s["bioguide_id"]] + "/") if s["bioguide_id"] in slugs else "index.html#" + code + "/" + s["bioguide_id"]}">{e(s["name"])}</a>: '
+                f'<a href="{e("members/" + slugs[s["bioguide_id"]] + "/") if s["bioguide_id"] in slugs else member_hash({**s, "state": code})}">{e(s["name"])}</a>: '
                 + (SIDE.get(s.get("sided_with") or "", "didn't vote") + (", related vote" if s.get("match") == "related" else ""))
                 for s in o.get("senate_votes", [])) or '<span class="meta">No Senate vote by a senator from here</span>'
             src = o.get("source") or {}

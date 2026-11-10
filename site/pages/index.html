@@ -109,15 +109,19 @@ main_class: home
     if (!id) { panel.hidden = true; history.replaceState(null, "", location.pathname); return; }
     panel.setAttribute("member", id);
     panel.hidden = false;
-    history.replaceState(null, "", `#${stateSel.value}/${id}`);
+    const m = lastMembers.find(x => x.bioguide_id === id);
+    history.replaceState(null, "", `#${stateSel.value}/${id}${m ? "_" + nameTag(m.name) : ""}`);
   }
 
   stateSel.addEventListener("change", () => { panel.hidden = true; loadState(stateSel.value); });
   memberSel.addEventListener("change", () => showMember(memberSel.value));
 
-  // A link like #TX/C001098 opens straight to that member (also when the search box changes it).
+  // A link like #TX/C001098_Ted_Cruz (or the older #TX/C001098) opens straight to that member, also
+  // when the search box changes it. Only the ID is used; the name is for people reading the link.
+  const nameTag = n => (n || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Za-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
   function openFromHash() {
-    const [hashState, hashId] = location.hash.slice(1).split("/");
+    const [hashState, rest = ""] = decodeURIComponent(location.hash.slice(1)).split("/");
+    const hashId = rest.split("_")[0];
     if (STATES[hashState]) {
       stateSel.value = hashState; loadState(hashState, hashId); return true;
     }

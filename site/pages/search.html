@@ -83,7 +83,7 @@ addEventListener("DOMContentLoaded", () => {
       return [ul, btn];
     };
     const memberItem = m => el("li", { class: "result" },
-        el("a", { href: `index.html#${m.state}/${m.bioguide_id}` }, m.name), " ",
+        el("a", { href: window.CC.memberHref(m) }, m.name), " ",
         el("span", { class: "meta" }, `${m.chamber === "senate" ? `${m.former ? "Former senator" : "Senator"}, ${m.state}` : `${m.former ? "Former representative" : "Representative"}, ${m.seat}`}`,
           el("span", { class: "party" }, ` · ${m.party}`),
           m.former && m.left_office ? ` · until ${date(m.left_office)}` : ""));

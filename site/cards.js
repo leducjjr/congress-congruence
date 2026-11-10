@@ -97,7 +97,9 @@
 
   const partiesHidden = () => document.documentElement.hasAttribute("data-party-blind");
   const ordinal = n => n + ((n % 100 >= 11 && n % 100 <= 13) ? "th" : ({ 1: "st", 2: "nd", 3: "rd" }[n % 10] || "th"));
-  const memberHref = m => `index.html#${m.state}/${m.bioguide_id}`;
+  // #TX/C001098_Ted_Cruz: the ID opens the member; the name is there for people reading the link.
+  const nameTag = n => (n || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Za-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+  const memberHref = m => `index.html#${m.state}/${m.bioguide_id}_${nameTag(m.name)}`;
 
   // "Yea–Nay by party: Democrats 210–2 · Republicans 3–215" (left out in the party-blind view).
   function partySplit(v) {

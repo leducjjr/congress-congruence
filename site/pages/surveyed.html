@@ -184,7 +184,7 @@ addEventListener("DOMContentLoaded", () => {
       const cy = i ? y1 : y0;
       for (const p of pts) {
         const m = p.m;
-        const a = S("a", { href: `index.html#${m.state}/${m.bioguide_id}` });
+        const a = S("a", { href: window.CC.memberHref(m) });
         const cls = `dot ${related ? "related" : m.agreement} ${m.position}`;
         a.append(S("circle", { cx: p.x, cy: cy + p.dy, r, class: cls }));
         const hide = document.documentElement.hasAttribute("data-party-blind");
@@ -247,7 +247,7 @@ addEventListener("DOMContentLoaded", () => {
         .sort((a, b) => { const x = value(a, sortKey), y = value(b, sortKey);
                           return (x < y ? -1 : x > y ? 1 : 0) * dir || a.name.localeCompare(b.name); });
       tbody.replaceChildren(...shown.map(m => el("tr", {},
-        el("td", {}, el("a", { href: `index.html#${m.state}/${m.bioguide_id}` }, m.name)),
+        el("td", {}, el("a", { href: window.CC.memberHref(m) }, m.name)),
         el("td", {}, m.seat), el("td", { class: "party" }, m.party || ""), el("td", {}, POS[m.position] || m.position),
         el("td", {}, m.area ? (ballot ? `${pct(m.area.support_pct)} yes (${m.area.area_note || "state measure"})`
                                       : `${pct(m.area.support_pct)} (likely ${pct(m.area.low_pct)}–${pct(m.area.high_pct)})`)

@@ -91,7 +91,7 @@ def test_member_page_has_the_figures_as_text(tmp_path):
     assert '<base href="/">' in page and 'href="/members/ted-cruz/#main"' in page      # skip link stays on the page
     assert '<link rel="canonical" href="https://uscongressvsvoters.org/members/ted-cruz/">' in page
     assert "voted with <strong>3 of 4</strong> surveyed votes where Texas's estimated majority was clear" in page
-    assert "Senator for Texas" in page and 'href="index.html#TX/C001098"' in page
+    assert "Senator for Texas" in page and 'href="index.html#TX/C001098_Ted_Cruz"' in page
     assert "Related bill, not counted" in page and "Too close to call" in page
     assert "&lt;for guns&gt;" in page and "<for guns>" not in page and "&lt;about&gt;" in page     # escaped
     assert "missed 12 of 600 Senate votes (2%)" in page

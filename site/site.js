@@ -38,7 +38,8 @@
   // Header search: suggestions as you type; Enter or a click opens the member's page.
   // Keyboard: Up/Down move through suggestions, Enter opens, Escape closes.
   const input = $("site-q"), list = $("site-q-list");
-  const memberHref = m => `index.html#${m.state}/${m.bioguide_id}`;
+  const nameTag = n => (n || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Za-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+  const memberHref = m => `index.html#${m.state}/${m.bioguide_id}_${nameTag(m.name)}`;
   const hidden = () => document.documentElement.hasAttribute("data-party-blind");
   const describe = m => (m.former ? "Former " : "") +
     (m.chamber === "senate" ? `${m.former ? "senator" : "Senator"}, ${m.state}` : `${m.former ? "representative" : "Representative"}, ${m.seat}`) +
