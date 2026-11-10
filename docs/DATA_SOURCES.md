@@ -377,8 +377,13 @@ Special handling:
 - **Left out:** 2024 measures with no matching floor vote in the 119th Congress (abortion, minimum
   wage, marijuana and others).
 - **YAML keys.** Counts are `yes_votes` and `no_votes`: a bare `yes`/`no` key reads as true/false in YAML.
-- **2026 measures** go in `config/ballot_2026_items.yaml` once states certify (expected: voter ID in
-  NV, NC, OH, CA; citizenship in AK, AR, KS, SD, WV; Colorado Amendment 81 with the Laken Riley Act).
+- **2026 measures** are in `config/ballot_2026_items.yaml`, all `match: related`: citizenship (AK, AR,
+  KS, SD, WV; AK and SD also compared with their at-large representative on the House's SAVE
+  America Act vote), voter ID (AZ, CA, CO Amendment 84, NV, NC, OH, OK in August; senators on the
+  photo-ID cloture vote), and Colorado Amendment 81 on police cooperation with immigration
+  authorities (senators on the Laken Riley Act). Each result stays `pending: true` until its state
+  certifies; load skips pending results, so states are added as they certify. Left out: abortion
+  (ID, MO, NV, VA), marijuana, redistricting, ranked-choice and other measures with no matching vote.
 
 ## 5b. Constituent opinion: Democracy Fund + UCLA Nationscape
 

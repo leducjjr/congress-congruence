@@ -84,7 +84,7 @@ def client_for(monkeypatch):
 def test_load_compares_senators_and_at_large_seats_only(conn, monkeypatch):
     monkeypatch.setattr(ballots, "load_config", lambda year: CFG)
     out = ballots.load(conn, 2024)
-    assert out == {"items": 1, "votes_linked": 2, "area_rows": 3}     # ID, WY, and WY's at-large seat
+    assert out == {"items": 1, "votes_linked": 2, "area_rows": 3, "not_certified_yet": 0}   # ID, WY, WY's at-large seat
     with conn.cursor() as cur:
         cur.execute("select kind from core.survey")
         assert cur.fetchone() == ("ballot",)
@@ -111,3 +111,25 @@ def test_load_compares_senators_and_at_large_seats_only(conn, monkeypatch):
     assert card["spread"]["states"] == {"areas": 2, "lowest_pct": 40.0, "highest_pct": 65.0,
                                         "support": 1, "oppose": 1, "too_close": 0}
     assert listed[0]["kind"] == "ballot"
+
+
+def test_pending_results_are_skipped_until_certified():
+    cfg = {"items": {
+        "A": {"question": "q", "votes": {}, "results": [
+            {"state": "NV", "measure": "Nevada Question 7", "url": "u", "yes_votes": 6, "no_votes": 4},
+            {"state": "OH", "measure": "Ohio Issue 3", "url": "u", "pending": True}]},
+        "B": {"question": "q", "votes": {}, "results": [
+            {"state": "KS", "measure": "Kansas amendment", "url": "u", "pending": True}]}}}
+    done, waiting = ballots.certified(cfg)
+    assert list(done["items"]) == ["A"] and [r["state"] for r in done["items"]["A"]["results"]] == ["NV"]
+    assert waiting == ["A OH", "B KS"]
+
+
+def test_2026_items_file_is_well_formed():
+    cfg = ballots.load_config(2026)
+    assert cfg["kind"] == "ballot" and cfg["congress"] == 119
+    for var, item in cfg["items"].items():
+        assert item.get("match") == "related", var        # no 2026 measure asks exactly what a bill does
+        assert item["votes"], var
+        for r in item["results"]:
+            assert r["url"].startswith("https://"), (var, r["state"])

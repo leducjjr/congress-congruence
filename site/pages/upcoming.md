@@ -14,8 +14,11 @@ they're estimates. Have an idea? <a href="contact.html#feedback">Tell us</a>.</p
 ### 2026 state ballot measures {#ballot-2026}
 
 The measures voters decided on November 3, 2026, compared with how their senators (and the
-representative of a state with one House seat) voted on the same subjects. We add them once each state
-certifies its results, usually within a few weeks of the election.
+representative of a state with one House seat) voted on related bills: citizenship requirements for
+voting in Alaska, Arkansas, Kansas, South Dakota and West Virginia; voter ID in Arizona, California,
+Colorado, Nevada, North Carolina, Ohio and Oklahoma; and Colorado's measure on police cooperation with
+immigration authorities. Each state's result is added once that state certifies it, usually within a
+few weeks of the election.
 
 ## Coming in 2027 {#2027}
 

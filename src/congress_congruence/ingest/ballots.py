@@ -7,6 +7,11 @@ config/ballot_<year>_items.yaml lists, per item, the vote(s) it relates to and e
 with its certified Yes and No counts (yes_votes, no_votes: plain yes/no would read as true/false
 in YAML) and a link to the result.
 
+A measure whose result isn't certified yet is listed with `pending: true` and no counts: load skips
+it (and any item with nothing certified yet), so a year can be loaded state by state as each one
+certifies. Re-running load replaces the year's earlier rows. `link` checks every item's votes,
+pending or not.
+
 How results are stored (method certified-results-v1), next to survey estimates but never blended:
   support    = Yes / (Yes + No)        votes actually cast, so no margin of error: low = high = support
   majority   = support if Yes > No, oppose if No > Yes, too_close only on an exact tie
@@ -38,9 +43,12 @@ def load_config(year: int) -> dict:
     cfg = yaml.safe_load(path.read_text())
     for var, item in cfg["items"].items():
         for r in item.get("results", []):
-            missing = {"state", "measure", "yes_votes", "no_votes", "url"} - set(r)
+            needed = {"state", "measure", "url"} | (set() if r.get("pending") else {"yes_votes", "no_votes"})
+            missing = needed - set(r)
             if missing:
                 raise ValueError(f"{var} {r.get('state')}: missing {sorted(missing)}")
+            if r.get("pending"):
+                continue
             if int(r["yes_votes"]) < 0 or int(r["no_votes"]) < 0 or int(r["yes_votes"]) + int(r["no_votes"]) == 0:
                 raise ValueError(f"{var} {r['state']}: vote counts must be positive")
     return cfg
@@ -53,8 +61,23 @@ def result_row(r: dict) -> dict:
             "votes": yes + no, "measure": r["measure"], "url": r["url"]}
 
 
+def certified(cfg: dict) -> tuple[dict, list[str]]:
+    """The config with only certified results, and items with none yet dropped; plus what was left out."""
+    items, waiting = {}, []
+    for var, item in cfg["items"].items():
+        done = [r for r in item.get("results", []) if not r.get("pending")]
+        waiting += [f"{var} {r['state']}" for r in item.get("results", []) if r.get("pending")]
+        if done:
+            items[var] = {**item, "results": done}
+    return {**cfg, "items": items}, waiting
+
+
 def load(conn, year: int) -> dict:
-    cfg = load_config(year)
+    cfg, waiting = certified(load_config(year))
+    for w in waiting:
+        log.info("Not certified yet, skipped: %s", w)
+    if not cfg["items"]:
+        raise ValueError(f"No certified results in config/ballot_{year}_items.yaml yet")
     links = ces.link(conn, year, cfg)
     seats = ces.house_seats(conn, year)
     conn.commit()     # close the lookups' transaction so the block below is a real transaction
@@ -74,7 +97,7 @@ def load(conn, year: int) -> dict:
                         (survey, var, r["state"], district, r["votes"], r["votes"], r["support"], r["support"],
                          r["support"], r["support"], r["majority"], METHOD, r["url"], r["measure"]))
                     rows += 1
-    return {"items": len(items), "votes_linked": len(links), "area_rows": rows}
+    return {"items": len(items), "votes_linked": len(links), "area_rows": rows, "not_certified_yet": len(waiting)}
 
 
 def main(argv: list[str]) -> int:

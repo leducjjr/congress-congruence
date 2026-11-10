@@ -1,0 +1,113 @@
+# Statewide ballot measures (2026) compared with votes in the 119th Congress. Load with
+#   python -m congress_congruence.ingest.ballots link 2026
+#   python -m congress_congruence.ingest.ballots load 2026
+#
+# Certified results only: votes actually cast, so there is no margin of error. Each state's result is
+# compared only with members who represent the whole state (senators, and the representative of a
+# one-district state: here Alaska and South Dakota). No measure asked exactly what Congress voted on,
+# so every item is match: related, shown for context and never counted.
+#
+# STATUS (Nov 10, 2026): outcomes known, no counts certified yet. Each result is `pending: true` until
+# its state certifies; then replace `pending: true` with yes_votes and no_votes from the state's
+# certified canvass (or Ballotpedia's page once it shows certified figures) and re-run load. Load
+# skips pending results, so states can be added one at a time.
+#
+# Left out: 2026 measures with no matching floor vote in the 119th Congress (abortion in Idaho,
+# Missouri, Nevada and Virginia; marijuana; redistricting; ranked-choice voting; others). Outcomes as
+# reported by Ballotpedia News, Nov 10, 2026.
+
+survey: Ballot measures 2026
+congress: 119
+kind: ballot
+
+source:
+  title: State ballot measures, 2026 (certified results)
+  organization: State ballot measures
+  description: >-
+    statewide ballot measures: certified votes cast by each state's voters, compared only with members
+    who represent the whole state
+  fielded: November 3, 2026 (Oklahoma's voter ID measure, August 25, 2026)
+  about_url: https://ballotpedia.org/2026_ballot_measures
+
+# The same three votes the 2024 measures are compared with (see config/ballot_2024_items.yaml).
+save_america_senate: &save_senate
+  roll_call: s-119-2-57
+  expect: "51-48"
+  note: >-
+    The Senate never voted on passing the SAVE America Act, which would require documents proving
+    citizenship to register and photo ID to vote in federal elections. This was its vote to take up
+    the bill; Yea was the vote to move it forward.
+photo_id_senate: &photo_id_senate
+  roll_call: s-119-2-73
+  expect: "53-47"
+  note: >-
+    A vote to end debate on Senator Husted's amendment to the SAVE America Act requiring photo ID to
+    vote in federal elections. It got 53 votes; 60 were needed. Yea was the vote to move it forward.
+save_america_house: &save_house
+  date: 2026-02-11
+  questions: [On Passage]
+  expect: "218-213"
+  note: The SAVE America Act would require proof of citizenship to register and photo ID to vote in federal elections.
+
+items:
+  BM26_CITIZEN:
+    question: Say in state law that only U.S. citizens may vote
+    match: related
+    note: >-
+      Related, not the same: these measures say only citizens may vote. The bill in Congress would
+      also require documents proving citizenship to register, and photo ID to vote.
+    votes:
+      senate: *save_senate
+      house: *save_house
+    results:
+      - {state: AK, measure: "Alaska Ballot Measure 3 (a state law, not a constitutional amendment)", pending: true,
+         url: "https://ballotpedia.org/Alaska_Citizenship_Voting_Requirement_Initiative_%282026%29"}
+      - {state: AR, measure: "Arkansas Issue 1", pending: true,
+         url: "https://ballotpedia.org/Arkansas_Issue_1,_Citizenship_Voting_Requirement_Amendment_%282026%29"}
+      - {state: KS, measure: "Kansas Citizenship Voting Requirement Amendment", pending: true,
+         url: "https://ballotpedia.org/Kansas_Citizenship_Voting_Requirement_Amendment_%282026%29"}
+      - {state: SD, measure: "South Dakota Constitutional Amendment J", pending: true,
+         url: "https://ballotpedia.org/South_Dakota_Constitutional_Amendment_J,_Citizenship_Voting_Requirement_Amendment_%282026%29"}
+      - {state: WV, measure: "West Virginia Citizenship Voting Requirement Amendment", pending: true,
+         url: "https://ballotpedia.org/West_Virginia_Citizenship_Voting_Requirement_Amendment_%282026%29"}
+
+  BM26_VOTER_ID:
+    question: Require voters to show identification
+    match: related
+    note: >-
+      Related, not the same: these measures set ID rules for voting in the state. The vote in Congress
+      was on requiring photo ID to vote in federal elections. Several measures also did other things;
+      their names say what.
+    votes:
+      senate: *photo_id_senate
+    results:
+      - {state: AZ, measure: "Arizona Proposition 144 (also citizenship and other election rules)", pending: true,
+         url: "https://ballotpedia.org/Arizona_Proposition_144,_Voter_Identification_and_Citizenship_Voting_Requirements_Amendment_%282026%29"}
+      - {state: CA, measure: "California Proposition 39 (also citizenship checks and voter-list rules)", pending: true,
+         url: "https://ballotpedia.org/California_Proposition_39,_Voter_Identification,_Citizenship_Verification,_and_Registered_Voter_List_Administration_Initiative_%282026%29"}
+      - {state: CO, measure: "Colorado Amendment 84 (an ID number on mail ballots)", pending: true,
+         url: "https://ballotpedia.org/Colorado_Amendment_84,_Require_Voter_Identification_Number_for_Mail-In_Ballots_Initiative_%282026%29"}
+      - {state: NV, measure: "Nevada Question 7 (second approval; first approved in 2024)", pending: true,
+         url: "https://ballotpedia.org/Nevada_Question_7,_Require_Voter_Identification_Initiative_%282026%29"}
+      - {state: NC, measure: "North Carolina Require Voter Identification Amendment", pending: true,
+         url: "https://ballotpedia.org/North_Carolina_Require_Voter_Identification_Amendment_%282026%29"}
+      - {state: OH, measure: "Ohio Issue 3", pending: true,
+         url: "https://ballotpedia.org/Ohio_Issue_3,_Require_Voter_Identification_Amendment_%282026%29"}
+      - {state: OK, measure: "Oklahoma State Question 846 (August 25, 2026)", pending: true,
+         url: "https://ballotpedia.org/Oklahoma_State_Question_846,_Voter_Identification_Requirement_Amendment_%28August_2026%29"}
+
+  BM26_ICE:
+    question: Require local police to share information with and cooperate with federal immigration authorities
+    match: related
+    note: >-
+      Related, not the same: Colorado's measure was about local police working with federal
+      immigration authorities. The Laken Riley Act requires federal detention of immigrants in the
+      country illegally who are charged with theft and certain other crimes.
+    votes:
+      senate:
+        bill: [s, 5]
+        questions: [Passage of the Bill]
+        note: The Senate's January 2025 passage of the Laken Riley Act.
+    results:
+      - {state: CO, measure: "Colorado Amendment 81", pending: true,
+         url: "https://leg.colorado.gov/ballots/law-enforcement-communication-with-federal-immigration-authorities-2"}
