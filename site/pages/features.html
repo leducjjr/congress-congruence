@@ -29,6 +29,27 @@ head: |
     .shot picture, .shot img { display: block; width: 100%; height: auto; border-radius: 12px; border: 1px solid var(--rule);
       box-shadow: 0 10px 30px rgb(0 0 0 / 0.10); background: var(--surface); }
     .shot figcaption { font-size: 0.82rem; color: var(--ink-soft); margin-top: 8px; }
+    .explore { background: var(--surface); border: 1px solid var(--rule); border-radius: 14px; padding: clamp(18px, 3vw, 32px);
+      margin: 0 0 48px; }
+    .explore .kicker { font-size: 0.78rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--mark); margin: 0 0 6px; }
+    .explore h2 { font-size: clamp(1.25rem, 2.4vw, 1.6rem); line-height: 1.25; margin: 0 0 8px; }
+    .explore-lede, .explore-note { color: var(--ink-soft); margin: 0 0 18px; }
+    .explore-note { margin: 12px 0 0; font-size: 0.93rem; }
+    .filter-group { margin: 0 0 18px; }
+    .filter-group h3 { font-size: 0.98rem; margin: 0 0 8px; }
+    .filter-group h3 small { font-weight: 400; color: var(--ink-soft); margin-left: 6px; }
+    .filter-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr)); gap: 0 28px; }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+    .chips a { display: inline-flex; align-items: baseline; gap: 6px; padding: 6px 12px; border-radius: 999px;
+      border: 1px solid var(--rule); background: var(--page); color: var(--ink); text-decoration: none; font-size: 0.9rem; }
+    .chips a span { color: var(--ink-soft); font-size: 0.8rem; }
+    .chips a:hover, .chips a:focus-visible { border-color: var(--mark); color: var(--mark); }
+    .chips .more-chip a { background: transparent; color: var(--mark); font-weight: 600; }
+    .examples { display: grid; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); gap: 8px 24px; margin: 0; padding: 0; list-style: none; }
+    .examples a { display: block; padding: 10px 14px; border-left: 3px solid var(--mark); background: var(--page);
+      border-radius: 0 8px 8px 0; color: var(--ink); text-decoration: none; font-weight: 600; font-size: 0.93rem; }
+    .examples a::after { content: " →"; color: var(--mark); }
+    .examples a:hover, .examples a:focus-visible { color: var(--mark); }
     .trust { background: var(--surface); border: 1px solid var(--rule); border-radius: 14px; padding: 22px 24px; margin: 8px 0 32px; }
     .trust h2 { font-size: 1.2rem; margin: 0 0 12px; }
     .trust ul { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 10px 24px; margin: 0; padding: 0; list-style: none; }
@@ -159,7 +180,7 @@ main_class: features-page
       <li>House and Senate votes from 2007, House votes checked against official totals</li>
       <li>Links to the official record and the bill on Congress.gov</li>
     </ul>
-    <a class="try" href="votes.html">Browse all votes →</a>
+    <a class="try" href="#explore-h">See what you can filter by ↓</a>
   </div>
   <figure class="shot">
     <a href="features/votes.png" title="Open full size"><picture><source media="(max-width: 760px)" srcset="features/votes-mobile.png" width="390" height="844">
@@ -167,6 +188,87 @@ main_class: features-page
     <figcaption>All votes, with filters.</figcaption>
   </figure>
 </article>
+
+<section class="explore" aria-labelledby="explore-h">
+  <p class="kicker">Explore every vote</p>
+  <h2 id="explore-h">19,604 House and Senate votes since 2007, sorted the way you think about them</h2>
+  <p class="explore-lede">Combine any of these filters on the <a href="votes.html">All votes</a> page. Every choice below
+    opens that page already filtered. Counts are from November 2026 and grow as Congress votes.</p>
+
+  <div class="filter-group">
+    <h3>Topic <small>33 subject areas, as Congress.gov classifies each bill</small></h3>
+    <ul class="chips">
+        <li><a href="votes.html?topic=Economics+and+Public+Finance">Economics and Public Finance <span>3,452</span></a></li>
+        <li><a href="votes.html?topic=Armed+Forces+and+National+Security">Armed Forces and National Security <span>1,601</span></a></li>
+        <li><a href="votes.html?topic=Health">Health <span>599</span></a></li>
+        <li><a href="votes.html?topic=Energy">Energy <span>567</span></a></li>
+        <li><a href="votes.html?topic=Transportation+and+Public+Works">Transportation and Public Works <span>476</span></a></li>
+        <li><a href="votes.html?topic=Crime+and+Law+Enforcement">Crime and Law Enforcement <span>456</span></a></li>
+        <li><a href="votes.html?topic=Taxation">Taxation <span>368</span></a></li>
+        <li><a href="votes.html?topic=Environmental+Protection">Environmental Protection <span>364</span></a></li>
+        <li><a href="votes.html?topic=Education">Education <span>362</span></a></li>
+        <li><a href="votes.html?topic=Science%2C+Technology%2C+Communications">Science, Technology, Communications <span>289</span></a></li>
+        <li><a href="votes.html?topic=Agriculture+and+Food">Agriculture and Food <span>286</span></a></li>
+        <li><a href="votes.html?topic=Immigration">Immigration <span>227</span></a></li>
+        <li><a href="votes.html?topic=Housing+and+Community+Development">Housing and Community Development <span>155</span></a></li>
+        <li><a href="votes.html?topic=Native+Americans">Native Americans <span>105</span></a></li>
+        <li><a href="votes.html?topic=Civil+Rights+and+Liberties%2C+Minority+Issues">Civil Rights and Liberties, Minority Issues <span>97</span></a></li>
+        <li><a href="votes.html?topic=Families">Families <span>47</span></a></li>
+        <li class="more-chip"><a href="votes.html">and 17 more</a></li>
+    </ul>
+  </div>
+
+  <div class="filter-grid">
+    <div class="filter-group">
+      <h3>Type of vote</h3>
+      <ul class="chips">
+        <li><a href="votes.html?kind=passage">Passage <span>bills, resolutions, conference reports</span></a></li>
+        <li><a href="votes.html?kind=amendment">Amendments</a></li>
+        <li><a href="votes.html?kind=nomination">Nominations <span>judges, cabinet</span></a></li>
+        <li><a href="votes.html?kind=procedural">Procedural <span>cloture, motions</span></a></li>
+      </ul>
+    </div>
+    <div class="filter-group">
+      <h3>Chamber and result</h3>
+      <ul class="chips">
+        <li><a href="votes.html?chamber=house">House <span>12,732</span></a></li>
+        <li><a href="votes.html?chamber=senate">Senate <span>6,872</span></a></li>
+        <li><a href="votes.html?outcome=passed">Passed</a></li>
+        <li><a href="votes.html?outcome=failed">Failed</a></li>
+        <li><a href="votes.html?surveyed=true">Asked about in a survey <span>128</span></a></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="filter-group">
+    <h3>Congress <small>ten two-year Congresses</small></h3>
+    <ul class="chips">
+        <li><a href="votes.html?congress=119">119th <span>2025–26</span></a></li>
+        <li><a href="votes.html?congress=118">118th <span>2023–24</span></a></li>
+        <li><a href="votes.html?congress=117">117th <span>2021–22</span></a></li>
+        <li><a href="votes.html?congress=116">116th <span>2019–20</span></a></li>
+        <li><a href="votes.html?congress=115">115th <span>2017–18</span></a></li>
+        <li><a href="votes.html?congress=114">114th <span>2015–16</span></a></li>
+        <li><a href="votes.html?congress=113">113th <span>2013–14</span></a></li>
+        <li><a href="votes.html?congress=112">112th <span>2011–12</span></a></li>
+        <li><a href="votes.html?congress=111">111th <span>2009–10</span></a></li>
+        <li><a href="votes.html?congress=110">110th <span>2007–08</span></a></li>
+    </ul>
+  </div>
+
+  <div class="filter-group">
+    <h3>Try a combination</h3>
+    <ul class="examples">
+      <li><a href="votes.html?topic=Energy&amp;congress=119">Energy votes in the current Congress</a></li>
+      <li><a href="votes.html?chamber=senate&amp;kind=nomination">Every Senate vote on a nomination</a></li>
+      <li><a href="votes.html?topic=Health&amp;kind=amendment&amp;outcome=failed">Health amendments that failed</a></li>
+      <li><a href="votes.html?topic=Taxation&amp;kind=passage">Final votes on tax bills</a></li>
+      <li><a href="votes.html?topic=Armed+Forces+and+National+Security&amp;chamber=house&amp;sort=oldest">House defense votes, oldest first</a></li>
+      <li><a href="votes.html?q=veteran%2A">Any vote with &ldquo;veteran&rdquo; in the title</a></li>
+    </ul>
+    <p class="explore-note">Open any vote to see how every member voted, with links to the official record and the bill.</p>
+  </div>
+</section>
 
 <section class="trust">
   <h2>Built to be checked</h2>
