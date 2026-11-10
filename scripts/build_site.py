@@ -132,6 +132,7 @@ def build(out: Path, version: str) -> list[str]:
                     main_class=meta.get("main_class", "prose" if path.suffix == ".md" else ""))
         (out / name).write_text(page, encoding="utf-8")
         built.append(name)
+    (out / "feed.xml").write_text(feed_xml(settings), encoding="utf-8")
     for name, src in ASSETS.items():
         shutil.copyfile(src, out / name)
     # Files served as they are, e.g. .well-known/security.txt
@@ -139,6 +140,82 @@ def build(out: Path, version: str) -> list[str]:
     if static.exists():
         shutil.copytree(static, out, dirs_exist_ok=True)
     return built
+
+
+# ---- the updates feed (feed.xml): "Recently added" (upcoming.md) and the corrections log, read
+# from the pages themselves, so it needs no upkeep of its own. Each entry is a bullet under a date
+# line in bold ("**November 10, 2026**").
+
+FEED_SOURCES = [("upcoming.md", "recent", "New"), ("corrections.md", None, "Correction")]
+DATE_LINE = re.compile(r"^\*\*([A-Z][a-z]+ \d{1,2}, \d{4})\*\*\s*$")
+
+
+def feed_entries(settings: dict) -> list[dict]:
+    from datetime import datetime
+    site_url = str(settings.get("site_url", "")).rstrip("/")
+    entries = []
+    for page, section, kind in FEED_SOURCES:
+        _, body = read_page(SITE / "pages" / page)
+        if section:                       # only that section: from its heading to the next ## heading
+            m = re.search(r"^## .*\{#" + section + r"\}\s*$(.*?)(?=^## |\Z)", body, re.M | re.S)
+            body = m.group(1) if m else ""
+        day, bullets = None, []
+        for line in body.splitlines():
+            d = DATE_LINE.match(line.strip())
+            if d:
+                day = datetime.strptime(d.group(1), "%B %d, %Y")
+            elif line.startswith("- ") and day:
+                bullets.append([day, line[2:].strip()])
+            elif line.startswith("  ") and line.strip() and bullets and day:
+                bullets[-1][1] += " " + line.strip()
+        anchor = f"#{section}" if section else ""
+        for n, (day, text) in enumerate(bullets):
+            for key, value in settings.items():
+                text = text.replace("{{" + key + "}}", str(value))
+            html_text = markdown.markdown(text)
+            html_text = re.sub(r'href="(?!https?:|mailto:|#)([^"]*)"', lambda m: f'href="{site_url}/{m.group(1)}"', html_text)
+            plain = html.unescape(re.sub(r"<[^>]+>", "", html_text)).strip()
+            first = re.match(r"\*\*(.+?)\*\*", text)
+            title = re.sub(r"\[([^\]]*)\]\([^)]*\)", r"\1", first.group(1)).rstrip(".,:") if first else plain
+            if first and not re.match(r"\*\*.+?[.,:]\*\*", text):     # "**Compare two members** side by side."
+                title = re.split(r"(?<=[a-z])[.:](?:\s|$)", plain)[0].rstrip(".,")
+            entries.append({"date": day, "kind": kind, "title": f"{kind}: {title}", "html": html_text,
+                            "link": f"{site_url}/{page.replace('.md', '.html')}{anchor}",
+                            "guid": f"{site_url}/{page.replace('.md', '.html')}#{day:%Y-%m-%d}-{re.sub(r'[^a-z0-9]+', '-', title.lower()).strip('-')}"})
+    entries.sort(key=lambda e: e["date"], reverse=True)       # stable: page order kept within a day
+    return entries
+
+
+def feed_xml(settings: dict) -> str:
+    from email.utils import format_datetime
+    from datetime import timezone
+    site_url = str(settings.get("site_url", "")).rstrip("/")
+    entries = feed_entries(settings)
+    items = []
+    for e in entries:
+        when = format_datetime(e["date"].replace(hour=12, tzinfo=timezone.utc))
+        items.append(f"""  <item>
+    <title>{html.escape(e['title'])}</title>
+    <link>{html.escape(e['link'])}</link>
+    <guid isPermaLink="false">{html.escape(e['guid'])}</guid>
+    <pubDate>{when}</pubDate>
+    <category>{e['kind']}</category>
+    <description>{html.escape(e['html'])}</description>
+  </item>""")
+    built = format_datetime(entries[0]["date"].replace(hour=12, tzinfo=timezone.utc)) if entries else ""
+    return f"""<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+<channel>
+  <title>US Congress vs Voters: updates</title>
+  <link>{site_url}/upcoming.html</link>
+  <atom:link href="{site_url}/feed.xml" rel="self" type="application/rss+xml"/>
+  <description>New sources, features and every correction to US Congress vs Voters.</description>
+  <language>en-us</language>
+  <lastBuildDate>{built}</lastBuildDate>
+{chr(10).join(items)}
+</channel>
+</rss>
+"""
 
 
 def main() -> None:

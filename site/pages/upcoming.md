@@ -43,6 +43,15 @@ republished, and only its questions about proposals Congress actually voted on a
 
 ## Recently added {#recent}
 
+Newest first. Follow these and every correction in a feed reader: [updates feed (RSS)](feed.xml).
+
+**November 10, 2026**
+
+- **Senate votes from the Senate's own files.** Senate votes now come from the official senate.gov
+  record, checked daily, instead of a copy that could be weeks behind. Earlier 2026 votes are being
+  caught up over the next week or so. See [Sources](sources.html#senate).
+- **Choose how many recent votes to see** on a member's page: 50, 100, 250 or 500, with the dates they
+  cover.
 - **A page for every member and every state,** with addresses you can share, such as
   [All members](members/) and [All states](states/). Shared links show a preview of the figures.
 - **[Press and researchers](press.html)** and a **[classroom guide](classroom.html)** for teachers.

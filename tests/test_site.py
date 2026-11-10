@@ -86,3 +86,19 @@ def test_page_text_fills_the_screen_width():
     assert {k: v for k, v in limits.items() if v} == {}
     assert text_width_limits(".x-page { max-width: 60rem; } .card img { max-width: 20rem; } main.prose { max-width: none; }"
                              " @media (max-width: 500px) { p { max-width: 10rem; } }") == [".x-page"]
+
+
+def test_updates_feed(tmp_path):
+    import xml.etree.ElementTree as ET
+    build_site.build(tmp_path, "x")
+    rss = ET.parse(tmp_path / "feed.xml").getroot()
+    items = rss.findall("./channel/item")
+    titles = [i.findtext("title") for i in items]
+    assert "New: Hide party labels" in titles and "Correction: TikTok bill (CES 2024)" in titles
+    assert len({i.findtext("guid") for i in items}) == len(items)            # every entry its own ID
+    dates = [i.findtext("pubDate") for i in items]
+    assert dates[0].startswith("Tue, 10 Nov 2026") and dates[-1].startswith("Sat, 07 Nov 2026")
+    first = items[0].findtext("description")
+    assert 'href="https://uscongressvsvoters.org/sources.html#senate"' in first   # links work in a reader
+    home = (tmp_path / "index.html").read_text()
+    assert 'type="application/rss+xml"' in home and 'href="feed.xml"' in home
