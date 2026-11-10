@@ -386,8 +386,13 @@ Special handling:
   week, 494,796 in all. Respondents agree or disagree with specific policy proposals.
 - **Where:** Harvard Dataverse, doi:10.7910/DVN/CQFP3Z (also the Voter Study Group's download form).
   One Stata file per week, named like `ns20190718.dta`, possibly inside a zip.
-- **Terms:** the Voter Study Group's site terms limit site content to personal, non-commercial use.
-  The release's own license and terms are printed by `nationscape inspect`; check them before loading.
+- **License:** CC0 1.0 (public domain), per the Dataverse release (version 1.0, Oct 3, 2023). Credited
+  anyway, on the Sources page.
+- **Files (checked Nov 10, 2026):** 80 weekly `.dta` files, 2019-07-18 to 2021-01-21, 494,532 interviews.
+  Three weeks also have a `_parallel` file: a separate sample asked extra questions (DC statehood,
+  police, impeach-and-convict), weighted the same way; pooled like any other week. Columns: `state`
+  (postal code), `congress_district` (like `TX07`), `weight`. Codes 1 Agree, 2 Disagree, 999 Not sure,
+  888 Not asked.
 - **Code:** `ingest/nationscape.py` (`inspect`, `link`, `load`), item file `config/nationscape_items.yaml`.
   Downloading, vote matching and the estimates reuse the CES loader and `opinion.estimate`.
 - **Loaded as one survey**, "Nationscape 2019-2021", pooling every week a question was asked
@@ -401,9 +406,11 @@ Special handling:
   checks compared with the House's 2019 and 2021 votes on H.R. 8.
 - **Matches** (see the item file): same proposal: impeachment Article I (2019), background checks
   (2019, 2021), $15 minimum wage, Dream Act (2019, 2021), marijuana (MORE Act), assault weapons ban
-  (2022). Related only: transgender service (non-binding resolution; decision pending), magazine
-  limit, Muslim-country entry ban (NO BAN Act, Nay side), right to work (PRO Act, Nay side), carbon cap
-  (Paris agreement bill), border wall (ending the 2019 emergency, Nay side).
+  (2022), impeach and convict (House Jan 13 and Senate Feb 13, 2021), DC statehood (2020, 2021).
+  Related only: transgender service (non-binding resolution; decision pending), magazine limit,
+  Muslim-country entry ban (NO BAN Act, Nay side), right to work (PRO Act, Nay side), carbon cap
+  (Paris agreement bill), border wall (ending the 2019 emergency, Nay side), chokeholds (Justice in
+  Policing Act, 2020).
 
 ## 6a. District profiles: Census Bureau (for district opinion estimates)
 

@@ -2,9 +2,11 @@
 # Respondents were asked whether they agree or disagree with each proposal; Agree = support.
 # `nationscape link` prints what each rule matched, for review; `nationscape load` estimates opinion.
 #
-# STATUS: the variable names below (and the state, district and weight columns) are PROVISIONAL.
-# They come from the published question list, not the data file. Confirm each against
-# logs/nationscape_inspect.txt before loading; load stops and lists any name it can't find.
+# Variable names, columns and answer codes checked against `nationscape inspect` (Nov 10, 2026):
+# 80 weekly files, 2019-07-18 to 2021-01-21, 494,532 interviews; license CC0 1.0. Three weeks
+# (2020-04-02, 2020-07-16, 2021-01-21) also have a "parallel" sample: separate respondents asked
+# extra questions, weighted the same way, so they're pooled with the rest. Codes: 1 = Agree,
+# 2 = Disagree, 999 = Not sure, 888 = Not asked (the last two are left out).
 #
 # Districts: 116th Congress lines. The 117th used the same lines except North Carolina, so items
 # compared with 117th Congress House votes skip NC districts (NC still counts toward the state).
@@ -18,9 +20,9 @@ survey: Nationscape 2019-2021
 congress: 116
 district_congress: 116
 district_lines_also: [117]
-state_column: state                 # PROVISIONAL
-district_column: congress_district  # PROVISIONAL
-weight_column: weight               # PROVISIONAL
+state_column: state
+district_column: congress_district
+weight_column: weight
 
 source:
   title: Democracy Fund + UCLA Nationscape, 2019-2021
@@ -37,7 +39,7 @@ final_questions: &final
 items:
   impeach_trump:
     question: Impeach President Trump (December 2019)
-    note: Asked both before and after the House's vote; all weeks are pooled.
+    note: Asked in 26 weeks, both before and after the House's vote; all are pooled.
     votes:
       house:
         date: 2019-12-18
@@ -105,7 +107,7 @@ items:
     votes:
       house: {congress: 117, bill: [hr, 1808], questions: *final}
 
-  muslim_ban:
+  muslimban:
     question: Ban people from predominantly Muslim countries from entering the United States
     match: related
     note: The NO BAN Act limited such entry bans, so voting Nay was the side closer to the proposal.
@@ -134,3 +136,42 @@ items:
       # Passage in each chamber, not the failed veto override that followed.
       house:  {bill: [hjres, 46], date: 2019-02-26, support_side: nay}
       senate: {bill: [hjres, 46], date: 2019-03-14, support_side: nay}
+
+  impeach_convict_trump:
+    question: Impeach and convict President Trump (January 2021)
+    note: Asked once, on January 21, 2021, after the House's vote and before the Senate's trial.
+    skip_district_states: [NC]
+    votes:
+      house:
+        congress: 117
+        bill: [hres, 24]
+        questions: *final
+        note: The House's January 13, 2021 vote to impeach (H.Res. 24).
+      senate:
+        congress: 117
+        date: 2021-02-13
+        expect: "57-43"
+        note: The Senate's vote on conviction; 67 votes were needed, so it failed.
+
+  DC_statehood:
+    question: Grant statehood and representation in Congress to Washington DC (Washington, D.C. Admission Act)
+    note: Asked once, on January 21, 2021. Compared with the House's June 2020 vote.
+    votes:
+      house: {bill: [hr, 51], questions: *final}
+
+  DC_statehood_2021:
+    column: DC_statehood
+    question: Grant statehood and representation in Congress to Washington DC (Washington, D.C. Admission Act, 2021)
+    note: The same question, compared with the House's second vote on the bill, in April 2021.
+    skip_district_states: [NC]
+    votes:
+      house: {congress: 117, bill: [hr, 51], questions: *final}
+
+  ban_chokeholds:
+    question: Ban police officers from using chokeholds
+    match: related
+    note: >-
+      Asked in July 2020 and January 2021. The George Floyd Justice in Policing Act banned chokeholds
+      among many other changes to policing, so its votes are shown but not counted.
+    votes:
+      house: {bill: [hr, 7120], questions: *final}
