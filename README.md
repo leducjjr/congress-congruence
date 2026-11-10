@@ -1,16 +1,19 @@
 # congress-congruence
 
-Measures how often members of the U.S. House and Senate vote with the
-estimated majority opinion of their own constituents, per vote and over time.
+The code behind [US Congress vs Voters](https://uscongressvsvoters.org): an independent, non-partisan
+site that shows how members of the U.S. House and Senate voted, and, where independent surveys asked
+about the same proposals, how each vote compared with the estimated opinion of the people they
+represent. Every figure links back to its source.
 
-See the systems inventory doc for the full design. This repo implements it in phases:
+What it does:
 
-| Phase | Scope | Status |
-| --- | --- | --- |
-| 1 | Schema, member loader, House + Senate vote ingestion, validation | Built; live download not yet run |
-| 2 | Voteview historical backfill and reconciliation | Not started |
-| 3 | CES opinion data, item-to-vote linking, district/state estimates, comparison | First version built (CES 2025) |
-| 4 | API, dashboard, address-to-district lookup | First member panel and API built |
+- Loads House and Senate roll-call votes (House Clerk, Senate via Voteview), members and terms, and
+  bill titles and subjects (Congress.gov), each checked against official totals.
+- Matches survey questions to the votes on the same proposals (Cooperative Election Study 2008-2025,
+  Program for Public Consultation, state ballot measures; Nationscape 2019-2021 in progress).
+- Estimates support in every state and congressional district, using Census district profiles.
+- Serves a read-only API and a static site: member pages, state pages, comparing two members, all
+  votes with filters, and a party-blind view.
 
 For where every dataset comes from and every special case in handling it, see
 [docs/DATA_SOURCES.md](docs/DATA_SOURCES.md).
@@ -281,3 +284,20 @@ Tests that need a database use `TEST_DATABASE_URL` and are skipped if it isn't s
   files were reachable but last updated Oct 1, 2026.
 - In Voteview, paired and announced positions are stored as `not_voting`, with
   their meaning kept in `raw_position`, matching how the official tallies count them.
+
+## Contributing
+
+Corrections and suggestions are welcome: see [CONTRIBUTING.md](CONTRIBUTING.md). Security problems:
+[SECURITY.md](SECURITY.md).
+
+## License
+
+Copyright (C) 2026 the US Congress vs Voters project.
+
+This program is free software: you can redistribute it and/or modify it under the terms of the
+GNU Affero General Public License as published by the Free Software Foundation, version 3. It is
+distributed WITHOUT ANY WARRANTY; see [LICENSE](LICENSE). If you run a modified version as a public
+website, the AGPL requires you to offer its source code to that site's users.
+
+The license covers the code. The site's name is not licensed for use by other sites. The source
+data belongs to its publishers, under their own terms (see docs/DATA_SOURCES.md).

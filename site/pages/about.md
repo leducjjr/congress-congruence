@@ -31,7 +31,11 @@ state by state and district by district. This site does that, openly and the sam
 Everything that produces this site is public: the code that downloads and checks each source, the
 methods that estimate opinion, the rules that match survey questions to votes, and every special case
 we've handled. Read it, check it, or reuse it: [source code]({{source_url}}). The full technical notes on
-each data source are in [DATA_SOURCES.md]({{source_url}}/blob/main/docs/DATA_SOURCES.md).
+each data source are in [DATA_SOURCES.md]({{source_url}}/blob/main/docs/DATA_SOURCES.md). The code is
+published under the [GNU Affero General Public License v3]({{source_url}}/blob/main/LICENSE): anyone may
+reuse it, and anyone who runs a changed version as a public site must publish their changes too.
+Suggestions and corrections are welcome as [issues]({{source_url}}/issues); every change is reviewed
+before it's made.
 
 ## Independence {#independence}
 

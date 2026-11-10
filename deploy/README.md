@@ -257,7 +257,7 @@ then `sudo systemctl restart congress-api`. Without these the form tells visitor
 **Titan (Bluehost Professional Email) refuses logins from programs by default** (SMTP error 535 even
 with the right password). In webmail, signed in as `feedback@`: Settings (gear) → **Enable Titan on
 other apps**. Two-factor authentication must also be off for `feedback@` (it blocks other apps); keep
-it on for `admin@` and `contact@`. To test the login without sending anything:
+it on for the admin mailbox and `contact@`. To test the login without sending anything:
 
 ```bash
 python -c "from congress_congruence import config; import os, smtplib, ssl; s = smtplib.SMTP_SSL('smtp.titan.email', 465, context=ssl.create_default_context(), timeout=20); s.login(os.environ['FEEDBACK_SMTP_USER'], os.environ['FEEDBACK_SMTP_PASSWORD']); print('login OK'); s.quit()"

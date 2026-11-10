@@ -7,6 +7,7 @@ name = "congress-congruence"
 version = "0.1.0"
 description = "Tracks how often members of Congress vote with their constituents"
 requires-python = ">=3.11"
+license = { text = "AGPL-3.0-only" }
 
 [tool.setuptools.packages.find]
 where = ["src"]

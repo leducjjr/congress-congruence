@@ -1,0 +1,24 @@
+name: Suggest a feature or a source
+description: A new way to view the data, or a survey source to add
+title: "Suggestion: "
+labels: ["suggestion"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The site shows data people can check, never verdicts of its own, and never mentions or links
+        to a political party. Suggestions that fit those rules are very welcome.
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would you like to see?
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Who would it help, and how?
+  - type: input
+    id: source
+    attributes:
+      label: For a new survey source, a link to its published data and terms of use

@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Contact the site without GitHub
+    url: https://uscongressvsvoters.org/contact.html
+    about: Corrections, questions and suggestions by email or the contact form
+  - name: Report a security problem
+    url: https://uscongressvsvoters.org/.well-known/security.txt
+    about: Please email security reports rather than opening a public issue

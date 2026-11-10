@@ -1,0 +1,34 @@
+name: Report a data error
+description: A vote, member record, survey match or estimate that looks wrong
+title: "Data error: "
+labels: ["data error"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you. Every report is checked against the original source. Fixes that change a figure
+        on the site are listed in the [corrections log](https://uscongressvsvoters.org/corrections.html).
+  - type: input
+    id: page
+    attributes:
+      label: Page
+      description: The address of the page, if you have it
+      placeholder: https://uscongressvsvoters.org/...
+  - type: input
+    id: what
+    attributes:
+      label: Member, vote or survey question
+      placeholder: e.g. Rep. ... (TX-7), H.R. 8 on Feb 27, 2019, CES 2022 CC22_350a
+    validations:
+      required: true
+  - type: textarea
+    id: wrong
+    attributes:
+      label: What looks wrong, and what you expected
+    validations:
+      required: true
+  - type: textarea
+    id: source
+    attributes:
+      label: Source
+      description: A link to the official record or published data that shows the correct figure
