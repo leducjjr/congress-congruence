@@ -1,7 +1,5 @@
 ---
 title: Features
-# Not built until its screenshots (site/static/features/) are in place.
-draft: true
 description: What you can do on US Congress vs Voters - see how your members voted, compare them with the people they represent, compare two members, browse every vote, and hide party labels.
 head: |
   <style>
@@ -28,6 +26,7 @@ head: |
     .feature li { margin: 3px 0; }
     .feature .try { font-weight: 600; color: var(--mark); }
     .shot { margin: 0; }
+    .shot a { display: block; }
     .shot picture, .shot img { display: block; width: 100%; height: auto; border-radius: 12px; border: 1px solid var(--rule);
       box-shadow: 0 10px 30px rgb(0 0 0 / 0.10); background: var(--surface); }
     .shot figcaption { font-size: 0.82rem; color: var(--ink-soft); margin-top: 8px; }
@@ -69,8 +68,8 @@ main_class: features-page
     <a class="try" href="index.html#TX/C001091">See an example →</a>
   </div>
   <figure class="shot">
-    <picture><source media="(max-width: 760px)" srcset="features/member-mobile.png">
-      <img src="features/member.png" alt="A member page showing recent votes and how surveyed votes compared with the district" loading="lazy" width="1280" height="900"></picture>
+    <a href="features/member.png" title="Open full size"><picture><source media="(max-width: 760px)" srcset="features/member-mobile.png" width="390" height="844">
+      <img src="features/member.png" alt="A member page showing recent votes and how surveyed votes compared with the district" loading="lazy" width="1280" height="900"></picture></a>
     <figcaption>A representative's page, with real data from this site.</figcaption>
   </figure>
 </article>
@@ -88,8 +87,8 @@ main_class: features-page
     <a class="try" href="index.html?parties=hidden#TX/V000134">Try it →</a>
   </div>
   <figure class="shot">
-    <picture><source media="(max-width: 760px)" srcset="features/party-blind-mobile.png">
-      <img src="features/party-blind.png" alt="A member page with party labels hidden" loading="lazy" width="1280" height="900"></picture>
+    <a href="features/party-blind.png" title="Open full size"><picture><source media="(max-width: 760px)" srcset="features/party-blind-mobile.png" width="390" height="844">
+      <img src="features/party-blind.png" alt="A member page with party labels hidden" loading="lazy" width="1280" height="900"></picture></a>
     <figcaption>The same kind of page with party labels hidden.</figcaption>
   </figure>
 </article>
@@ -107,8 +106,8 @@ main_class: features-page
     <a class="try" href="compare.html?a=V000134&amp;b=C001091">Compare two Texas representatives →</a>
   </div>
   <figure class="shot">
-    <picture><source media="(max-width: 760px)" srcset="features/compare-mobile.png">
-      <img src="features/compare.png" alt="Two members compared side by side" loading="lazy" width="1280" height="900"></picture>
+    <a href="features/compare.png" title="Open full size"><picture><source media="(max-width: 760px)" srcset="features/compare-mobile.png" width="390" height="844">
+      <img src="features/compare.png" alt="Two members compared side by side" loading="lazy" width="1280" height="900"></picture></a>
     <figcaption>Two members compared: attendance, votes cast together, and where they split.</figcaption>
   </figure>
 </article>
@@ -126,8 +125,8 @@ main_class: features-page
     <a class="try" href="state.html?s=TX">See Texas →</a>
   </div>
   <figure class="shot">
-    <picture><source media="(max-width: 760px)" srcset="features/state-mobile.png">
-      <img src="features/state.png" alt="A state page listing its members of Congress" loading="lazy" width="1280" height="900"></picture>
+    <a href="features/state.png" title="Open full size"><picture><source media="(max-width: 760px)" srcset="features/state-mobile.png" width="390" height="844">
+      <img src="features/state.png" alt="A state page listing its members of Congress" loading="lazy" width="1280" height="900"></picture></a>
     <figcaption>A state page.</figcaption>
   </figure>
 </article>
@@ -145,8 +144,8 @@ main_class: features-page
     <a class="try" href="surveyed.html">Browse surveyed votes →</a>
   </div>
   <figure class="shot">
-    <picture><source media="(max-width: 760px)" srcset="features/surveyed-mobile.png">
-      <img src="features/surveyed.png" alt="A survey question with support by district and each member's vote" loading="lazy" width="1280" height="900"></picture>
+    <a href="features/surveyed.png" title="Open full size"><picture><source media="(max-width: 760px)" srcset="features/surveyed-mobile.png" width="390" height="844">
+      <img src="features/surveyed.png" alt="A survey question with support by district and each member's vote" loading="lazy" width="1280" height="900"></picture></a>
     <figcaption>One survey question: support where each member lives, and how they voted.</figcaption>
   </figure>
 </article>
@@ -164,8 +163,8 @@ main_class: features-page
     <a class="try" href="votes.html">Browse all votes →</a>
   </div>
   <figure class="shot">
-    <picture><source media="(max-width: 760px)" srcset="features/votes-mobile.png">
-      <img src="features/votes.png" alt="The All votes page with filters" loading="lazy" width="1280" height="900"></picture>
+    <a href="features/votes.png" title="Open full size"><picture><source media="(max-width: 760px)" srcset="features/votes-mobile.png" width="390" height="844">
+      <img src="features/votes.png" alt="The All votes page with filters" loading="lazy" width="1280" height="900"></picture></a>
     <figcaption>All votes, with filters.</figcaption>
   </figure>
 </article>
