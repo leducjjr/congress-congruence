@@ -28,9 +28,22 @@ items:
     title: Send the Senate webmaster access request
     due: 2026-11-20
     lead_days: [3, 0]
+    done: true          # sent Nov 10, 2026 to webmaster@sec.senate.gov
     details: |
       senate.gov refuses the server's requests, so Senate votes come from Voteview, which can trail by
       days to weeks. The request asks the Senate to allow the server; it can link the public code.
+
+  - id: senate-access-follow-up
+    title: Check whether senate.gov now lets the server download Senate votes
+    due: 2026-11-24
+    lead_days: [0]
+    details: |
+      The access request went to webmaster@sec.senate.gov on November 10, 2026. Check for a reply, and
+      test from the server whether the official files now download:
+        curl -sI https://www.senate.gov/legislative/LIS/roll_call_votes/vote1192/vote_119_2_00001.xml | head -1
+      "200" means access works: ask Claude to switch the Senate job to the official files. "403"
+      means still blocked; with no reply, a short follow-up to the same address is reasonable.
+      Set done: true here once settled.
 
   - id: ballot-2026-certified
     title: Finish loading the 2026 ballot measures

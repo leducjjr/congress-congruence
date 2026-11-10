@@ -102,7 +102,7 @@ Principles that apply to every source:
 - **Why Voteview.**
   - senate.gov refuses downloads from server addresses (HTTP 403, every request), and the
     Congress.gov API has no Senate votes yet.
-  - A request for access has been drafted to the Senate webmaster; it isn't sent yet.
+  - Access requested from the Senate webmaster (webmaster@sec.senate.gov) on Nov 10, 2026; awaiting a reply.
   - Voteview lags the official record by days to weeks. When first checked (7 Nov 2026), its
     Senate files were last updated 1 Oct 2026.
 - **Same IDs as the official files.** Voteview rows reuse the official session and roll

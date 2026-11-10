@@ -55,8 +55,8 @@ See `docs/SITE_PLAN.md`: header, footer and reference pages, leading with the vo
   use the GitHub private address. Public site on uscongressvsvoters.org (deploy/nginx-prod.conf),
   www/.com/.online redirect to it; dev site unchanged.
 - Still open: DMARC on .org from `p=none` to `p=quarantine` once reports are clean; renew
-  security.txt Expires yearly (now 2027-11-01); send the Senate webmaster access request (can
-  link the public repo); optional: host the Public Sans font on the server instead of Google Fonts;
+  security.txt Expires yearly (now 2027-11-01); Senate webmaster access request sent Nov 10, 2026,
+  awaiting a reply; optional: host the Public Sans font on the server instead of Google Fonts;
   consider a separate production server.
 - Later, if wanted: automated AI review of pull requests (Claude Code GitHub Action), triggered
   only by a maintainer comment, with the site's rules as its checklist; needs Actions back on and
@@ -66,7 +66,7 @@ See `docs/SITE_PLAN.md`: header, footer and reference pages, leading with the vo
 1. Done: state ballot-measure results, 2024 (docs/DATA_SOURCES.md 5a). Add 2026 once states certify.
 2. Done: Nationscape 2019-2021 loaded Nov 10 (18 items, 20 votes; docs/DATA_SOURCES.md 5b). AP VoteCast: permission requested Nov 10, 2026; on hold until AP-NORC replies
    (its terms bar AI tools from processing the data).
-Also open: send the Senate access email; healthchecks.io and NOTIFY_URL;
+Also open: healthchecks.io and NOTIFY_URL;
 an "About this data" page; separate production server; stock-trading overlay.
 Earlier Congresses: built (ingest/backfill.py, seat history on the panel); load with the deploy steps.
 
