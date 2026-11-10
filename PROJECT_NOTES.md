@@ -60,7 +60,9 @@ See `docs/SITE_PLAN.md`: header, footer and reference pages, leading with the vo
 
 ## Next candidates (agreed order)
 1. Done: state ballot-measure results, 2024 (docs/DATA_SOURCES.md 5a). Add 2026 once states certify.
-2. AP VoteCast (check reuse terms first).
+2. Nationscape (2019-2021): loader built (ingest/nationscape.py); confirm variable names from the
+   inspect report, then link and load. AP VoteCast: on hold pending AP-NORC's written permission
+   (its terms bar AI tools from processing the data).
 Also open: make the repo public + send the Senate access email; healthchecks.io and NOTIFY_URL;
 an "About this data" page; separate production server; stock-trading overlay.
 Earlier Congresses: built (ingest/backfill.py, seat history on the panel); load with the deploy steps.

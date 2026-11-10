@@ -1,0 +1,136 @@
+# Democracy Fund + UCLA Nationscape (July 2019 - February 2021): policy questions matched to votes.
+# Respondents were asked whether they agree or disagree with each proposal; Agree = support.
+# `nationscape link` prints what each rule matched, for review; `nationscape load` estimates opinion.
+#
+# STATUS: the variable names below (and the state, district and weight columns) are PROVISIONAL.
+# They come from the published question list, not the data file. Confirm each against
+# logs/nationscape_inspect.txt before loading; load stops and lists any name it can't find.
+#
+# Districts: 116th Congress lines. The 117th used the same lines except North Carolina, so items
+# compared with 117th Congress House votes skip NC districts (NC still counts toward the state).
+# Items reading the same question for a second vote set `column:` to that question's variable.
+#
+# Left out (no floor vote on the proposal asked about): Medicare for All, Green New Deal (the Senate's
+# only vote failed 0-57 with most sponsors voting Present), debt-free college, taxes on high incomes,
+# the estate tax, paid maternity leave, reparations, the abortion questions, candidate-preference items.
+
+survey: Nationscape 2019-2021
+congress: 116
+district_congress: 116
+district_lines_also: [117]
+state_column: state                 # PROVISIONAL
+district_column: congress_district  # PROVISIONAL
+weight_column: weight               # PROVISIONAL
+
+source:
+  title: Democracy Fund + UCLA Nationscape, 2019-2021
+  fielded: weekly, July 2019 to February 2021
+  about_url: https://www.voterstudygroup.org/data/nationscape
+
+final_questions: &final
+  - On Passage
+  - Passage of the Bill
+  - Suspend the Rules and Pass
+  - Agreeing to the Resolution
+  - Joint Resolution
+
+items:
+  impeach_trump:
+    question: Impeach President Trump (December 2019)
+    note: Asked both before and after the House's vote; all weeks are pooled.
+    votes:
+      house:
+        date: 2019-12-18
+        expect: "230-197"
+        note: Article I of the impeachment resolution (H.Res. 755), abuse of power.
+
+  guns_bg:
+    question: Require background checks for all gun purchases (Bipartisan Background Checks Act)
+    votes:
+      house: {bill: [hr, 8], questions: *final}
+
+  guns_bg_2021:
+    column: guns_bg
+    question: Require background checks for all gun purchases (Bipartisan Background Checks Act, 2021)
+    note: The same question, compared with the House's second vote on the bill, in March 2021.
+    skip_district_states: [NC]
+    votes:
+      house: {congress: 117, bill: [hr, 8], questions: *final}
+
+  minwage:
+    question: Raise the minimum wage to $15 an hour (Raise the Wage Act)
+    votes:
+      house: {bill: [hr, 582], questions: *final}
+
+  dreamers:
+    question: Create a path to citizenship for undocumented immigrants brought here as children (American Dream and Promise Act)
+    note: The bill also covers people with temporary protected status.
+    votes:
+      house: {bill: [hr, 6], questions: *final}
+
+  dreamers_2021:
+    column: dreamers
+    question: Create a path to citizenship for undocumented immigrants brought here as children (American Dream and Promise Act, 2021)
+    note: The same question, compared with the House's second vote on the bill, in March 2021. The bill also covers people with temporary protected status.
+    skip_district_states: [NC]
+    votes:
+      house: {congress: 117, bill: [hr, 6], questions: *final}
+
+  marijuana:
+    question: Legalize marijuana (MORE Act)
+    note: The bill removes marijuana from the federal list of controlled substances.
+    votes:
+      house: {bill: [hr, 3884], questions: *final}
+
+  ban_assault_rifles:
+    question: Ban assault rifles (Assault Weapons Ban of 2022)
+    note: Compared with the House's July 2022 vote, about a year after the last interviews.
+    skip_district_states: [NC]
+    votes:
+      house: {congress: 117, bill: [hr, 1808], questions: *final}
+
+  # Decision pending: same proposal (counted), or related (shown only)? Set to related until decided.
+  trans_military:
+    question: Allow transgender people to serve in the military
+    match: related
+    note: The House's vote was on a non-binding resolution opposing the ban on transgender service members (H.Res. 124).
+    votes:
+      house: {bill: [hres, 124], questions: *final}
+
+  limit_magazines:
+    question: Limit gun magazines to 10 bullets
+    match: related
+    note: The 2022 assault weapons bill also limited magazines, but not to the same number.
+    skip_district_states: [NC]
+    votes:
+      house: {congress: 117, bill: [hr, 1808], questions: *final}
+
+  muslim_ban:
+    question: Ban people from predominantly Muslim countries from entering the United States
+    match: related
+    note: The NO BAN Act limited such entry bans, so voting Nay was the side closer to the proposal.
+    votes:
+      house: {bill: [hr, 2214], questions: *final, support_side: nay}
+
+  right_to_work:
+    question: Allow people to work in unionized workplaces without paying union dues
+    match: related
+    note: The PRO Act would have overridden state right-to-work laws, among much else, so voting Nay was the side closer to the proposal.
+    votes:
+      house: {bill: [hr, 2474], questions: *final, support_side: nay}
+
+  cap_carbon:
+    question: Cap carbon emissions to combat climate change
+    match: related
+    note: The Climate Action Now Act kept the U.S. in the Paris climate agreement; it set no cap itself.
+    votes:
+      house: {bill: [hr, 9], questions: *final}
+
+  wall:
+    question: Build a wall on the southern border
+    match: related
+    note: The vote was on ending the 2019 national emergency used to fund the wall, so voting Nay was the side closer to the proposal.
+    votes:
+      # Passage in each chamber, not the failed veto override that followed.
+      house:  {bill: [hjres, 46], date: 2019-02-26, support_side: nay}
+      senate: {bill: [hjres, 46], date: 2019-03-14, support_side: nay}

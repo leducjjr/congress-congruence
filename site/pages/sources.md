@@ -110,6 +110,25 @@ Only members from the states and districts it surveyed get these comparisons.
 
 <div data-surveys="Program for Public Consultation"><p class="note">Loading the list…</p></div>
 
+### Democracy Fund + UCLA Nationscape {#democracy-fund-ucla-nationscape}
+
+**Who runs it:** the Democracy Fund Voter Study Group and UCLA.
+[voterstudygroup.org/data/nationscape](https://www.voterstudygroup.org/data/nationscape)
+
+**What it is:** a survey of about 6,250 people a week from July 2019 to February 2021, nearly half a
+million interviews in all, conducted online and weighted to Census figures. Respondents said whether
+they agree or disagree with specific policy proposals.
+
+**What we use:** the answers to the proposals Congress actually voted on, from the published data
+files, pooled across the weeks each question was asked. Its size allows an estimate for nearly every
+congressional district. Districts are as drawn for the 116th Congress (2019-2020), which the 117th
+also used everywhere except North Carolina, so North Carolina's representatives are compared only on
+votes from 2019-2020.
+
+**Loaded on this site:**
+
+<div data-surveys="Democracy Fund + UCLA Nationscape"><p class="note">Loading the list…</p></div>
+
 ## State ballot measures {#state-ballot-measures}
 
 **What they are:** questions a state's voters decided themselves on the ballot, such as a

@@ -42,7 +42,8 @@ def test_reference_anchors_the_panel_links_to_exist(tmp_path):
     build_site.build(tmp_path, "x")
     sources = (tmp_path / "sources.html").read_text()
     # The panel links each survey organization to sources.html#<slug of its name>.
-    for anchor in ("surveys", "cooperative-election-study", "program-for-public-consultation"):
+    for anchor in ("surveys", "cooperative-election-study", "program-for-public-consultation",
+                   "democracy-fund-ucla-nationscape"):
         assert f'id="{anchor}"' in sources
     assert 'data-surveys="Program for Public Consultation"' in sources
     assert 'id="too-close-to-call"' in (tmp_path / "glossary.html").read_text()
