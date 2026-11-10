@@ -18,6 +18,15 @@ It's an independent civic project. It isn't affiliated with the U.S. government,
 party or campaign, or any survey organization, and it takes no advertising. The same methods, wording and
 design apply to every member. See [About](about.html).
 
+## Is this site made with AI? {#ai}
+
+Partly. Most of the code and first drafts of the text are written by Claude, an AI model made by
+Anthropic, working at the maintainer's direction. A person decides what the site uses and shows:
+the sources, which survey questions match which votes, the wording, and what gets corrected, and
+reviews changes before they're published. No AI is involved when you use the site: every figure is
+calculated by fixed code from published data, and the code is public so anyone can check it.
+More on the [About](about.html#how-built) page.
+
 ## Does "voted against the majority" mean a member did something wrong? {#wrong}
 
 No. Members weigh many things: their own judgment, the details of a bill, what they promised voters,
