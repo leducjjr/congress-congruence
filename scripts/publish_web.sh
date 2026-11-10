@@ -42,10 +42,13 @@ if [ "${1:-}" = "pages" ]; then
   exit 0
 fi
 
+# Ask for the sudo password now, not after the few minutes the member pages take to build.
+sudo -v
 rm -rf build/site
 "$py" scripts/build_site.py --out build/site --version "$version"
 pages=yes
 build_pages build/site || { pages=no; echo "WARNING: couldn't build the member and state pages (is the API running?). Publishing the rest; the pages already there are kept." >&2; }
+sudo -v      # asks again only if the build outlasted sudo's timeout
 for dir in $targets; do
   sudo mkdir -p "$dir"
   sudo cp -r build/site/. "$dir/"          # includes .well-known/
