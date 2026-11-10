@@ -85,13 +85,40 @@ Certificates renew automatically.
 
 Open `https://dev.yourdomain.org`, sign in with `john` and the dev-site password.
 
+## Going public (uscongressvsvoters.org)
+
+The public site is a second nginx site on the same server, using the same API, with no password.
+The dev site stays as it is, for trying changes first.
+
+1. **DNS (Bluehost, each domain's DNS settings):** for `uscongressvsvoters.org`,
+   `uscongressvsvoters.com` and `uscongressvsvoters.online`, set the **A record** for host `@` and
+   for host `www` to the server's address (the same value as the `dev` record). Change only A
+   records: the .org's MX, SPF, DKIM and DMARC records carry its email and must stay. Wait until
+   `dig +short uscongressvsvoters.org www.uscongressvsvoters.com uscongressvsvoters.online` shows
+   the server's address for every name.
+2. **Site and certificate:**
+
+```bash
+cd ~/congress-congruence && git pull
+scripts/publish_web.sh prod
+sudo cp deploy/nginx-prod.conf /etc/nginx/sites-available/congress
+sudo ln -sf /etc/nginx/sites-available/congress /etc/nginx/sites-enabled/congress
+sudo nginx -t && sudo systemctl reload nginx
+sudo certbot --nginx --redirect --agree-tos --no-eff-email -m contact@uscongressvsvoters.org \
+  -d uscongressvsvoters.org -d www.uscongressvsvoters.org \
+  -d uscongressvsvoters.com -d www.uscongressvsvoters.com \
+  -d uscongressvsvoters.online -d www.uscongressvsvoters.online
+```
+
+3. From then on, publish to both: `scripts/publish_web.sh both`.
+
 ## Later updates
 
 ```bash
 git pull
 pip install -r requirements.txt
 sudo systemctl restart congress-api     # if API code changed
-scripts/publish_web.sh                  # if the panel or any page changed (builds the site)
+scripts/publish_web.sh both             # if the panel or any page changed (dev only: no argument)
 ```
 
 ## If something's wrong
