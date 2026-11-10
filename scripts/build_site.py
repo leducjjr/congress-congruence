@@ -99,6 +99,7 @@ def build(out: Path, version: str) -> list[str]:
                 .replace("{{slug}}", path.stem)
                 .replace("{{main_class}}", meta.get("main_class", "prose" if path.suffix == ".md" else ""))
                 .replace("{{nav}}", nav_html(name))
+                .replace("{{features_current}}", ' aria-current="page"' if name == "features.html" else "")
                 .replace("{{body}}", render_body(path, body)))
         for key, value in settings.items():                  # {{source_url}} etc. from site/site.yaml
             page = page.replace("{{" + key + "}}", html.escape(str(value), quote=True))
