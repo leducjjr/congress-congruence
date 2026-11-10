@@ -71,6 +71,17 @@ items:
       (logs/members.log), that the first House and Senate votes of the new Congress appear on
       All votes, and that departed members show under former members.
 
+  - id: newsroom-pitches-2027
+    title: Send the newsroom pitches for the new Congress
+    due: 2027-01-12
+    lead_days: [7, 0]
+    details: |
+      The 120th Congress begins January 3, 2027, a natural news hook. Ask Claude to draft short
+      pitches to state data desks (for example the Texas Tribune and Houston Chronicle), each with
+      an angle for that state from its states/<name>/ page, linking the Press page (press.html).
+      Send them from press@. Check first that the new members' pages are up (new-congress-2027).
+      Set done: true once they're sent.
+
   - id: ces-2026-release
     title: Look for the 2026 Cooperative Election Study release
     due: 2027-04-15
