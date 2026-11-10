@@ -112,7 +112,11 @@ items:
     match: related
     note: The NO BAN Act limited such entry bans, so voting Nay was the side closer to the proposal.
     votes:
-      house: {bill: [hr, 2214], questions: *final, support_side: nay}
+      house:
+        date: 2020-07-22
+        expect: "233-183"
+        support_side: nay
+        note: The House passed the NO BAN Act inside an unrelated bill (H.R. 2486) used as the vehicle, so the record's title doesn't match.
 
   right_to_work:
     question: Allow people to work in unionized workplaces without paying union dues
