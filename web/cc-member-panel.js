@@ -312,6 +312,18 @@
     return (Math.round(n / 1000) * 1000).toLocaleString();
   }
 
+  // How long someone held a seat: "13 years, 11 months", "4 years", "3 months".
+  const monthsBetween = (a, b) => {
+    const [y1, m1, d1] = a.slice(0, 10).split("-").map(Number), [y2, m2, d2] = b.slice(0, 10).split("-").map(Number);
+    return Math.max(0, (y2 - y1) * 12 + (m2 - m1) - (d2 < d1 ? 1 : 0));
+  };
+  const tenureWords = months => {
+    const y = Math.floor(months / 12), mo = months % 12;
+    const ys = y ? `${y} year${y === 1 ? "" : "s"}` : "", ms = mo ? `${mo} month${mo === 1 ? "" : "s"}` : "";
+    if (!y && !mo) return "less than a month";
+    return [ys, ms].filter(Boolean).join(", ");
+  };
+  const tenure = (a, b) => tenureWords(monthsBetween(a, b));
   const fmtDate = (iso, opts = { month: "short", day: "numeric", year: "numeric" }) =>
     new Date(iso + "T12:00:00").toLocaleDateString("en-US", opts);
 
@@ -408,19 +420,24 @@
     // member list (whole career), with a note when the votes loaded here start later than that.
     historyLine(m) {
       const seats = m.seats || [];
-      if (seats.length < 2 && !(seats.length === 1 && seats[0].first_congress < seats[0].last_congress)) return null;
+      if (!seats.length) return null;
       const year = d => d.slice(0, 4);
+      const today = new Date().toISOString().slice(0, 10);
       const parties = new Set(seats.map(x => x.party));
       // Each seat stays on one line; the separators between them are where long histories wrap.
       const spells = seats.map((x, i) => [h("span", { class: "spell" },
         `${x.chamber === "senate" ? "Senator for" : "Representative for"} ${x.seat.replace("-", "\u2011")}`,
         parties.size > 1 && !partiesHidden() ? ` (${x.party})` : "",
-        `, ${year(x.start)}\u2013${x.end ? year(x.end) : "now"}`), i < seats.length - 1 ? " · " : ""]);
+        `, ${year(x.start)}\u2013${x.end ? year(x.end) : "now"}`,
+        h("span", { class: "tenure" }, ` (${tenure(x.start, x.end || today)})`)), i < seats.length - 1 ? " · " : ""]);
+      // More than one seat: the whole time in Congress too (gaps between seats aren't counted).
+      const months = seats.reduce((n, x) => n + monthsBetween(x.start, x.end || today), 0);
+      const total = seats.length > 1 ? ` In Congress ${tenureWords(months)} in all.` : "";
       const loaded = (m.service || []).map(p => p.congress);
       const earliest = Math.min(...seats.map(x => x.first_congress));
       const note = loaded.length && earliest < Math.min(...loaded)
         ? ` Votes on this site start with the ${ordinal(Math.min(...loaded))} Congress.` : "";
-      return h("p", { class: "history" }, h("strong", {}, "Seats held: "), spells, ".", note);
+      return h("p", { class: "history" }, h("strong", {}, "Seats held: "), spells, ".", total, note);
     }
 
     foldable(key, summary, ...body) {

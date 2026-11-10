@@ -113,6 +113,21 @@ def view_switch(interactive: str, current: str = "summary") -> str:
             f'<span aria-current="page" title="A plain summary page, quick to load, with a preview when the link is shared">Summary</span></span></span>')
 
 
+def months_between(a: str, b: str) -> int:
+    (y1, m1, d1), (y2, m2, d2) = ((int(x) for x in d[:10].split("-")) for d in (a, b))
+    return max(0, (y2 - y1) * 12 + (m2 - m1) - (d2 < d1))
+
+
+def tenure_words(months: int) -> str:
+    """How long someone held a seat (same wording as the interactive page): "13 years, 11 months", "4 years"."""
+    y, mo = divmod(months, 12)
+    ys = f"{y} year{'s' if y != 1 else ''}" if y else ""
+    ms = f"{mo} month{'s' if mo != 1 else ''}" if mo else ""
+    if not y and not mo:
+        return "less than a month"
+    return ", ".join(x for x in (ys, ms) if x)
+
+
 def state_slug(code: str) -> str:
     return slugify(STATE_NAMES.get(code, code))
 
@@ -210,12 +225,15 @@ def member_page(m: dict, opinion: dict | None, votes: list[dict], slugs: dict, t
 
     seats = m.get("seats") or []
     if seats:
-        bits = []
+        bits, months = [], 0
         for x in seats:
             r = "Senator for" if x["chamber"] == "senate" else "Representative for"
             span = f"{str(x['start'])[:4]}–{str(x['end'])[:4] if x.get('end') else 'now'}"
-            bits.append(f"{r} {e(x['seat'])}, {span}")
-        p.append(f'<p><strong>Seats held:</strong> {" · ".join(bits)}.</p>')
+            n = months_between(str(x["start"]), str(x.get("end") or today.isoformat()))
+            months += n
+            bits.append(f"{r} {e(x['seat'])}, {span} ({tenure_words(n)})")
+        total = f" In Congress {tenure_words(months)} in all." if len(seats) > 1 else ""
+        p.append(f'<p><strong>Seats held:</strong> {" · ".join(bits)}.{total}</p>')
     pop = m.get("population")
     if pop and pop.get("residents"):
         if m["chamber"] == "senate":

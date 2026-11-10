@@ -153,3 +153,15 @@ def test_regular_pages_have_link_previews(tmp_path):
     assert "<base" not in home
     assert (tmp_path / "preview.png").exists()
     assert "Sitemap: https://uscongressvsvoters.org/sitemap.xml" in (tmp_path / "robots.txt").read_text()
+
+
+def test_time_in_office():
+    assert bp.tenure_words(bp.months_between("2012-11-13", "2026-11-10")) == "13 years, 11 months"
+    assert bp.tenure_words(bp.months_between("2019-01-03", "2023-01-03")) == "4 years"
+    assert bp.tenure_words(bp.months_between("2026-11-01", "2026-11-10")) == "less than a month"
+
+
+def test_member_page_says_how_long_in_each_seat(tmp_path):
+    built(tmp_path)
+    page = (tmp_path / "members" / "ted-cruz" / "index.html").read_text()
+    assert "Senator for TX, 2013–now (13 years, 10 months)." in page
