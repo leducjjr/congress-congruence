@@ -95,14 +95,17 @@ Principles that apply to every source:
 | | |
 |---|---|
 | Official source | Senate LIS XML, `senate.gov/legislative/LIS/roll_call_votes/...` |
-| Source actually used | [Voteview](https://voteview.com) (UCLA), which republishes every roll call |
-| Fetched | Daily at 06:40 UTC (`senate-voteview` job), reloading the current Congress |
-| Code | `ingest/voteview.py`; the official parser is ready in `ingest/vote_parsers.py` |
+| Sources used | The official files (`senate` job, daily 06:20 UTC), and [Voteview](https://voteview.com) (UCLA) for any vote not yet loaded from them (`senate-voteview` job, daily 06:40 UTC) |
+| Code | `ingest/votes.py` (official files), `ingest/voteview.py`; Voteview never overwrites an official row |
 
-- **Why Voteview.**
-  - senate.gov refuses downloads from server addresses (HTTP 403, every request), and the
-    Congress.gov API has no Senate votes yet.
-  - Access requested from the Senate webmaster (webmaster@sec.senate.gov) on Nov 10, 2026; awaiting a reply.
+- **Official files since Nov 10, 2026.**
+  - senate.gov refused downloads from the server (HTTP 403, every request) until the Senate
+    webmaster (webmaster@sec.senate.gov) allowed it, Nov 10, 2026.
+  - Its bot protection still refuses a server that asks too fast: ~97 files at one a second
+    worked, then 403. So the `senate` job waits 6 seconds between files and takes at most 60 per
+    run (`SENATE_PAUSE_SECONDS`, `SENATE_MAX_PER_RUN`); a 403 ends that day's run, keeping what
+    loaded, and the next run carries on. Until the official files catch up, Voteview fills the rest.
+- **Voteview** stays as the fallback, and for earlier Congresses.
   - Voteview lags the official record by days to weeks. When first checked (7 Nov 2026), its
     Senate files were last updated 1 Oct 2026.
 - **Same IDs as the official files.** Voteview rows reuse the official session and roll

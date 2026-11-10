@@ -6,7 +6,8 @@
 # Jobs:
 #   members          refresh the member list (new members must exist before their votes load)
 #   house            load any new House votes for the current session (official Clerk files)
-#   senate-voteview  reload the current Congress's Senate votes from Voteview
+#   senate           load new Senate votes from the official senate.gov files (slowly; see ingest/votes.py)
+#   senate-voteview  reload the current Congress's Senate votes from Voteview (never replaces official ones)
 #   backup           nightly database backup (scripts/backup_db.sh)
 #   survey-watch     monthly check for new survey releases; drafts them for review, never loads
 #   bills            daily: titles, policy areas and subject tags from Congress.gov for voted-on bills
@@ -54,6 +55,10 @@ case "$job" in
         exec >>"$log" 2>&1
         run flock -n "$lock" python -m congress_congruence.ingest.votes sync house current
         ;;
+    senate)
+        exec >>"$log" 2>&1
+        run flock -n "$lock" python -m congress_congruence.ingest.votes sync senate current
+        ;;
     senate-voteview)
         exec >>"$log" 2>&1
         run flock -n "$lock" python -m congress_congruence.ingest.voteview senate current
@@ -79,7 +84,7 @@ case "$job" in
         run flock -n "$lock" scripts/publish_web.sh pages
         ;;
     *)
-        echo "usage: $0 members|house|senate-voteview|backup|survey-watch|bills|reminders|pages" >&2
+        echo "usage: $0 members|house|senate|senate-voteview|backup|survey-watch|bills|reminders|pages" >&2
         exit 2
         ;;
 esac

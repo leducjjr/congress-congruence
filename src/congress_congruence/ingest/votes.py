@@ -36,6 +36,11 @@ log = logging.getLogger(__name__)
 
 USER_AGENT = "congress-congruence/0.1 (+https://github.com/leducjjr/congress-congruence)"
 REQUEST_PAUSE_SECONDS = 1.0     # be polite to the chambers' servers
+# senate.gov's bot protection refuses a server that asks too fast (it let ~97 files through at
+# one a second, Nov 10, 2026). So Senate files go slower, and at most this many in one run; the
+# next daily run carries on where this one stopped, and Voteview fills any gap meanwhile.
+SENATE_PAUSE_SECONDS = 6.0
+SENATE_MAX_PER_RUN = 60
 SOURCE = {"house": "house_clerk", "senate": "senate_lis"}
 MAX_MEMBERS = {"house": 441, "senate": 100}   # House: 435 seats + 6 delegates
 
@@ -230,8 +235,8 @@ def download(url: str, session: requests.Session) -> bytes | None:
             return None
         if resp.status_code == 403:
             raise PermissionError(
-                f"{url} refused the request (403). The Senate's site blocks server addresses; "
-                "use the Voteview loader for Senate votes until access is granted.")
+                f"{url} refused the request (403). senate.gov refuses servers that ask too often "
+                "or that it hasn't allowed; the next run tries again.")
         resp.raise_for_status()
         body = resp.content
         if not looks_missing(body):
@@ -292,10 +297,17 @@ def sync(conn, chamber: str, congress: int, session_no: int) -> dict[str, int]:
                     "and session=%s and source <> 'voteview'", (chamber, congress, session_no))
         have = {row[0] for row in cur.fetchall()}
     http, loaded, failed, vacated, roll = http_session(), 0, 0, 0, 1
+    pause = SENATE_PAUSE_SECONDS if chamber == "senate" else REQUEST_PAUSE_SECONDS
+    cap = SENATE_MAX_PER_RUN if chamber == "senate" else None
+    refused = False
     while True:
         if roll in have:
             roll += 1
             continue
+        if cap and loaded + vacated >= cap:
+            log.info("%s %s-%s: %d files this run, the most per run; the next run carries on at vote %d",
+                     chamber, congress, session_no, cap, roll)
+            break
         if loaded and loaded % 25 == 0:
             log.info("%s %s-%s: %d loaded so far, now at vote %d", chamber, congress, session_no, loaded, roll)
         try:
@@ -305,6 +317,11 @@ def sync(conn, chamber: str, congress: int, session_no: int) -> dict[str, int]:
             log.error("%s", e)
             failed += 1
             n = -1
+        except PermissionError as e:
+            # senate.gov's bot protection: stop for today, keep what loaded, try again next run.
+            log.warning("%s; stopping this run at vote %d (%d loaded)", e, roll, loaded)
+            refused = True
+            break
         except ValueError as e:
             # Not a vote file at all (an unfamiliar error page, say). Stop cleanly rather
             # than guess; the raw file is saved for a look, and the next run resumes here.
@@ -326,8 +343,8 @@ def sync(conn, chamber: str, congress: int, session_no: int) -> dict[str, int]:
         elif n >= 0:
             loaded += 1
         roll += 1
-        time.sleep(REQUEST_PAUSE_SECONDS)
-    return {"loaded": loaded, "failed": failed, "vacated": vacated, "next_roll": roll}
+        time.sleep(pause)
+    return {"loaded": loaded, "failed": failed, "vacated": vacated, "next_roll": roll, "refused": refused}
 
 
 # ---------------------------------------------------------------- command line

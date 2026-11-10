@@ -13,7 +13,10 @@
 # House votes: every 2 hours. When nothing is new this is one request plus two short retries.
 17 */2 * * *    $HOME/congress-congruence/scripts/run_job.sh house
 
-# Senate votes from Voteview: daily. Three files, a few MB.
+# Senate votes from the official senate.gov files: daily, slowly (at most 60 files, 6 s apart).
+20 6 * * *      $HOME/congress-congruence/scripts/run_job.sh senate
+
+# Senate votes from Voteview: daily, for any vote not yet loaded from the official files.
 40 6 * * *      $HOME/congress-congruence/scripts/run_job.sh senate-voteview
 
 # Bill titles and subject tags from Congress.gov: daily, after the vote jobs.

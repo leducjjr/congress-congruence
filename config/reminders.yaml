@@ -37,6 +37,7 @@ items:
     title: Check whether senate.gov now lets the server download Senate votes
     due: 2026-11-24
     lead_days: [0]
+    done: true          # access granted Nov 10, 2026; the daily `senate` job uses the official files
     details: |
       The access request went to webmaster@sec.senate.gov on November 10, 2026. Check for a reply, and
       test from the server whether the official files now download:
