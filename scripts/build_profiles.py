@@ -621,7 +621,24 @@ def main() -> None:
     if args.site_image:
         site_image(Path(args.site_image))
         return
-    build(Path(args.out), http_getter(args.api), args.version, images=False if args.no_images else None)
+    get = http_getter(args.api)
+    wait_for_api(get)
+    build(Path(args.out), get, args.version, images=False if args.no_images else None)
+
+
+def wait_for_api(get, seconds: int = 60) -> None:
+    """Right after `systemctl restart congress-api` the API takes a few seconds to answer."""
+    import time
+    from urllib.error import URLError
+    for tries in range(seconds // 2):
+        try:
+            get("/v1/health")
+            return
+        except (URLError, ConnectionError, OSError):
+            if tries == 0:
+                print("Waiting for the API to answer…", flush=True)
+            time.sleep(2)
+    raise SystemExit(f"The API didn't answer within {seconds} seconds. Check: systemctl status congress-api")
 
 
 if __name__ == "__main__":
