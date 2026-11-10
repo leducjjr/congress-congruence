@@ -67,6 +67,10 @@ Four commitments to state plainly and keep visible:
 | **Corrections** | How to report an error; a dated log of corrections | Credibility for a neutral site |
 | **Privacy** | No accounts, no cookies, no analytics that identify visitors; how address lookup works | Short and specific |
 
+**Page width.** Text on every page fills the screen width, inside the side padding. No page
+caps the width of its text (main, sections, headings, paragraphs, lists, or page/lede/hero classes);
+`tests/test_site.py` fails if one does. Only non-text items (forms, pictures, buttons) may be limited.
+
 **Party-blind view.** A "Hide party labels" switch in the header removes party names, party splits
 and party figures everywhere (pages mark such text `class="party"`, or redraw on the `cc-party-blind`
 event). The choice is kept in the visitor's browser; `?parties=hidden` in a link turns it on.

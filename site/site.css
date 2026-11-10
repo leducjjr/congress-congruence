@@ -63,7 +63,10 @@ a:hover { color: var(--mark); }
 .site-search li.empty { cursor: default; color: var(--ink-soft); }
 @media (max-width: 560px) { .site-search { flex-basis: 100%; margin-left: 0; } }
 
-/* Main */
+/* Main
+   Site rule: page text fills the width of the screen (inside the side padding of .wrap).
+   Don't give main, its sections or its paragraphs a max-width; tests/test_site.py checks this.
+   Limit only things that aren't running text (a form, a picture, a button row). */
 main { padding-top: 28px; padding-bottom: 48px; }
 main:focus { outline: none; }
 main.prose { max-width: none; }
@@ -137,7 +140,7 @@ a.tag { white-space: normal; max-width: 100%; margin: 2px 4px 2px 0; border-radi
 .show-more:disabled { opacity: 0.6; cursor: default; }
 .more-row { margin: 12px 0 0; }
 .page-head h1 { font-size: 1.35rem; margin: 0 0 4px; }
-.page-head .lede { color: var(--ink-soft); margin: 0 0 18px; max-width: 48rem; }
+.page-head .lede { color: var(--ink-soft); margin: 0 0 18px; }
 .controls { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: end; margin: 0 0 18px; font-size: 0.9rem; }
 .controls label { display: grid; gap: 3px; color: var(--ink-soft); }
 .controls label.check { display: flex; align-items: center; gap: 6px; }

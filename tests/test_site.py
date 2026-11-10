@@ -1,6 +1,7 @@
 """The website builder: every page gets the shared frame, its nav item marked, and versioned assets."""
 
 import importlib.util
+import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -57,3 +58,31 @@ def test_party_blind_switch_on_every_page(tmp_path):
     for page in tmp_path.glob("*.html"):
         text = page.read_text()
         assert 'id="party-blind"' in text and 'data-party-blind' in text, page.name
+
+
+TEXT_SELECTORS = re.compile(r"(^|[\s,>])(main|section|article|p|h[1-6]|ul|ol|li|blockquote|\.[\w-]*(page|lede|prose|hero|text|head)[\w-]*)\b")
+
+
+def text_width_limits(css: str) -> list[str]:
+    """Rules (outside @media) that cap the width of running text: max-width on main, its
+    sections, headings, paragraphs and lists, or on page, lede, prose, hero, text and head classes."""
+    css = re.sub(r"/\*.*?\*/", "", css, flags=re.S)
+    css = re.sub(r"@media[^{]*\{(?:[^{}]*\{[^{}]*\})*[^{}]*\}", "", css)
+    found = []
+    for selector, body in re.findall(r"([^{}]+)\{([^{}]*)\}", css):
+        if re.search(r"(^|;|\s)max-width\s*:(?!\s*(none|100%))", body) and TEXT_SELECTORS.search(selector.strip()):
+            found.append(selector.strip())
+    return found
+
+
+def test_page_text_fills_the_screen_width():
+    """Site rule: text adjusts to the screen width; no page caps it (see site.css, "Main")."""
+    sheets = {"site.css": (build_site.SITE / "site.css").read_text()}
+    for page in (build_site.SITE / "pages").glob("*"):
+        if page.suffix in (".md", ".html"):
+            meta, _ = build_site.read_page(page)
+            sheets[page.name] = meta.get("head", "")
+    limits = {name: text_width_limits(css) for name, css in sheets.items()}
+    assert {k: v for k, v in limits.items() if v} == {}
+    assert text_width_limits(".x-page { max-width: 60rem; } .card img { max-width: 20rem; } main.prose { max-width: none; }"
+                             " @media (max-width: 500px) { p { max-width: 10rem; } }") == [".x-page"]
