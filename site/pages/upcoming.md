@@ -11,15 +11,6 @@ they're estimates. Have an idea? <a href="contact.html#feedback">Tell us</a>.</p
 
 ## In progress {#in-progress}
 
-### A new survey: Nationscape, 2019-2021 {#nationscape}
-
-Nationscape, from the Democracy Fund Voter Study Group and UCLA, interviewed about 6,250 people a week
-for 85 weeks: nearly half a million interviews. It asked whether people agree or disagree with specific
-proposals, several of which the House voted on in 2019-2022, among them background checks for gun
-sales, a $15 minimum wage, a path to citizenship for people brought to the U.S. as children, and the
-2019 impeachment. Its size allows an estimate for nearly every congressional district. It will appear as
-its own source, never combined with the others.
-
 ### 2026 state ballot measures {#ballot-2026}
 
 The measures voters decided on November 3, 2026, compared with how their senators (and the
@@ -49,6 +40,9 @@ republished, and only its questions about proposals Congress actually voted on a
 
 ## Recently added {#recent}
 
+- **Nationscape, 2019-2021:** nearly half a million interviews from the Democracy Fund Voter Study
+  Group and UCLA, compared with House and Senate votes on background checks, the minimum wage, the
+  Dream Act, marijuana, DC statehood, both impeachments and more. Shown as its own source.
 - **Hide party labels:** a switch on every page that removes party names and party figures, so members
   can be judged on their votes alone.
 - **Compare two members** side by side.
