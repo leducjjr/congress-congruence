@@ -9,7 +9,7 @@ Pages are Markdown (.md) or HTML (.html) files that start with a short header:
     description: One sentence for search results and link previews.
     ---
 
-Optional header keys: head (extra tags for <head>), main_class.
+Optional header keys: head (extra tags for <head>), main_class, draft (true = not built yet).
 Settings in site/site.yaml (e.g. source_url) fill {{source_url}}-style placeholders on any page.
 Markdown pages get the "prose" layout; headings get link anchors; {#id} after a heading sets
 its anchor. The panel script, site.css and site.js are copied alongside, and every reference
@@ -89,6 +89,8 @@ def build(out: Path, version: str) -> list[str]:
         if path.suffix not in (".md", ".html"):
             continue
         meta, body = read_page(path)
+        if meta.get("draft"):
+            continue
         name = path.stem + ".html"
         page = (frame
                 .replace("{{title}}", html.escape(meta["title"]))
