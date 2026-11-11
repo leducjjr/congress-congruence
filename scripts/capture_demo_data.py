@@ -61,6 +61,7 @@ def main() -> int:
         for v in (r or {}).get("votes", [])[:3]:
             get(f"/v1/votes/{v['roll_call_id']}")
     get("/v1/search", q="background check*", limit=40, member=MEMBERS[:2])
+    get("/v1/numbers", congress=119, chamber="house")                 # Members by the numbers
     OUT.parent.mkdir(parents=True, exist_ok=True)
     with gzip.open(OUT, "wt") as f:
         json.dump(saved, f, default=str)
