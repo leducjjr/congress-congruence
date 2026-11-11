@@ -29,7 +29,7 @@ state_column: v1002
 source:
   title: Cooperative Congressional Election Study 2006
   fielded: fall 2006, before and after the election
-  dataset_url: https://hdl.handle.net/1902.1/14002
+  dataset_url: https://dataverse.harvard.edu/dataset.xhtml?persistentId=hdl:1902.1/14002
   about_url: https://tischcollege.tufts.edu/ces
 
 items:
