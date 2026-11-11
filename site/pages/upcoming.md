@@ -11,15 +11,6 @@ they're estimates. Have an idea? <a href="contact.html#feedback">Tell us</a>.</p
 
 ## In progress {#in-progress}
 
-### Voting records back to 1989 {#records-1989}
-
-Every House and Senate vote from 1989 through 2006 (the 101st to 109th Congresses), added to the
-records that now start in 2007. House votes come from the Clerk's official files, which begin in 1990;
-Senate votes and the House's 1989 votes from Voteview. Longer-serving members' pages will show their
-full records from 1989, along with attendance and party-line voting for each of those Congresses. Survey
-comparisons still start in 2006, since that's when surveys large enough to estimate each state's and
-district's opinion begin. Added one Congress at a time over the coming days.
-
 ### 2026 state ballot measures {#ballot-2026}
 
 The measures voters decided on November 3, 2026, compared with how their senators (and the
@@ -64,6 +55,14 @@ republished, and only its questions about proposals Congress actually voted on a
 ## Recently added {#recent}
 
 Newest first. Follow these and every correction in a feed reader: [updates feed (RSS)](feed.xml).
+
+**November 11, 2026**
+
+- **Voting records back to 1989.** Every House and Senate vote from 1989 through 2006, about 16,000
+  more votes. Longer-serving members' pages now show their records from 1989, with attendance and
+  party-line voting for each Congress. Survey comparisons still start in 2006, when surveys large
+  enough to estimate each state's and district's opinion begin. See [Sources](sources.html#house).
+- **How long each member has held each seat,** and their time in Congress in all.
 
 **November 10, 2026**
 
