@@ -97,6 +97,29 @@ def parse(people: list[dict]) -> ParsedMembers:
     return out
 
 
+CORRECTIONS_FILE = Path(__file__).resolve().parents[3] / "config" / "term_corrections.yaml"
+
+
+def apply_corrections(terms: list[dict], corrections: list[dict]) -> list[str]:
+    """Fix start dates (and districts) the member list gets wrong, each from a cited official source.
+    A correction applies only while the list still gives the date it corrects, so an upstream fix
+    is never overwritten. Returns a line per correction for the load log."""
+    notes = []
+    for c in corrections:
+        listed = str(c["listed_start"])
+        match = [t for t in terms if t["bioguide_id"] == c["bioguide"] and t["chamber"] == c["chamber"]
+                 and str(t["start_date"]) == listed]
+        if not match:
+            notes.append(f"Correction not needed any more (list changed): {c['bioguide']} {listed}")
+            continue
+        for t in match:
+            t["start_date"] = str(c["start"])
+            if "district" in c:
+                t["district"] = c["district"]
+        notes.append(f"Corrected {c['bioguide']} start {listed} -> {c['start']}")
+    return notes
+
+
 # Senate seats of each class run six-year terms ending January 3 of these years (and every 6 after).
 CLASS_TERM_END_YEAR = {1: 2025, 2: 2027, 3: 2029}
 
@@ -205,6 +228,9 @@ def run(source_dir: Path, conn=None) -> dict[str, int]:
     for name in SOURCE_FILES:
         people += read_yaml(source_dir / name)
     parsed = parse(people)
+    if CORRECTIONS_FILE.exists():
+        for note in apply_corrections(parsed.terms, read_yaml(CORRECTIONS_FILE) or []):
+            log.info(note)
     for who in hold_appointed_seats(parsed.terms, date.today()):
         log.info("Kept serving until a successor is listed: %s", who)
     for id_type, value, kept, skipped in parsed.duplicate_ids:

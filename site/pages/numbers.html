@@ -59,7 +59,7 @@ main_class: numbers-page
       official member list, so it includes service before the votes on this site begin (1989). A member who left and
       came back gets the time they served, not the years in between, and is marked "returned". For a past Congress,
       it's counted up to the day that Congress ended, so "Longest in Congress" means longest at the time.</li>
-    <li><strong>In this seat since</strong> is when their unbroken stretch in the seat they held that Congress began.</li>
+    <li><strong>Started in this seat</strong> is when their unbroken stretch in the seat shown began. The line under the date is how long they had held it: as of today, or for a past Congress, as of its last day. A renumbered district counts as a new seat.</li>
     <li><strong>Didn't vote</strong> is the share of the chamber's roll-call votes, while they were a member that
       Congress, where they cast no vote. Members miss votes for many reasons: illness, family, a campaign, or votes
       held on the day they were sworn in or left. It isn't a measure of effort.</li>
@@ -180,7 +180,7 @@ addEventListener("DOMContentLoaded", () => {
       el("td", { class: "nw", "data-label": "Seat" }, m.seat || ""),
       el("td", { class: "party", "data-label": "Party" }, partyText(m)),
       tenureCell(m),
-      el("td", { class: "nw", "data-label": "In this seat since" }, longDate(m.seat_since),
+      el("td", { class: "nw", "data-label": "Started in this seat" }, longDate(m.seat_since),
         el("span", { class: "sub" }, years(m.months_in_seat))),
       el("td", { class: "n", "data-label": "Votes" }, m.votes_total.toLocaleString()),
       el("td", { class: "n", "data-label": "Didn't vote" }, pctText(m.missed_pct),
@@ -193,7 +193,7 @@ addEventListener("DOMContentLoaded", () => {
       el("thead", {}, el("tr", {},
         el("th", { scope: "col", class: "rank" }, el("span", { class: "sr" }, "Position")),
         head("name", "Member"), head("seat", "Seat"), el("th", { scope: "col", class: "party" }, "Party"),
-        head("tenure", "Time in Congress", "n"), head("seat_t", "In this seat since"),
+        head("tenure", "Time in Congress", "n"), head("seat_t", "Started in this seat"),
         head("votes", "Votes", "n"), head("missed", "Didn't vote", "n"), head("yea", "Yea", "n"),
         head("nay", "Nay", "n"), hidden ? null : head("party", "With their party", "n party"))),
       el("tbody", {}, rows));

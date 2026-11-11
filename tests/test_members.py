@@ -120,3 +120,24 @@ def test_appointed_senator_serves_until_a_successor_is_listed():
     assert members.hold_appointed_seats([running], date(2026, 6, 1)) == [] and running["end_date"] == date(2026, 11, 3)
     assert members.regular_end(1, date(2025, 2, 1)) == date(2031, 1, 3)
     assert members.regular_end(2, date(2025, 2, 1)) == date(2027, 1, 3)
+
+
+def test_corrections_fix_special_election_starts():
+    from congress_congruence.ingest import members as m
+    terms = [{"bioguide_id": "P000034", "chamber": "house", "start_date": "1987-01-06", "district": 6},
+             {"bioguide_id": "P000034", "chamber": "house", "start_date": "1989-01-03", "district": 3}]
+    notes = m.apply_corrections(terms, [{"bioguide": "P000034", "chamber": "house", "listed_start": "1987-01-06",
+                                         "start": "1988-11-08", "district": 3}])
+    assert terms[0]["start_date"] == "1988-11-08" and terms[0]["district"] == 3 and terms[1]["start_date"] == "1989-01-03"
+    assert notes == ["Corrected P000034 start 1987-01-06 -> 1988-11-08"]
+    # Once the list is fixed upstream, the correction steps aside.
+    assert "not needed" in m.apply_corrections(terms, [{"bioguide": "P000034", "chamber": "house",
+                                                        "listed_start": "1987-01-06", "start": "1988-11-08"}])[0]
+
+
+def test_corrections_file_is_valid():
+    import datetime as dt
+    from congress_congruence.ingest import members as m
+    for c in m.read_yaml(m.CORRECTIONS_FILE):
+        assert {"bioguide", "chamber", "listed_start", "start", "source"} <= set(c), c
+        assert dt.date.fromisoformat(str(c["start"])) > dt.date.fromisoformat(str(c["listed_start"])), c

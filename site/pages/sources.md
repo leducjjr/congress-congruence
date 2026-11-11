@@ -65,6 +65,11 @@ used by news organizations and researchers.
 **How we use it:** every vote is matched to the seat the member held **on the day of the vote**, so
 redrawn districts, special elections and moves between the House and Senate are handled correctly.
 
+**Corrections:** a few members who arrived by special election are listed as starting on the
+Congress's opening day. Where an official record gives the real date, we use it, so time in office
+isn't overstated. Each correction and its source is listed in
+[the corrections file](https://github.com/leducjjr/congress-congruence/blob/main/config/term_corrections.yaml).
+
 ### Bills {#bills}
 
 Bill names and links go to [Congress.gov](https://www.congress.gov/), the official site for federal

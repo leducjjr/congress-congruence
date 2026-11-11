@@ -1,0 +1,33 @@
+# Corrections to the member list (congress-legislators), applied each time members are loaded.
+#
+# Each entry names a term by member, chamber and the start date the list gives, then the corrected
+# values and the official source. If the list is fixed upstream (the listed start no longer matches),
+# the entry is skipped and the load log says so; then it can be removed.
+#
+# All four below came into the House by special election partway through a Congress, but the list
+# gives that Congress's opening day as the start.
+
+- bioguide: H000874          # Steny H. Hoyer, MD-5
+  chamber: house
+  listed_start: 1981-01-05
+  start: 1981-05-19
+  source: "House History, Art & Archives: elected to the 97th Congress by special election; service began May 19, 1981"
+
+- bioguide: P000197          # Nancy Pelosi, CA-5
+  chamber: house
+  listed_start: 1987-01-06
+  start: 1987-06-02
+  source: "Special election runoff held June 2, 1987, to fill the vacancy caused by the death of Sala Burton"
+
+- bioguide: P000034          # Frank Pallone, Jr.
+  chamber: house
+  listed_start: 1987-01-06
+  start: 1988-11-08
+  district: 3
+  source: "Congressional Directory (2007): elected to the 100th Congress by special election on November 8, 1988, to fill the vacancy caused by the death of James J. Howard (NJ-3)"
+
+- bioguide: M000133          # Edward J. Markey, MA-7
+  chamber: house
+  listed_start: 1975-01-14
+  start: 1976-11-02
+  source: "Elected by special election November 2, 1976, to fill the vacancy caused by the death of Torbert Macdonald"
