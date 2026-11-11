@@ -24,6 +24,15 @@ head: |
     .feature ul { margin: 0 0 12px; padding-left: 1.1em; color: var(--ink-soft); }
     .feature li { margin: 3px 0; }
     .feature .try { font-weight: 600; color: var(--mark); }
+    .qa-card { background: var(--surface); border: 1px solid var(--rule); border-radius: 12px; padding: 18px 20px;
+      box-shadow: 0 10px 30px rgb(0 0 0 / 0.10); }
+    .qa-card .qa-title { font-weight: 700; margin: 0 0 8px; }
+    .qa-card ul { list-style: none; margin: 0; padding: 0; }
+    .qa-card li { border-top: 1px solid var(--rule); }
+    .qa-card li:first-child { border-top: 0; }
+    .qa-card a { display: block; padding: 10px 0; font-weight: 600; text-decoration: none; }
+    .qa-card a:hover, .qa-card a:focus-visible { text-decoration: underline; }
+    .qa-card a::after { content: " →"; color: var(--mark); }
     .shot { margin: 0; }
     .shot a { display: block; }
     .shot picture, .shot img { display: block; width: 100%; height: auto; border-radius: 12px; border: 1px solid var(--rule);
@@ -130,6 +139,32 @@ main_class: features-page
       <img src="features/compare.png" alt="Two members compared side by side" loading="lazy" width="1280" height="900"></picture></a>
     <figcaption>Two members compared: attendance, votes cast together, and where they split.</figcaption>
   </figure>
+</article>
+
+<article class="feature">
+  <div class="text">
+    <p class="kicker">Members by the numbers</p>
+    <h2>Every member of a Congress in one sortable table</h2>
+    <p>Time in Congress, time in their seat, votes cast, votes missed, and how often they voted Yea, Nay,
+      or with their party. Pick a Congress back to 1989 and either chamber, then sort by any column.</p>
+    <ul>
+      <li>Members who left and came back get the time they served, not the years in between</li>
+      <li>Past Congresses are measured as of that time, so "longest serving" means then</li>
+      <li>The same counts as each member's own page</li>
+    </ul>
+    <a class="try" href="numbers.html">Open Members by the numbers →</a>
+  </div>
+  <div class="qa-card">
+    <p class="qa-title">Questions it answers</p>
+    <ul>
+      <li><a href="numbers.html?chamber=house&amp;sort=tenure&amp;dir=desc">Who has served longest in the House?</a></li>
+      <li><a href="numbers.html?chamber=senate&amp;sort=tenure&amp;dir=asc">Who are the newest senators?</a></li>
+      <li><a href="numbers.html?chamber=house&amp;sort=missed&amp;dir=desc">Which representatives missed the most votes?</a></li>
+      <li><a href="numbers.html?chamber=senate&amp;sort=missed&amp;dir=asc">Which senators missed the fewest?</a></li>
+      <li><a href="numbers.html?chamber=house&amp;sort=nay&amp;dir=desc">Who voted Nay most often?</a></li>
+      <li><a href="numbers.html?congress=101&amp;chamber=senate&amp;sort=tenure&amp;dir=desc">Who had served longest in the Senate in 1989?</a></li>
+    </ul>
+  </div>
 </article>
 
 <article class="feature">

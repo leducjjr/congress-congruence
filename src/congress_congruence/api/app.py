@@ -769,12 +769,20 @@ def numbers(response: Response, congress: int | None = None, chamber: str | None
         raise HTTPException(404, "No votes loaded for that Congress")
     rows = fetch(q.MEMBER_NUMBERS, {"congress": congress, "chamber": chamber})
     today = date.today()
+    # Time in office is as of the Congress shown: today for the current one, its last day for a past
+    # one (a new Congress begins January 3 of odd years), so "longest in Congress" means at the time.
+    congress_end = date(1789 + 2 * congress, 1, 3)
+    as_of = min(today, congress_end)
     terms: dict[str, list[dict]] = {}
     for t in fetch(q.TERMS_FOR, {"ids": [r["bioguide_id"] for r in rows]}):
         terms.setdefault(t["bioguide_id"], []).append(t)
     members = []
     for r in rows:
-        spells = seat_history(terms.get(r["bioguide_id"], []), today)        # newest first
+        all_spells = seat_history(terms.get(r["bioguide_id"], []), today)                 # newest first
+        spells = [s for s in all_spells if s["start"] < as_of]
+        end_of = lambda s: min(s["end"] or today, as_of)
+        # The seat they held in this Congress: the stretch covering their last vote in it.
+        held = next((s for s in spells if s["start"] <= r["last_vote"] <= (s["end"] or today)), spells[0] if spells else None)
         # Breaks in service: a gap of more than a month between one seat's end and the next's start
         # (a member who left Congress and came back). Moving seat or chamber without a gap isn't one.
         breaks = []
@@ -786,12 +794,13 @@ def numbers(response: Response, congress: int | None = None, chamber: str | None
             "chamber": r["chamber"], "state": r["state"], "district": r["district"],
             "seat": q.seat_label(r["state"], r["district"], r["chamber"]) if r["state"] else None,
             "party": r["party"], "caucus": r["caucus"],
-            "serving": bool(spells) and spells[0]["end"] is None,
+            "serving": bool(all_spells) and all_spells[0]["end"] is None,
             "first_sworn_in": spells[-1]["start"] if spells else None,
             "breaks": list(reversed(breaks)),                                      # oldest first
-            "months_in_congress": sum(months_between(s["start"], s["end"] or today) for s in spells),
-            "seat_since": spells[0]["start"] if spells else None,
-            "months_in_seat": months_between(spells[0]["start"], spells[0]["end"] or today) if spells else None,
+            "as_of": as_of,
+            "months_in_congress": sum(months_between(s["start"], end_of(s)) for s in spells),
+            "seat_since": held["start"] if held else None,
+            "months_in_seat": months_between(held["start"], end_of(held)) if held else None,
             "votes_total": r["votes_total"], "yea": r["yea"], "nay": r["nay"], "present": r["present"],
             "not_voting": r["not_voting"],
             "yea_pct": pct(r["yea"], r["votes_total"]), "nay_pct": pct(r["nay"], r["votes_total"]),
@@ -802,7 +811,7 @@ def numbers(response: Response, congress: int | None = None, chamber: str | None
         })
     members.sort(key=lambda m: (m["chamber"] != "senate", m["state"] or "", m["district"] or 0, m["last_name"]))
     response.headers["Cache-Control"] = CACHE
-    return {"congress": congress, "chamber": chamber, "congresses": available, "members": members}
+    return {"congress": congress, "chamber": chamber, "as_of": as_of, "congresses": available, "members": members}
 
 
 @app.get("/v1/states/{code}")

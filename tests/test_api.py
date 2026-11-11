@@ -330,3 +330,36 @@ def test_numbers_returning_member(client):
         with psycopg.connect(url) as c, c.cursor() as cur:
             cur.execute("delete from core.term where bioguide_id = 'R000001' and start_date = '2011-01-03'")
             c.commit()
+
+
+def test_numbers_past_congress_is_measured_as_of_then(client, monkeypatch):
+    """Looking back at a Congress after it ended: time in office stops at its last day, and a seat
+    taken later doesn't count, while still-serving members stay marked as serving."""
+    from datetime import date as real_date
+    import congress_congruence.api.app as app_module
+
+    class Later(real_date):
+        @classmethod
+        def today(cls):
+            return real_date(2029, 6, 1)
+
+    import psycopg
+    url = os.environ["TEST_DATABASE_URL"]
+    with psycopg.connect(url) as c, c.cursor() as cur:       # R000001 later moves on to a Senate seat
+        cur.execute("update core.term set end_date = '2027-01-03' where bioguide_id = 'R000001' and start_date = '2025-01-03'")
+        cur.execute("""insert into core.term (bioguide_id, chamber, state, district, party, start_date, end_date)
+                       values ('R000001', 'senate', 'TX', null, 'Republican', '2027-01-03', '2099-01-03')""")
+        c.commit()
+    monkeypatch.setattr(app_module, "date", Later)
+    try:
+        d = client.get("/v1/numbers?congress=119").json()
+        assert d["as_of"] == "2027-01-03"
+        for m in d["members"]:
+            assert m["months_in_congress"] == m["months_in_seat"] == 24, m        # Jan 2025 to Jan 2027
+            assert m["seat_since"] == "2025-01-03" and m["seat"].startswith("TX-"), m
+            assert m["serving"], m                                                  # fixture terms run to 2099
+    finally:
+        with psycopg.connect(url) as c, c.cursor() as cur:
+            cur.execute("delete from core.term where bioguide_id = 'R000001' and chamber = 'senate'")
+            cur.execute("update core.term set end_date = '2099-01-03' where bioguide_id = 'R000001' and start_date = '2025-01-03'")
+            c.commit()

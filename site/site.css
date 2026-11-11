@@ -28,7 +28,8 @@ a:hover { color: var(--mark); }
 .brand { font-weight: 700; font-size: 1.1rem; text-decoration: none; letter-spacing: -0.01em; white-space: nowrap; }
 .brand span { color: var(--mark); font-weight: 600; }
 .features-btn { display: inline-block; padding: 5px 14px; border-radius: 999px; border: 1px solid var(--mark);
-  color: var(--mark); font-size: 0.88rem; font-weight: 600; text-decoration: none; white-space: nowrap; margin-left: -12px; }
+  color: var(--mark); font-size: 0.88rem; font-weight: 600; text-decoration: none; white-space: nowrap; }
+.header-btns { display: inline-flex; flex-wrap: wrap; gap: 6px; }
 .features-btn:hover, .features-btn:focus-visible { background: var(--mark); color: var(--surface); }
 .features-btn[aria-current="page"] { background: var(--mark); color: var(--surface); }
 .site-header nav ul { display: flex; flex-wrap: wrap; gap: 2px 4px; list-style: none; margin: 0; padding: 0; }

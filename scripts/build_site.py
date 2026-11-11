@@ -108,6 +108,7 @@ def wrap(frame: str, settings: dict, meta: dict, body_html: str, name: str, vers
             .replace("{{main_class}}", main_class)
             .replace("{{nav}}", nav_html(name))
             .replace("{{features_current}}", ' aria-current="page"' if name == "features.html" else "")
+            .replace("{{numbers_current}}", ' aria-current="page"' if name == "numbers.html" else "")
             .replace("{{body}}", body_html))
     if base:      # with <base href="/">, the skip link must name this page or it jumps to the home page
         page = page.replace('href="#main"', f'href="/{html.escape(url_path, quote=True)}#main"')
