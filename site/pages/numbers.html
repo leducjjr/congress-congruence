@@ -67,7 +67,8 @@ main_class: numbers-page
       up for a vote and who was in the majority, not how agreeable a member is.</li>
     <li class="party"><strong>With their party</strong> counts votes where most of their party (or the party they
       caucus with) voted one way, and how often they voted the same way. Votes where the party split evenly aren't counted.</li>
-    <li>A member who served in part of a Congress is compared on the votes while they were there. One who served in
+    <li>A member who served in part of a Congress is compared on the votes while they were there, and
+      the date they left is shown under their name. One who served in
       both chambers that Congress appears under each.</li>
   </ul>
 </section>
@@ -148,6 +149,8 @@ addEventListener("DOMContentLoaded", () => {
     return th;
   }
 
+  const chamberWord = c => c === "senate" ? "Senate" : "House";
+
   function tenureCell(m) {
     const td = el("td", { class: "n", "data-label": "Time in Congress" }, years(m.months_in_congress));
     const first = m.first_sworn_in ? `first sworn in ${longDate(m.first_sworn_in)}` : "";
@@ -176,7 +179,8 @@ addEventListener("DOMContentLoaded", () => {
     const rows = list.map((m, i) => el("tr", {},
       el("td", { class: "rank" }, sort === "seat" ? "" : String(i + 1)),
       el("td", { class: "lead" }, el("a", { href: memberHref(m) }, m.name),
-        m.serving ? null : el("span", { class: "sub" }, "no longer serving")),
+        m.left ? el("span", { class: "sub" }, `left the ${chamberWord(m.chamber)} ${longDate(m.left)}`)
+          : m.serving ? null : el("span", { class: "sub" }, "no longer serving")),
       el("td", { class: "nw", "data-label": "Seat" }, m.seat || ""),
       el("td", { class: "party", "data-label": "Party" }, partyText(m)),
       tenureCell(m),

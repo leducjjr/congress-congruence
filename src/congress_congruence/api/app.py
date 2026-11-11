@@ -800,6 +800,8 @@ def numbers(response: Response, congress: int | None = None, chamber: str | None
             "as_of": as_of,
             "months_in_congress": sum(months_between(s["start"], end_of(s)) for s in spells),
             "seat_since": held["start"] if held else None,
+            # Left this seat partway through the Congress shown (resigned, died, moved chamber).
+            "left": held["end"] if held and held["end"] and held["end"] < congress_end else None,
             "months_in_seat": months_between(held["start"], end_of(held)) if held else None,
             "votes_total": r["votes_total"], "yea": r["yea"], "nay": r["nay"], "present": r["present"],
             "not_voting": r["not_voting"],

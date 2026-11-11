@@ -383,3 +383,26 @@ def test_numbers_keeps_the_seat_when_the_last_vote_falls_after_the_term(client):
         with psycopg.connect(url) as c, c.cursor() as cur:
             cur.execute("update core.term set end_date = '2099-01-03' where bioguide_id = 'R000001' and start_date = '2025-01-03'")
             c.commit()
+
+
+def test_numbers_says_when_a_member_left_during_the_congress(client):
+    """Rubio left the Senate on January 20, 2025, after 8 votes: the row says so, instead of a bare
+    'no longer serving'. Members who stayed to the end have no date."""
+    import psycopg
+    url = os.environ["TEST_DATABASE_URL"]
+    with psycopg.connect(url) as c, c.cursor() as cur:
+        cur.execute("""select max(r.vote_date) from core.member_vote v join core.roll_call r using (roll_call_id)
+                       where v.bioguide_id = 'R000001'""")
+        last = cur.fetchone()[0]
+        cur.execute("update core.term set end_date = %s + 1 where bioguide_id = 'R000001' and start_date = '2025-01-03'", (last,))
+        c.commit()
+    try:
+        members = {x["bioguide_id"]: x for x in client.get("/v1/numbers?congress=119").json()["members"]}
+        from datetime import timedelta
+        assert members["R000001"]["left"] == (last + timedelta(days=1)).isoformat()
+        assert not members["R000001"]["serving"]
+        assert all(m["left"] is None for b, m in members.items() if b != "R000001")
+    finally:
+        with psycopg.connect(url) as c, c.cursor() as cur:
+            cur.execute("update core.term set end_date = '2099-01-03' where bioguide_id = 'R000001' and start_date = '2025-01-03'")
+            c.commit()
