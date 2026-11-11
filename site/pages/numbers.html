@@ -14,6 +14,7 @@ head: |
     .num-table th[aria-sort] button::after { content: " \25BC"; font-size: 0.7em; }
     .num-table th[aria-sort="ascending"] button::after { content: " \25B2"; }
     .num-table td.n, .num-table th.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .num-table td.nw { white-space: nowrap; }
     .num-table td.rank { color: var(--ink-soft); font-variant-numeric: tabular-nums; }
     .num-table .sub { display: block; font-size: 0.8rem; color: var(--ink-soft); }
     .table-scroll { overflow-x: auto; }
@@ -176,14 +177,14 @@ addEventListener("DOMContentLoaded", () => {
       el("td", { class: "rank" }, sort === "seat" ? "" : String(i + 1)),
       el("td", { class: "lead" }, el("a", { href: memberHref(m) }, m.name),
         m.serving ? null : el("span", { class: "sub" }, "no longer serving")),
-      el("td", { "data-label": "Seat" }, m.seat || ""),
+      el("td", { class: "nw", "data-label": "Seat" }, m.seat || ""),
       el("td", { class: "party", "data-label": "Party" }, partyText(m)),
       tenureCell(m),
-      el("td", { "data-label": "In this seat since" }, longDate(m.seat_since),
+      el("td", { class: "nw", "data-label": "In this seat since" }, longDate(m.seat_since),
         el("span", { class: "sub" }, years(m.months_in_seat))),
       el("td", { class: "n", "data-label": "Votes" }, m.votes_total.toLocaleString()),
       el("td", { class: "n", "data-label": "Didn't vote" }, pctText(m.missed_pct),
-        el("span", { class: "sub" }, m.not_voting.toLocaleString())),
+        el("span", { class: "sub" }, `${m.not_voting.toLocaleString()} vote${m.not_voting === 1 ? "" : "s"}`)),
       el("td", { class: "n", "data-label": "Yea" }, pctText(m.yea_pct)),
       el("td", { class: "n", "data-label": "Nay" }, pctText(m.nay_pct)),
       el("td", { class: "n party", "data-label": "With their party" }, pctText(m.with_party_pct))));
