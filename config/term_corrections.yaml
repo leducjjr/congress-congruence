@@ -37,3 +37,217 @@
   listed_start: 1987-01-06
   start: 1988-04-16
   source: "Congressional Directory (2001): elected by special election to the 100th Congress, April 16, 1988, to fill the vacancy caused by the resignation of Charles E. (Buddy) Roemer"
+
+# Found by scripts/check_term_starts.py (November 2026): the roll calls show each of these joined
+# partway through the Congress. Dates are the special election (House convention: service begins
+# on the day of the election), checked against the first roll call on which they were a member.
+
+- bioguide: W000428          # Jamie Whitten, MS-2
+  chamber: house
+  listed_start: 1941-01-03
+  start: 1941-11-04
+  source: "Special election November 4, 1941 (List of special elections to the U.S. House of Representatives (Wikipedia)); first roll call as a member 1941-11-18 (Voteview)"
+
+- bioguide: B000401          # Lloyd Bentsen, TX-15
+  chamber: house
+  listed_start: 1947-01-03
+  start: 1948-12-04
+  source: "Special election December 4, 1948 (List of special elections to the U.S. House of Representatives (Wikipedia)); no roll calls after it that Congress (Voteview)"
+
+- bioguide: D000355          # John D. Dingell, MI-15
+  chamber: house
+  listed_start: 1955-01-05
+  start: 1955-12-13
+  source: "Special election December 13, 1955 (List of special elections to the U.S. House of Representatives (Wikipedia)); first roll call as a member 1956-01-31 (Voteview)"
+
+- bioguide: I000025          # Daniel K. Inouye, HI-0
+  chamber: house
+  listed_start: 1959-01-07
+  start: 1959-08-21
+  source: "Hawaii became a state on August 21, 1959; first roll call as a member August 26, 1959 (Voteview)"
+
+- bioguide: G000272          # Henry González, TX-20
+  chamber: house
+  listed_start: 1961-01-03
+  start: 1961-11-04
+  source: "Special election November 4, 1961 (List of special elections to the U.S. House of Representatives (Wikipedia)); first roll call as a member 1962-01-30 (Voteview)"
+
+- bioguide: U000001          # Morris Udall, AZ-2
+  chamber: house
+  listed_start: 1961-01-03
+  start: 1961-05-02
+  source: "Special election May 2, 1961 (List of special elections to the U.S. House of Representatives (Wikipedia)); first roll call as a member 1961-05-17 (Voteview)"
+
+- bioguide: P000556          # David Pryor, AR-4
+  chamber: house
+  listed_start: 1965-01-04
+  start: 1966-11-08
+  source: "Special election November 8, 1966 (List of special elections to the U.S. House of Representatives (Wikipedia)); no roll calls after it that Congress (Voteview)"
+
+- bioguide: J000256          # Walter Jones, NC-1
+  chamber: house
+  listed_start: 1965-01-04
+  start: 1966-02-05
+  source: "Special election February 5, 1966 (List of special elections to the U.S. House of Representatives (Wikipedia)); first roll call as a member 1966-02-23 (Voteview)"
+
+- bioguide: G000105          # Joseph Gaydos, PA-20
+  chamber: house
+  listed_start: 1967-01-10
+  start: 1968-11-05
+  source: "Special election November 5, 1968 (List of special elections to the U.S. House of Representatives (Wikipedia)); no roll calls after it that Congress (Voteview)"
+
+- bioguide: O000007          # David Obey, WI-7
+  chamber: house
+  listed_start: 1969-01-03
+  start: 1969-04-01
+  source: "Special election April 1, 1969 (List of special elections to the U.S. House of Representatives (Wikipedia)); first roll call as a member 1969-04-16 (Voteview)"
+
+- bioguide: C000873          # Philip Crane, IL-13
+  chamber: house
+  listed_start: 1969-01-03
+  start: 1969-11-25
+  source: "Special election November 25, 1969 (List of special elections to the U.S. House of Representatives (Wikipedia)); first roll call as a member 1969-12-01 (Voteview)"
+
+- bioguide: R000383          # Robert Roe, NJ-8
+  chamber: house
+  listed_start: 1969-01-03
+  start: 1969-11-04
+  source: "Special election November 4, 1969 (List of special elections to the U.S. House of Representatives (Wikipedia)); first roll call as a member 1969-11-20 (Voteview)"
+
+- bioguide: B000780          # John Breaux, LA-7
+  chamber: house
+  listed_start: 1971-01-21
+  start: 1972-09-30
+  source: "Special election September 30, 1972 (List of special elections to the U.S. House of Representatives (Wikipedia)); first roll call as a member 1972-10-12 (Voteview)"
+
+- bioguide: H000456          # Henry Heinz, PA-18
+  chamber: house
+  listed_start: 1971-01-21
+  start: 1971-11-02
+  source: "Special election November 2, 1971 (List of special elections to the U.S. House of Representatives (Wikipedia)); first roll call as a member 1971-11-04 (Voteview)"
+
+- bioguide: B000592          # Corinne Boggs, LA-2
+  chamber: house
+  listed_start: 1973-01-03
+  start: 1973-03-20
+  source: "Special election March 20, 1973 (List of special elections to the U.S. House of Representatives (Wikipedia)); first roll call as a member 1973-03-29 (Voteview)"
+
+- bioguide: C000618          # Earl Coleman, MO-6
+  chamber: house
+  listed_start: 1975-01-14
+  start: 1976-11-02
+  source: "Special election November 2, 1976 (List of special elections to the U.S. House of Representatives (Wikipedia)); no roll calls after it that Congress (Voteview)"
+
+- bioguide: G000047          # Robert Garcia, NY-21
+  chamber: house
+  listed_start: 1977-01-04
+  start: 1978-02-14
+  source: "Special election February 14, 1978 (List of special elections to the U.S. House of Representatives (Wikipedia)); first roll call as a member 1978-02-21 (Voteview)"
+
+- bioguide: L000371          # Robert Livingston, LA-1
+  chamber: house
+  listed_start: 1977-01-04
+  start: 1977-08-27
+  source: "Special election August 27, 1977 (List of special elections to the U.S. House of Representatives (Wikipedia)); first roll call as a member 1977-09-08 (Voteview)"
+
+- bioguide: S000795          # Arlan Stangeland, MN-7
+  chamber: house
+  listed_start: 1977-01-04
+  start: 1977-02-22
+  source: "Special election February 22, 1977 (List of special elections to the U.S. House of Representatives (Wikipedia)); first roll call as a member 1977-03-01 (Voteview)"
+
+- bioguide: F000329          # Wyche Fowler, GA-5
+  chamber: house
+  listed_start: 1977-01-04
+  start: 1977-04-06
+  source: "Special election April 6, 1977 (List of special elections to the U.S. House of Representatives (Wikipedia)); first roll call as a member 1977-04-06 (Voteview)"
+
+- bioguide: G000417          # Sedgwick Green, NY-18
+  chamber: house
+  listed_start: 1977-01-04
+  start: 1978-02-14
+  source: "Special election February 14, 1978 (List of special elections to the U.S. House of Representatives (Wikipedia)); first roll call as a member 1978-02-21 (Voteview)"
+
+- bioguide: C000919          # George Crockett, MI-13
+  chamber: house
+  listed_start: 1979-01-15
+  start: 1980-11-04
+  source: "Special election November 4, 1980 (List of special elections to the U.S. House of Representatives (Wikipedia)); first roll call as a member 1980-11-12 (Voteview)"
+
+- bioguide: T000058          # William Tauzin, LA-3
+  chamber: house
+  listed_start: 1979-01-15
+  start: 1980-05-17
+  source: "Special election May 17, 1980 (List of special elections to the U.S. House of Representatives (Wikipedia)); first roll call as a member 1980-05-22 (Voteview)"
+
+- bioguide: P000444          # John Porter, IL-10
+  chamber: house
+  listed_start: 1979-01-15
+  start: 1980-01-22
+  source: "Special election January 22, 1980 (List of special elections to the U.S. House of Representatives (Wikipedia)); first roll call as a member 1980-01-24 (Voteview)"
+
+- bioguide: P000265          # Thomas E. Petri, WI-6
+  chamber: house
+  listed_start: 1979-01-15
+  start: 1979-04-03
+  source: "Special election April 3, 1979 (List of special elections to the U.S. House of Representatives (Wikipedia)); first roll call as a member 1979-04-09 (Voteview)"
+
+- bioguide: K000118          # Barbara Kennelly, CT-1
+  chamber: house
+  listed_start: 1981-01-05
+  start: 1982-01-12
+  source: "Special election January 12, 1982 (List of special elections to the U.S. House of Representatives (Wikipedia)); first roll call as a member 1982-02-09 (Voteview)"
+
+- bioguide: O000163          # Michael Oxley, OH-4
+  chamber: house
+  listed_start: 1981-01-05
+  start: 1981-06-25
+  source: "Special election June 25, 1981 (List of special elections to the U.S. House of Representatives (Wikipedia)); first roll call as a member 1981-07-21 (Voteview)"
+
+- bioguide: M000206          # Matthew Martínez, CA-30
+  chamber: house
+  listed_start: 1981-01-05
+  start: 1982-07-13
+  source: "Special election July 13, 1982 (List of special elections to the U.S. House of Representatives (Wikipedia)); first roll call as a member 1982-07-15 (Voteview)"
+
+- bioguide: H000388          # Charles Hayes, IL-1
+  chamber: house
+  listed_start: 1983-01-03
+  start: 1983-08-23
+  source: "Special election August 23, 1983 (List of special elections to the U.S. House of Representatives (Wikipedia)); first roll call as a member 1983-09-13 (Voteview)"
+
+- bioguide: P000229          # Carl Perkins, KY-7
+  chamber: house
+  listed_start: 1983-01-03
+  start: 1984-11-06
+  source: "Special election November 6, 1984 (List of special elections to the U.S. House of Representatives (Wikipedia)); no roll calls after it that Congress (Voteview)"
+
+- bioguide: D000051          # George Darden, GA-7
+  chamber: house
+  listed_start: 1983-01-03
+  start: 1983-11-08
+  source: "Special election November 8, 1983 (List of special elections to the U.S. House of Representatives (Wikipedia)); first roll call as a member 1983-11-10 (Voteview)"
+
+- bioguide: S000109          # Daniel Schaefer, CO-6
+  chamber: house
+  listed_start: 1983-01-03
+  start: 1983-03-29
+  source: "Special election March 29, 1983 (List of special elections to the U.S. House of Representatives (Wikipedia)); first roll call as a member 1983-04-12 (Voteview)"
+
+- bioguide: A000014          # Neil Abercrombie, HI-1
+  chamber: house
+  listed_start: 1985-01-03
+  start: 1986-09-20
+  source: "Special election September 20, 1986 (List of special elections to the U.S. House of Representatives (Wikipedia)); first roll call as a member 1986-09-23 (Voteview)"
+
+- bioguide: C000312          # Jim Chapman, TX-1
+  chamber: house
+  listed_start: 1985-01-03
+  start: 1985-09-04
+  source: "Special election September 4, 1985 (List of special elections to the U.S. House of Representatives (Wikipedia)); first roll call as a member 1985-09-04 (Voteview)"
+
+- bioguide: M000342          # Francis McCloskey, IN-8
+  chamber: house
+  listed_start: 1985-01-03
+  start: 1985-05-01
+  source: "Seated by the House on May 1, 1985, after the disputed 1984 election in Indiana's 8th district; first roll call as a member that day (Voteview)"
