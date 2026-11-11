@@ -88,6 +88,10 @@ items:
 
   v3072:
     question: Raise the federal minimum wage from $5.15 to $6.25 within 18 months
+    match: related       # decided Nov 11, 2026: the amendment bundled other provisions, as with the NO BAN Act
+    note: >-
+      Related, not the same: the Senate's only vote on this increase was an amendment that also did other
+      things, so it's shown and not counted.
     votes:
       senate:
         date: 2006-06-21
