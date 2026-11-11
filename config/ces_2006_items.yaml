@@ -8,6 +8,10 @@
 # skipped answer). The columns after each (Senator 1 / Senator 2) are what people thought their
 # senators did, not their own view, so they aren't used.
 #
+# License: CC0 1.0 (public domain), per the dataset's Terms on Harvard Dataverse (checked Nov 11, 2026);
+# it asks for credit via its citation: Stephen Ansolabehere, 2010, "CCES Common Content, 2006",
+# https://doi.org/10.7910/DVN/Q8HC9N, Harvard Dataverse, V5.
+#
 # Columns: v1001 = case weight, v1002 = state (postal code), v1003 = congressional district.
 #
 # District lines: the 109th Congress's (the 2002 redistricting). Georgia (redrawn in 2005 for the
@@ -29,7 +33,7 @@ state_column: v1002
 source:
   title: Cooperative Congressional Election Study 2006
   fielded: fall 2006, before and after the election
-  dataset_url: https://dataverse.harvard.edu/dataset.xhtml?persistentId=hdl:1902.1/14002
+  dataset_url: https://doi.org/10.7910/DVN/Q8HC9N
   about_url: https://tischcollege.tufts.edu/ces
 
 items:

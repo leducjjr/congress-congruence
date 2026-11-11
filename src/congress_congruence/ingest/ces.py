@@ -32,7 +32,7 @@ DATASETS = {
     2024: "doi:10.7910/DVN/X11EP6",
     2023: "doi:10.7910/DVN/JQJTCC",
     2022: "doi:10.7910/DVN/PR4L8P",
-    2006: "hdl:1902.1/14002",          # the first CES; an older-style Dataverse handle (rematched release, 2011)
+    2006: "doi:10.7910/DVN/Q8HC9N",    # the first CES (also hdl:1902.1/14002); CC0
 }
 
 GEO_PATTERNS = [r"^cdid", r"^cd\d", r"district", r"^inputstate", r"^state", r"^countyfips", r"^lookupzip", r"^region"]
