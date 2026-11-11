@@ -615,7 +615,9 @@ select siv.survey, siv.variable, siv.roll_call_id, siv.match_kind, siv.support_s
 # Every member who voted in one Congress (one chamber, or both), with the same counts the member
 # page shows for that Congress: votes, Yea / Nay / Present / not voting, and how often they voted with
 # their party (the stored party positions, worked out on the spot for any roll call not stored).
-# A member who served in both chambers that Congress gets a row for each.
+# A member who served in both chambers that Congress gets a row for each. Seat and party come from
+# their latest vote that falls within a listed term (a vote recorded on the day someone left can
+# fall just outside their term).
 MEMBER_NUMBERS = """
 with rc as (
     select roll_call_id, chamber, vote_date from core.roll_call
@@ -646,10 +648,10 @@ majority as (
 )
 select mv.bioguide_id, mv.chamber,
        coalesce(m.official_full, m.first_name || ' ' || m.last_name) as name, m.last_name,
-       (array_agg(mv.state    order by mv.vote_date desc))[1] as state,
-       (array_agg(mv.district order by mv.vote_date desc))[1] as district,
-       (array_agg(mv.party    order by mv.vote_date desc))[1] as party,
-       (array_agg(mv.caucus   order by mv.vote_date desc))[1] as caucus,
+       (array_agg(mv.state    order by mv.vote_date desc) filter (where mv.state is not null))[1] as state,
+       (array_agg(mv.district order by mv.vote_date desc) filter (where mv.state is not null))[1] as district,
+       (array_agg(mv.party    order by mv.vote_date desc) filter (where mv.state is not null))[1] as party,
+       (array_agg(mv.caucus   order by mv.vote_date desc) filter (where mv.state is not null))[1] as caucus,
        count(*)                                                   as votes_total,
        count(*) filter (where mv.position = 'yea')                as yea,
        count(*) filter (where mv.position = 'nay')                as nay,

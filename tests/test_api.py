@@ -363,3 +363,23 @@ def test_numbers_past_congress_is_measured_as_of_then(client, monkeypatch):
             cur.execute("delete from core.term where bioguide_id = 'R000001' and chamber = 'senate'")
             cur.execute("update core.term set end_date = '2099-01-03' where bioguide_id = 'R000001' and start_date = '2025-01-03'")
             c.commit()
+
+
+def test_numbers_keeps_the_seat_when_the_last_vote_falls_after_the_term(client):
+    """A vote recorded on the day someone left can fall just outside their listed term (Gaetz,
+    November 2024). Their seat and the link to them still come from the term they held."""
+    import psycopg
+    url = os.environ["TEST_DATABASE_URL"]
+    with psycopg.connect(url) as c, c.cursor() as cur:
+        cur.execute("""select max(r.vote_date) from core.member_vote v join core.roll_call r using (roll_call_id)
+                       where v.bioguide_id = 'R000001'""")
+        last = cur.fetchone()[0]
+        cur.execute("update core.term set end_date = %s - 1 where bioguide_id = 'R000001' and start_date = '2025-01-03'", (last,))
+        c.commit()
+    try:
+        m = next(x for x in client.get("/v1/numbers?congress=119").json()["members"] if x["bioguide_id"] == "R000001")
+        assert m["state"] == "TX" and m["seat"].startswith("TX-")
+    finally:
+        with psycopg.connect(url) as c, c.cursor() as cur:
+            cur.execute("update core.term set end_date = '2099-01-03' where bioguide_id = 'R000001' and start_date = '2025-01-03'")
+            c.commit()

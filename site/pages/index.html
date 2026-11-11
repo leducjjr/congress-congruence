@@ -125,6 +125,16 @@ main_class: home
     if (STATES[hashState]) {
       stateSel.value = hashState; loadState(hashState, hashId); return true;
     }
+    // A link with the state missing or wrong (#null/G000578_...): look the member up and open them.
+    if (/^[A-Z]\d{6}$/.test(hashId)) {
+      fetch(`${API}/v1/members/${hashId}`).then(r => r.ok ? r.json() : null).then(m => {
+        if (m && STATES[m.state]) {
+          history.replaceState(null, "", `#${m.state}/${hashId}_${nameTag(m.name)}`);
+          stateSel.value = m.state; loadState(m.state, hashId);
+        }
+      }).catch(() => {});
+      return true;
+    }
     return false;
   }
   window.addEventListener("hashchange", openFromHash);
