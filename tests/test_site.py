@@ -97,7 +97,9 @@ def test_updates_feed(tmp_path):
     assert "New: Hide party labels" in titles and "Correction: TikTok bill (CES 2024)" in titles
     assert len({i.findtext("guid") for i in items}) == len(items)            # every entry its own ID
     dates = [i.findtext("pubDate") for i in items]
-    assert dates[0].startswith("Tue, 10 Nov 2026") and dates[-1].startswith("Sat, 07 Nov 2026")
+    from email.utils import parsedate_to_datetime
+    when = [parsedate_to_datetime(d) for d in dates]
+    assert when == sorted(when, reverse=True) and dates[-1].startswith("Sat, 07 Nov 2026")   # newest first
     first = items[0].findtext("description")
     assert 'href="https://uscongressvsvoters.org/sources.html#senate"' in first   # links work in a reader
     home = (tmp_path / "index.html").read_text()
