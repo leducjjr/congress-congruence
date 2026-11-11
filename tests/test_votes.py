@@ -353,3 +353,31 @@ def test_sync_senate_goes_slowly_and_stops_politely(conn, monkeypatch):
     monkeypatch.setattr(votes, "SENATE_MAX_PER_RUN", 60)
     monkeypatch.setattr(votes, "fetch_one", refuse_third)
     assert votes.sync(conn, "senate", 119, 1) == {"loaded": 2, "failed": 0, "vacated": 0, "next_roll": 3, "refused": True}
+
+
+def test_loading_a_vote_stores_how_each_party_voted(conn, tmp_path, monkeypatch):
+    """Member pages read core.party_position instead of working it out on every visit."""
+    monkeypatch.setenv("RAW_DATA_DIR", str(tmp_path))
+    rc = parse_house(HOUSE)
+    with conn.cursor() as cur:       # give every voter a term so their party is known
+        for i, v in enumerate(rc.votes):
+            cur.execute("""insert into core.term (bioguide_id, chamber, state, district, party, start_date, end_date)
+                           values (%s, 'house', 'TX', %s, %s, '2025-01-03', '2027-01-03')
+                           on conflict do nothing""", (v.member_id, i % 36, "Republican" if i % 2 else "Democrat"))
+    conn.commit()
+    votes.load_roll_call(conn, rc)
+    with conn.cursor() as cur:
+        cur.execute("select grp, position from core.party_position where roll_call_id = %s order by grp", (rc.roll_call_id,))
+        stored = cur.fetchall()
+        cur.execute(party_select("and v.roll_call_id = %(id)s"), {"id": rc.roll_call_id})
+        live = sorted((g, p) for _, g, p in cur.fetchall())
+    assert stored == live and {g for g, _ in stored} == {"Democrat", "Republican"}
+    votes.load_roll_call(conn, rc)                       # reloading rewrites, never duplicates
+    with conn.cursor() as cur:
+        cur.execute("select count(*) from core.party_position where roll_call_id = %s", (rc.roll_call_id,))
+        assert cur.fetchone()[0] == 2
+
+
+def party_select(where):
+    from congress_congruence import party
+    return party.SELECT.format(where=where)

@@ -30,6 +30,7 @@ from pathlib import Path
 import requests
 
 from .. import config, db
+from .. import party as party_positions
 from .vote_parsers import ParsedRollCall, parse
 
 log = logging.getLogger(__name__)
@@ -198,6 +199,7 @@ def load_roll_call(conn, rc: ParsedRollCall, raw_sha: str | None = None,
                       "from stdin") as cp:
             for r in rows:
                 cp.write_row(r)
+        party_positions.refresh(cur, [rc.roll_call_id])      # how each party voted, for the member figures
     return len(rows)
 
 

@@ -19,6 +19,7 @@ from pathlib import Path
 import yaml
 
 from .. import db
+from .. import party as party_positions
 
 log = logging.getLogger(__name__)
 
@@ -158,6 +159,7 @@ def load(conn, parsed: ParsedMembers) -> dict[str, int]:
             for row in parsed.external_ids:
                 cp.write_row(row)
 
+        before = term_fingerprint(cur)
         cur.execute("delete from core.term")  # also removes core.term_party (cascade)
         n_party = 0
         for t in parsed.terms:
@@ -178,12 +180,24 @@ def load(conn, parsed: ParsedMembers) -> dict[str, int]:
                 )
                 n_party += 1
 
+        # Which party each vote counts toward depends on the terms: if any changed, rework them all.
+        if term_fingerprint(cur) != before:
+            party_positions.refresh(cur)
+
     return {
         "members": len(parsed.members),
         "external_ids": len(parsed.external_ids),
         "terms": len(parsed.terms),
         "party_changes": n_party,
     }
+
+
+def term_fingerprint(cur) -> str:
+    """Changes whenever a term's dates, chamber, party or caucus change."""
+    cur.execute("""select md5(coalesce(string_agg(concat_ws('|', bioguide_id, chamber, party, caucus,
+                                                            start_date, end_date), ',' order by bioguide_id,
+                                                  chamber, start_date), '')) from core.term""")
+    return cur.fetchone()[0]
 
 
 def run(source_dir: Path, conn=None) -> dict[str, int]:

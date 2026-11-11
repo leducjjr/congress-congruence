@@ -75,7 +75,15 @@ with mine as (
       from core.member_vote v join core.roll_call r using (roll_call_id)
      where v.bioguide_id = %(id)s and r.congress = %(congress)s and r.chamber = %(chamber)s
 ),
+unstored as materialized (     -- roll calls with no stored party positions (usually none)
+    select m.roll_call_id from mine m
+     where not exists (select 1 from core.party_position p where p.roll_call_id = m.roll_call_id)
+),
 majority as (
+    -- Stored when each vote loads (core.party_position); worked out here only for any not stored.
+    select p.roll_call_id, p.grp, p.position from core.party_position p
+     where p.roll_call_id in (select roll_call_id from mine)
+    union all
     select v.roll_call_id, coalesce(t.caucus, t.party) as grp,
            case when count(*) filter (where v.position = 'yea') > count(*) filter (where v.position = 'nay') then 'yea'
                 when count(*) filter (where v.position = 'nay') > count(*) filter (where v.position = 'yea') then 'nay'
@@ -84,7 +92,7 @@ majority as (
       join core.roll_call r using (roll_call_id)
       join core.term t on t.bioguide_id = v.bioguide_id and t.chamber = r.chamber
                       and r.vote_date between t.start_date and t.end_date
-     where v.roll_call_id in (select roll_call_id from mine)
+     where v.roll_call_id in (select roll_call_id from unstored)
      group by 1, 2
 )
 select count(*)                                                         as votes_total,
