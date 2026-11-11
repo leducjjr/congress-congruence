@@ -355,3 +355,62 @@ p.write_text('\n'.join(keep) + '\n')
 print('saved')
 PY
 ```
+
+## Adding another app to this server
+
+The server can host other apps alongside this site. Keep each one fully separate, so a problem or
+a mistake in one can't reach the other. Set these first (example names):
+
+```sh
+APP=newapp                  # short name: Linux user, database, service, nginx file
+DOMAIN=newapp.example.org   # its own domain, never part of uscongressvsvoters.org
+PORT=8001                   # this site's API uses 8000; give each app its own
+```
+
+**1. Its own domain.** Add an A record for `$DOMAIN` pointing to 162.214.171.209 at its registrar.
+Keep it off uscongressvsvoters.org (no subdomains of it), so this site's independence stays clear.
+
+**2. Its own Linux user and folder**, so the app can't read this site's files or `.env`:
+
+```sh
+sudo adduser --disabled-password --gecos "" "$APP"
+sudo -u "$APP" -H bash -c 'cd ~ && git clone https://github.com/<you>/<repo>.git app'
+sudo chmod 750 /home/john          # this site's folder: john only (check it isn't already)
+```
+
+**3. Its own database and login.** Never reuse this site's database, logins or passwords:
+
+```sh
+sudo -u postgres createuser --pwprompt "$APP"       # type a new password, kept in the app's own .env
+sudo -u postgres createdb -O "$APP" "$APP"
+```
+
+**4. Its own service on its own port.** Copy `deploy/congress-api.service` as a pattern: change
+`User=` to `$APP`, the folders to `/home/$APP/app`, `--port` to `$PORT`, keep `--host 127.0.0.1`,
+and save it as `/etc/systemd/system/$APP.service`. Then
+`sudo systemctl enable --now "$APP"`.
+
+**5. Its own nginx file and certificate**, added next to this site's, never replacing them:
+
+```sh
+sudo nano /etc/nginx/sites-available/"$APP"     # server_name $DOMAIN; proxy_pass http://127.0.0.1:$PORT;
+sudo ln -s /etc/nginx/sites-available/"$APP" /etc/nginx/sites-enabled/"$APP"
+sudo nginx -t && sudo systemctl reload nginx     # -t checks every site's file before reloading
+sudo certbot --nginx -d "$DOMAIN" --redirect
+```
+
+`sudo nginx -t` must say "syntax is ok" before the reload: a broken file would take this site down
+too. Leave `congress`, `congress-dev` and the redirect block for www/.com/.online as they are.
+
+**6. Its own backup and cron jobs.** The nightly backup (`scripts/backup_db.sh`) covers only this
+site's database. Add the new app's jobs to the new user's own crontab (`sudo -u "$APP" crontab -e`),
+not to john's, and keep heavy jobs away from 06:00–07:30 UTC, when this site's jobs run.
+
+**Things to avoid**
+
+- **Downloading from senate.gov or clerk.house.gov.** senate.gov allowed this server's address on
+  Nov 10, 2026, and its bot protection judges the address as a whole: another app downloading from
+  it could get this site's Senate access blocked. Ask the Senate webmaster first if a new app needs it.
+- **"Reimage" in Bluehost.** It wipes the whole server, every app on it.
+- **Running out of room.** Check before adding a big app, and now and then after:
+  `nproc; free -h; df -h /`. Ubuntu updates that need a reboot restart every app on the server.
