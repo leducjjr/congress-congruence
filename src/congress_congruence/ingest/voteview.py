@@ -60,7 +60,7 @@ SKIP_CODE = "0"  # not a member at the time of the vote
 
 
 def file_names(chamber: str, congress: int) -> dict[str, str]:
-    p = f"{PREFIX[chamber]}{congress}"
+    p = f"{PREFIX[chamber]}{congress:03d}"        # three digits: H077 for the 77th, H118 for the 118th
     return {"rollcalls": f"rollcalls/{p}_rollcalls.csv",
             "votes": f"votes/{p}_votes.csv",
             "members": f"members/{p}_members.csv"}

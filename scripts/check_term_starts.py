@@ -7,7 +7,7 @@ the time (cast code 0 means "not a member yet / any more"), whether or not they 
 
 For every member with service since 1989, each term that claims they were there from a Congress's
 first roll call is compared with the first roll call on which they were actually a member. A gap of
-more than a month is listed, with whoever else held the seat that Congress, so each case can be
+more than 45 days is listed (delegates, who can't vote on most roll calls, are left out), with whoever else held the seat that Congress, so each case can be
 checked against the official House or Senate record before it goes in config/term_corrections.yaml.
 
     python scripts/check_term_starts.py          # → data/exports/term_start_check.csv
@@ -27,7 +27,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-GAP_DAYS = 30                       # later than this after the first roll call is listed
+GAP_DAYS = 45                       # later than this after the first roll call is listed
 FIRST_DB_CONGRESS = 101             # 1989: votes in this site's database from here on
 SINCE = date(1989, 1, 3)
 PAUSE_SECONDS = 2
@@ -41,6 +41,10 @@ def congress_on(day: date) -> int:
     return (year - 1787) // 2
 
 
+# Delegates and the Resident Commissioner can't vote on most roll calls, so they look absent.
+DELEGATE_STATES = {"DC", "PR", "GU", "VI", "AS", "MP"}
+
+
 def find_flags(terms, first_vote, presence, gap_days=GAP_DAYS):
     """terms: dicts with bioguide_id, chamber, state, district, start_date.
     first_vote[(chamber, congress)] = date of that chamber's first roll call that Congress.
@@ -48,12 +52,16 @@ def find_flags(terms, first_vote, presence, gap_days=GAP_DAYS):
     Returns the terms that claim a member from the first roll call who wasn't one until later."""
     flags = []
     for t in terms:
+        if t["state"] in DELEGATE_STATES:
+            continue
         c = congress_on(t["start_date"])
         key = (t["chamber"], c)
         if key not in first_vote or t["start_date"] > first_vote[key]:
             continue                                    # listed as starting mid-Congress: nothing to check
         seen = presence.get(key, {}).get(t["bioguide_id"])
         if seen is None:
+            if t.get("end_date") and (t["end_date"] - first_vote[key]).days < 60:
+                continue                                # left within weeks (e.g. to join the Cabinet)
             flags.append({**t, "congress": c, "chamber_first_vote": first_vote[key], "first_as_member": None,
                           "gap_days": None})
         elif (seen[0] - first_vote[key]).days > gap_days:
@@ -157,6 +165,7 @@ def main() -> int:
             if b == f["bioguide_id"]:
                 continue
             same = [t for t in terms if t["bioguide_id"] == b and t["chamber"] == f["chamber"]
+                    and congress_on(t["start_date"]) == f["congress"]
                     and t["state"] == f["state"] and (f["chamber"] == "senate" or t["district"] == f["district"])]
             vv_same = [m for m in seat_holders.get(key, []) if m.get("bioguide_id") == b and m["state_abbrev"] == f["state"]
                        and (f["chamber"] == "senate" or same_district(m.get("district_code"), f["district"]))]
