@@ -33,6 +33,10 @@ def bill_info(congress: int | None, bill_type: str | None, number: int | None) -
 
 
 def official_vote_url(chamber: str, congress: int, session: int, roll: int, vote_date: date) -> str:
+    if chamber == "house" and vote_date.year < 1990 and session == 1:
+        # The Clerk's site starts in 1990. Voteview numbers votes through the whole Congress,
+        # which matches the session's numbering in a Congress's first session.
+        return f"https://voteview.com/rollcall/RH{congress:03d}{roll:04d}"     # e.g. RH1010353
     if chamber == "house":
         return f"https://clerk.house.gov/Votes/{vote_date.year}{roll:03d}"   # e.g. /Votes/2025069
     return ("https://www.senate.gov/legislative/LIS/roll_call_votes/"

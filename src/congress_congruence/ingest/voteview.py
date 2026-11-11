@@ -38,6 +38,9 @@ BASE_URL = "https://voteview.com/static/data/out"
 PREFIX = {"house": "H", "senate": "S"}
 CHAMBER_NAME = {"house": "House", "senate": "Senate"}
 MAX_MEMBERS = {"house": 441, "senate": 100}
+# Delegates and the Resident Commissioner: in some Congresses (1993-94, 2007-10, 2019-22) they could
+# vote in the Committee of the Whole; their votes are recorded but not in the published totals.
+DELEGATE_STATES = {"DC", "PR", "GU", "VI", "AS", "MP"}
 
 # Voteview cast codes. Only 1 (Yea), 6 (Nay) and 7 (Present) are recorded votes;
 # paired and announced positions are not counted in the official tally, so they
@@ -86,6 +89,20 @@ def to_int(text: str | None) -> int | None:
         return None
 
 
+def session_of(r: dict) -> int | None:
+    """Voteview's session, or (where it's blank) the one its date falls in: a Congress's first
+    year is its 1st session, the next its 2nd."""
+    s = to_int(r.get("session"))
+    if s is not None:
+        return s
+    try:
+        first_year = 1789 + 2 * (int(r["congress"]) - 1)
+        s = date.fromisoformat(r["date"]).year - first_year + 1
+    except (KeyError, ValueError):
+        return None
+    return s if s in (1, 2) else None
+
+
 def build_roll_calls(chamber: str, rollcalls: list[dict], votes: list[dict],
                      members: list[dict], known_icpsr: dict[str, str] | None = None
                      ) -> tuple[list[ParsedRollCall], list[str]]:
@@ -107,11 +124,27 @@ def build_roll_calls(chamber: str, rollcalls: list[dict], votes: list[dict],
         if v["chamber"] == name and v["cast_code"] != SKIP_CODE and v["icpsr"] not in presidents:
             by_roll[v["rollnumber"]].append(v)
 
+    # A House session with no Clerk numbers at all (1989: the Clerk's records start in 1990) is
+    # numbered in Voteview's order, the order the votes were taken. A session with only some
+    # numbers missing is left as it is: those votes are skipped rather than guessed.
+    numbered, unnumbered = defaultdict(int), defaultdict(list)
+    for r in rollcalls:
+        if r["chamber"] == name and session_of(r) is not None:
+            if to_int(r.get("clerk_rollnumber")) is None:
+                unnumbered[(r["congress"], session_of(r))].append(r)
+            else:
+                numbered[(r["congress"], session_of(r))] += 1
+    assigned = {}
+    for key, rows in unnumbered.items():
+        if chamber == "house" and not numbered[key]:
+            for i, r in enumerate(sorted(rows, key=lambda r: int(r["rollnumber"])), start=1):
+                assigned[id(r)] = i
+
     out = []
     for r in rollcalls:
         if r["chamber"] != name:
             continue
-        clerk_no, session = to_int(r.get("clerk_rollnumber")), to_int(r.get("session"))
+        clerk_no, session = to_int(r.get("clerk_rollnumber")) or assigned.get(id(r)), session_of(r)
         if clerk_no is None or session is None:
             problems.append(f"Voteview roll {r['rollnumber']}: missing session or clerk roll number; skipped")
             continue
@@ -163,13 +196,18 @@ def validate_voteview(rc: ParsedRollCall) -> None:
         problems.append(f"{len(ids)} members exceeds {MAX_MEMBERS[rc.chamber]}")
 
     # Voteview's yea_count/nay_count may or may not include paired and announced
-    # positions; accept either convention, nothing else.
+    # positions, and may leave out delegates' votes (see DELEGATE_STATES); accept those
+    # conventions, nothing else.
     raw = Counter(v.raw_position for v in rc.votes)
+    delegates = Counter(v.raw_position for v in rc.votes if v.state in DELEGATE_STATES)
     recorded = {"yea": raw["Yea"], "nay": raw["Nay"]}
     with_pairs = {"yea": raw["Yea"] + raw["Paired Yea"] + raw["Announced Yea"],
                   "nay": raw["Nay"] + raw["Paired Nay"] + raw["Announced Nay"]}
     for side, published in (("yea", rc.yea_total), ("nay", rc.nay_total)):
-        if published is not None and published not in (recorded[side], with_pairs[side]):
+        accepted = {recorded[side], with_pairs[side]}
+        if rc.chamber == "house":
+            accepted.add(recorded[side] - delegates["Yea" if side == "yea" else "Nay"])
+        if published is not None and published not in accepted:
             problems.append(f"{side}: file lists {recorded[side]} recorded "
                             f"({with_pairs[side]} with pairs), published total is {published}")
     if problems:

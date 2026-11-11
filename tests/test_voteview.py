@@ -176,3 +176,49 @@ def test_official_senate_file_replaces_voteview_copy(conn, tmp_path):
         cur.execute("select source, count(*) from core.roll_call join core.member_vote using (roll_call_id) "
                     "where roll_call_id='s-119-1-77' group by source")
         assert cur.fetchall() == [("senate_lis", 100)]
+
+
+HOUSE_1989 = b"""congress,chamber,rollnumber,date,session,clerk_rollnumber,majority_requirement,yea_count,nay_count,nominate_mid_1,nominate_mid_2,nominate_spread_1,nominate_spread_2,nominate_log_likelihood,bill_number,vote_result,vote_desc,vote_question,dtl_desc
+101,House,2,1989-01-05,,,1/2,2,1,,,,,,,Passed,Second vote of 1989,On Passage,
+101,House,1,1989-01-03,1,,1/2,2,1,,,,,,,Passed,First vote of 1989,On Passage,
+101,House,3,1990-01-23,2,1,1/2,2,1,,,,,,,Passed,First vote of 1990,On Passage,
+101,House,4,1990-01-24,2,,1/2,2,1,,,,,,,Passed,A 1990 vote without its Clerk number,On Passage,
+"""
+HOUSE_VOTES = b"""congress,chamber,rollnumber,icpsr,cast_code,prob
+""" + b"".join(b"101,House,%d,%d,%d,\n" % (r, m, c) for r in (1, 2, 3, 4) for m, c in ((1, 1), (2, 1), (3, 6), (4, 6)))
+HOUSE_MEMBERS = b"""congress,chamber,icpsr,state_icpsr,district_code,state_abbrev,party_code,occupancy,last_means,bioname,bioguide_id,born,died,nominate_dim1,nominate_dim2,nominate_log_likelihood,nominate_geo_mean_probability,nominate_number_of_votes,nominate_number_of_errors,conditional,nokken_poole_dim1,nokken_poole_dim2
+101,House,1,49,1,TX,100,,,"ONE, A",A000001,,,,,,,,,,,
+101,House,2,49,2,TX,200,,,"TWO, B",B000002,,,,,,,,,,,
+101,House,3,49,3,TX,200,,,"THREE, C",C000003,,,,,,,,,,,
+101,House,4,55,0,DC,100,,,"DELEGATE, D",D000004,,,,,,,,,,,
+"""
+
+
+def test_a_house_session_without_clerk_numbers_is_numbered_in_order():
+    """1989: Voteview gives no Clerk numbers (or session) for any vote of the session, so they are
+    numbered in the order taken. A vote missing its number in a numbered session is still skipped."""
+    rcs, problems = voteview.build_roll_calls("house", voteview.read_csv(HOUSE_1989),
+                                              voteview.read_csv(HOUSE_VOTES), voteview.read_csv(HOUSE_MEMBERS))
+    ids = {rc.roll_call_id: rc.description for rc in rcs}
+    assert ids == {"h-101-1-1": "First vote of 1989", "h-101-1-2": "Second vote of 1989", "h-101-2-1": "First vote of 1990"}
+    assert problems == ["Voteview roll 4: missing session or clerk roll number; skipped"]
+
+
+def test_delegates_votes_left_out_of_the_published_total_are_accepted():
+    """1993-94: delegates voted in the Committee of the Whole, but the published totals leave them out."""
+    rc = voteview.build_roll_calls("house", voteview.read_csv(HOUSE_1989), voteview.read_csv(HOUSE_VOTES),
+                                   voteview.read_csv(HOUSE_MEMBERS))[0][0]
+    rc.nay_total = 2                       # both nays, the delegate's included
+    voteview.validate_voteview(rc)
+    rc.nay_total = 1                       # the member's nay only: the delegate (DC) left out
+    voteview.validate_voteview(rc)
+    rc.nay_total = 0
+    with pytest.raises(votes.ValidationError, match="nay"):
+        voteview.validate_voteview(rc)
+
+
+def test_house_votes_before_1990_link_to_voteview():
+    from datetime import date
+    from congress_congruence.api.queries import official_vote_url
+    assert official_vote_url("house", 101, 1, 353, date(1989, 11, 17)) == "https://voteview.com/rollcall/RH1010353"
+    assert official_vote_url("house", 101, 2, 1, date(1990, 1, 23)) == "https://clerk.house.gov/Votes/1990001"
