@@ -62,6 +62,12 @@ Newest first. Follow these and every correction in a feed reader: [updates feed 
   more votes. Longer-serving members' pages now show their records from 1989, with attendance and
   party-line voting for each Congress. Survey comparisons still start in 2006, when surveys large
   enough to estimate each state's and district's opinion begin. See [Sources](sources.html#house).
+- **The 2006 Cooperative Election Study,** the survey's first year: what about 36,000 people said on
+  partial-birth abortion, stem cell research, an Iraq withdrawal plan, citizenship for illegal
+  immigrants, the minimum wage, capital gains taxes and CAFTA, compared with the House and Senate
+  votes on them from 2003 to 2006.
+- **A 2008 survey question on a constitutional amendment banning same-sex marriage,** compared with
+  the House and Senate votes on it in 2006.
 - **How long each member has held each seat,** and their time in Congress in all.
 
 **November 10, 2026**
