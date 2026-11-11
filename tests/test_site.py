@@ -100,8 +100,9 @@ def test_updates_feed(tmp_path):
     from email.utils import parsedate_to_datetime
     when = [parsedate_to_datetime(d) for d in dates]
     assert when == sorted(when, reverse=True) and dates[-1].startswith("Sat, 07 Nov 2026")   # newest first
-    first = items[0].findtext("description")
-    assert 'href="https://uscongressvsvoters.org/sources.html#senate"' in first   # links work in a reader
+    described = " ".join(i.findtext("description") for i in items)
+    assert 'href="https://uscongressvsvoters.org/sources.html#senate"' in described   # links work in a reader
+    assert 'href="sources.html' not in described
     home = (tmp_path / "index.html").read_text()
     assert 'type="application/rss+xml"' in home and 'href="feed.xml"' in home
 
