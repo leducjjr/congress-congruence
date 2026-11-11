@@ -5,15 +5,17 @@
 # Columns: this year's file uses numbered names. V201 = case weight, V206 = state (FIPS),
 # V250 = congressional district (110th Congress lines, the 2002 redistricting).
 #
-# Left out on purpose:
-#   CC316f (constitutional amendment to ban gay marriage): last voted on in 2006 (109th Congress),
-#             which isn't loaded.
+# CC316f asks about a 2006 vote (109th Congress). The 109th used the same district lines as V250
+# (the 110th's) except in Georgia (redrawn in 2005 for the 2006 election) and five Texas districts
+# (redrawn by a federal court in 2006 after LULAC v. Perry), so those two states' districts are left
+# out of that comparison (district_lines_also, skip_district_states).
 
 survey: CES 2008
 weight_preference: [V201]
 district_column: V250
 district_congress: 110
 state_column: V206
+district_lines_also: [109]       # for CC316f only; see the note above
 
 source:
   title: Cooperative Election Study 2008
@@ -62,6 +64,26 @@ items:
       # whose own February passage the bill-number rule picked up, so these are named by date and tally.
       house:  {date: 2007-09-25, expect: "265-159"}
       senate: {date: 2007-09-27, expect: "67-29"}
+
+  CC316f:
+    question: Amend the Constitution to ban same-sex marriage (Marriage Protection Amendment)
+    skip_district_states: [GA, TX]
+    votes:
+      house:
+        congress: 109
+        date: 2006-07-18
+        expect: "236-187"
+        note: >-
+          Asked in 2008 about the House's July 2006 vote on the amendment, its last vote on it. It got
+          236 votes; a constitutional amendment needs two-thirds, so it failed.
+      senate:
+        congress: 109
+        date: 2006-06-07
+        expect: "49-48"
+        match: related
+        note: >-
+          The Senate never voted on the amendment itself. This was its June 2006 vote to end debate on
+          taking it up; it got 49 votes, and 60 were needed. Yea was the vote to move it forward.
 
   CC316g:
     question: Federal help for homeowners facing foreclosure (Housing and Economic Recovery Act)

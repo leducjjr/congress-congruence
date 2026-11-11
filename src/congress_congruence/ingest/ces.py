@@ -32,6 +32,7 @@ DATASETS = {
     2024: "doi:10.7910/DVN/X11EP6",
     2023: "doi:10.7910/DVN/JQJTCC",
     2022: "doi:10.7910/DVN/PR4L8P",
+    2006: "hdl:1902.1/14002",          # the first CES; an older-style Dataverse handle (rematched release, 2011)
 }
 
 GEO_PATTERNS = [r"^cdid", r"^cd\d", r"district", r"^inputstate", r"^state", r"^countyfips", r"^lookupzip", r"^region"]
@@ -331,8 +332,13 @@ def link(conn, year: int, cfg: dict) -> list[tuple]:
     """Resolve each item's vote per chamber. Returns rows for survey_item_vote (LINK_COLUMNS)
     and prints a review list.
 
-    Per item: match: same (default) or related (a close but different bill: shown, never scored).
+    Per item: match: same (default) or related (a close but different bill: shown, never scored);
+    skip_district_states: states whose district lines differ between the survey's column and the
+    House vote's Congress (a mid-decade redraw), so their districts aren't estimated for this item
+    (their residents still count toward the state).
     Per chamber rule: support_side: yea (default) or nay (e.g. an amendment to block the proposal);
+    match: overrides the item's for that chamber (e.g. the House voted on the proposal itself, the
+    Senate only on a procedural motion);
     congress: an earlier Congress than the survey's (surveys sometimes ask about bills passed years
     before). Such a rule is allowed for the House only when the survey's district column is for that
     Congress's lines; otherwise respondents' districts and the members' seats wouldn't be the same areas."""
@@ -357,14 +363,14 @@ def link(conn, year: int, cfg: dict) -> list[tuple]:
             print(f"  {chamber:6} {vote['roll_call_id']}  {vote['vote_date']}  {vote['question']}  "
                   f"{vote['result']} {vote['yea_total']}-{vote['nay_total']}  ({n} matched; using the latest)")
             print(f"         {(vote['description'] or '')[:110]}")
-            side, kind = rule.get("support_side", "yea"), item.get("match", "same")
+            side, kind = rule.get("support_side", "yea"), rule.get("match", item.get("match", "same"))
             if side not in ("yea", "nay") or kind not in ("same", "related"):
                 raise ValueError(f"{var}: support_side must be yea/nay and match same/related")
             if side == "nay" or kind == "related":
                 print(f"         support side: {side.title()}   match: {kind}")
             if vote_congress != congress:
                 print(f"         from the {vote_congress}th Congress")
-            criteria = {k: v for k, v in rule.items() if k not in ("note", "support_side")}
+            criteria = {k: v for k, v in rule.items() if k not in ("note", "support_side", "match")}
             out.append((cfg["survey"], var, chamber, vote["roll_call_id"],
                         f"latest of {n} votes matching {json.dumps(criteria, default=str)}", rule.get("note"),
                         side, kind))
@@ -486,7 +492,8 @@ def load(conn, year: int, local_file: Path | None = None) -> dict:
         for var in items:
             resp = responses_for(df, var, cfg["state_column"], cfg["district_column"], weight_col, seats)
             states, districts = opinion.estimate(resp, seats, profiles)
-            for a in states + districts:
+            skip = set(cfg["items"][var].get("skip_district_states") or [])
+            for a in states + [d for d in districts if d.state not in skip]:
                 cur.execute(
                     """insert into core.opinion_estimate (survey, variable, state, district, respondents,
                        effective_n, raw_support, support, support_low, support_high, majority, method)

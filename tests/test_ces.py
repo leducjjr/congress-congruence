@@ -117,6 +117,17 @@ def test_every_items_file_is_well_formed():
                 assert chamber in ("house", "senate"), (path, var)
                 assert rule.get("support_side", "yea") in ("yea", "nay"), (path, var)
                 assert set(rule) <= {"roll_call", "date", "expect", "bill", "find", "questions", "congress",
-                                     "note", "support_side"}, (path, var, set(rule))
+                                     "note", "support_side", "match"}, (path, var, set(rule))
+                assert rule.get("match", "same") in ("same", "related"), (path, var)
+                # A House vote from an earlier Congress whose lines differed in some states must name them
+                if chamber == "house" and int(rule.get("congress", survey_congress)) != ces.district_congress(cfg, survey_congress):
+                    assert path.stem != "ces_2008_items" or item.get("skip_district_states") == ["GA", "TX"], (path, var)
                 if chamber == "house":
                     assert int(rule.get("congress", survey_congress)) in lines, (path, var)
+
+
+def test_a_vote_rule_can_be_related_while_the_question_is_not():
+    """CES 2008 CC316f: the House voted on the amendment itself (same), the Senate only on cloture (related)."""
+    item = ces.load_config(2008)["items"]["CC316f"]
+    assert item.get("match", "same") == "same" and item["votes"]["senate"]["match"] == "related"
+    assert item["votes"]["house"]["congress"] == 109 and item["skip_district_states"] == ["GA", "TX"]
