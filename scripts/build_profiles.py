@@ -232,8 +232,12 @@ def member_page(m: dict, opinion: dict | None, votes: list[dict], slugs: dict, t
             n = months_between(str(x["start"]), str(x.get("end") or today.isoformat()))
             months += n
             bits.append(f"{r} {e(x['seat'])}, {span} ({tenure_words(n)})")
-        total = f" In Congress {tenure_words(months)} in all." if len(seats) > 1 else ""
-        p.append(f'<p><strong>Seats held:</strong> {" · ".join(bits)}.{total}</p>')
+        if len(seats) == 1:
+            p.append(f"<p><strong>Seat held:</strong> {bits[0]}.</p>")
+        else:
+            p.append('<p class="seats-head"><strong>Seats held</strong></p><ul class="seats">'
+                     + "".join(f"<li>{b}</li>" for b in bits) + "</ul>"
+                     + f"<p>In Congress {tenure_words(months)} in all.</p>")
     pop = m.get("population")
     if pop and pop.get("residents"):
         if m["chamber"] == "senate":
@@ -425,11 +429,13 @@ PAGE_CSS = """<style>
     font-weight: 600; text-decoration: none; }
   .button:hover, .button:focus-visible { color: var(--surface); filter: brightness(1.1); }
   .score-lines { padding-left: 1.2rem; }
+  .seats-head { margin-bottom: 2px; }
+  .seats { margin-top: 0; padding-left: 1.2rem; }
   .table-scroll { overflow-x: auto; }
   .asof { margin-top: 28px; }
   .member-list { columns: 18rem; padding-left: 1.2rem; }
   .jump-list { line-height: 1.9; }
-  .state-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr)); gap: 6px; margin: 0; padding: 0; list-style: none; }
+  .state-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(11rem, 100%), 1fr)); gap: 6px; margin: 0; padding: 0; list-style: none; }
   .state-grid a { display: block; padding: 8px 12px; background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; text-decoration: none; }
   .state-grid a:hover, .state-grid a:focus-visible { border-color: var(--mark); color: var(--mark); }
   .state-grid small { color: var(--ink-soft); margin-left: 4px; }

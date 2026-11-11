@@ -164,4 +164,4 @@ def test_time_in_office():
 def test_member_page_says_how_long_in_each_seat(tmp_path):
     built(tmp_path)
     page = (tmp_path / "members" / "ted-cruz" / "index.html").read_text()
-    assert "Senator for TX, 2013–now (13 years, 10 months)." in page
+    assert "<strong>Seat held:</strong> Senator for TX, 2013–now (13 years, 10 months)." in page

@@ -208,7 +208,9 @@
     .view-switch { display: inline-flex; border: 1px solid var(--mark); border-radius: 999px; overflow: hidden; vertical-align: middle; }
     .tools .view-switch > * { padding: 2px 12px; text-decoration: none; color: var(--mark); }
     .tools .view-switch > [aria-current] { background: var(--mark); color: var(--surface, #fff); font-weight: 600; }
-    .history .spell { white-space: nowrap; }
+    .history .seats { margin: 2px 0 4px; padding-left: 1.2rem; }
+    .history .seats li { margin: 1px 0; }
+    .history p { margin: 0; }
     .op-sample { margin: 2px 0 0; font-size: 0.85rem; color: var(--ink-soft); }
     .op-sample strong { color: var(--ink); font-variant-numeric: tabular-nums; }
     .op-key { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 0.8rem; color: var(--ink-soft); margin: 8px 0 0; }
@@ -425,11 +427,13 @@
       const today = new Date().toISOString().slice(0, 10);
       const parties = new Set(seats.map(x => x.party));
       // Each seat stays on one line; the separators between them are where long histories wrap.
-      const spells = seats.map((x, i) => [h("span", { class: "spell" },
+      // One seat: one sentence. Several: a short list, newest first, so long careers read
+      // easily and wrap on a phone.
+      const spell = x => [
         `${x.chamber === "senate" ? "Senator for" : "Representative for"} ${x.seat.replace("-", "\u2011")}`,
         parties.size > 1 && !partiesHidden() ? ` (${x.party})` : "",
         `, ${year(x.start)}\u2013${x.end ? year(x.end) : "now"}`,
-        h("span", { class: "tenure" }, ` (${tenure(x.start, x.end || today)})`)), i < seats.length - 1 ? " · " : ""]);
+        h("span", { class: "tenure" }, ` (${tenure(x.start, x.end || today)})`)];
       // More than one seat: the whole time in Congress too (gaps between seats aren't counted).
       const months = seats.reduce((n, x) => n + monthsBetween(x.start, x.end || today), 0);
       const total = seats.length > 1 ? ` In Congress ${tenureWords(months)} in all.` : "";
@@ -437,7 +441,11 @@
       const earliest = Math.min(...seats.map(x => x.first_congress));
       const note = loaded.length && earliest < Math.min(...loaded)
         ? ` Votes on this site start with the ${ordinal(Math.min(...loaded))} Congress.` : "";
-      return h("p", { class: "history" }, h("strong", {}, "Seats held: "), spells, ".", total, note);
+      if (seats.length === 1)
+        return h("p", { class: "history" }, h("strong", {}, "Seat held: "), spell(seats[0]), ".", note);
+      return h("div", { class: "history" }, h("strong", {}, "Seats held"),
+        h("ul", { class: "seats" }, seats.map(x => h("li", {}, spell(x)))),
+        (total || note) ? h("p", {}, total.trim(), note) : null);
     }
 
     foldable(key, summary, ...body) {

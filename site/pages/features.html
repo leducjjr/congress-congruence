@@ -9,7 +9,7 @@ head: |
     .cta { display: inline-block; background: var(--mark); color: var(--surface); text-decoration: none; font-weight: 600;
       padding: 10px 20px; border-radius: 999px; margin: 4px; }
     .cta.secondary { background: var(--surface); color: var(--mark); border: 1px solid var(--rule); }
-    .who { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: 12px; margin: 28px 0 40px; padding: 0; list-style: none; }
+    .who { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(14rem, 100%), 1fr)); gap: 12px; margin: 28px 0 40px; padding: 0; list-style: none; }
     .who li { background: var(--surface); border: 1px solid var(--rule); border-radius: 12px; padding: 14px 16px; }
     .who strong { display: block; margin-bottom: 4px; }
     .who span { color: var(--ink-soft); font-size: 0.93rem; }
@@ -38,21 +38,21 @@ head: |
     .filter-group { margin: 0 0 18px; }
     .filter-group h3 { font-size: 0.98rem; margin: 0 0 8px; }
     .filter-group h3 small { font-weight: 400; color: var(--ink-soft); margin-left: 6px; }
-    .filter-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr)); gap: 0 28px; }
+    .filter-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(20rem, 100%), 1fr)); gap: 0 28px; }
     .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
     .chips a { display: inline-flex; align-items: baseline; gap: 6px; padding: 6px 12px; border-radius: 999px;
       border: 1px solid var(--rule); background: var(--page); color: var(--ink); text-decoration: none; font-size: 0.9rem; }
     .chips a span { color: var(--ink-soft); font-size: 0.8rem; }
     .chips a:hover, .chips a:focus-visible { border-color: var(--mark); color: var(--mark); }
     .chips .more-chip a { background: transparent; color: var(--mark); font-weight: 600; }
-    .examples { display: grid; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); gap: 8px 24px; margin: 0; padding: 0; list-style: none; }
+    .examples { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(17rem, 100%), 1fr)); gap: 8px 24px; margin: 0; padding: 0; list-style: none; }
     .examples a { display: block; padding: 10px 14px; border-left: 3px solid var(--mark); background: var(--page);
       border-radius: 0 8px 8px 0; color: var(--ink); text-decoration: none; font-weight: 600; font-size: 0.93rem; }
     .examples a::after { content: " →"; color: var(--mark); }
     .examples a:hover, .examples a:focus-visible { color: var(--mark); }
     .trust { background: var(--surface); border: 1px solid var(--rule); border-radius: 14px; padding: 22px 24px; margin: 8px 0 32px; }
     .trust h2 { font-size: 1.2rem; margin: 0 0 12px; }
-    .trust ul { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 10px 24px; margin: 0; padding: 0; list-style: none; }
+    .trust ul { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(16rem, 100%), 1fr)); gap: 10px 24px; margin: 0; padding: 0; list-style: none; }
     .trust li strong { display: block; }
     .trust li span { color: var(--ink-soft); font-size: 0.93rem; }
     .closing { text-align: center; margin: 0 0 24px; }

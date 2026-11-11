@@ -176,3 +176,6 @@ a.tag { white-space: normal; max-width: 100%; margin: 2px 4px 2px 0; border-radi
 .view-switch > [aria-current] { background: var(--mark); color: var(--surface); font-weight: 600; }
 .view-switch a:hover, .view-switch a:focus-visible { background: color-mix(in srgb, var(--mark) 12%, transparent); }
 .view-switch-label { font-size: 0.85rem; color: var(--ink-soft); margin-right: 6px; }
+
+/* Long web addresses and code break onto the next line instead of running off a small phone. */
+.prose-body a, .prose-body code, main code { overflow-wrap: anywhere; }

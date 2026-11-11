@@ -4,7 +4,7 @@ description: Each state's members of Congress, how each one's surveyed votes com
 head: |
   <script src="cards.js" defer></script>
   <style>
-    .state-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr)); gap: 6px; margin: 0; padding: 0; list-style: none; }
+    .state-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(11rem, 100%), 1fr)); gap: 6px; margin: 0; padding: 0; list-style: none; }
     .state-grid a { display: block; padding: 8px 12px; background: var(--surface); border: 1px solid var(--rule);
       border-radius: 8px; text-decoration: none; }
     .state-grid a:hover, .state-grid a:focus-visible { border-color: var(--mark); color: var(--mark); }
