@@ -7,9 +7,18 @@ description: What's being added to US Congress vs Voters next - new survey sourc
 <p class="lede">What we're working on next. Dates depend on when each source publishes its data, so
 they're estimates. Have an idea? <a href="contact.html#feedback">Tell us</a>.</p>
 
-*Last updated November 10, 2026.*
+*Last updated November 11, 2026.*
 
 ## In progress {#in-progress}
+
+### Voting records back to 1989 {#records-1989}
+
+Every House and Senate vote from 1989 through 2006 (the 101st to 109th Congresses), added to the
+records that now start in 2007. House votes come from the Clerk's official files, which begin in 1990;
+Senate votes and the House's 1989 votes from Voteview. Longer-serving members' pages will show their
+full records from 1989, along with attendance and party-line voting for each of those Congresses. Survey
+comparisons still start in 2006, since that's when surveys large enough to estimate each state's and
+district's opinion begin. Added one Congress at a time over the coming days.
 
 ### 2026 state ballot measures {#ballot-2026}
 
@@ -34,6 +43,17 @@ The largest survey on this site publishes its 2026 data the year after each elec
 spring. Its questions about bills will be matched to votes and added when it's released.
 
 ## Being considered {#considered}
+
+### Voting records back to 1973 {#records-1973}
+
+The votes of the 93rd to 100th Congresses (1973 to 1988), from Voteview. That would cover the whole
+career of every member serving today, and Congress.gov's subject areas for bills also start in 1973.
+
+### Voting trends over time {#trends}
+
+Charts of how things have changed from one Congress to the next: a member's attendance and how often
+they voted with their party, and in each chamber, how often votes split along party lines. These would
+be counts from the voting records, like every figure on the site, not estimates or scores.
 
 ### More surveys {#more-surveys}
 

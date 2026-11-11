@@ -4,8 +4,9 @@
     python -m congress_congruence.ingest.backfill 117 117 house    # one chamber, one Congress
 
 House: the Clerk's official vote files (clerk.house.gov/evs), one request per vote with a pause
-between them, so a Congress takes about an hour. They exist from 1990 (101st Congress, 2nd session);
-earlier House votes would come from Voteview and aren't offered here.
+between them, so a Congress takes about an hour. They exist from 1990 (101st Congress, 2nd session).
+Earlier House votes (1989 and before) come from Voteview, one download per Congress; for the 101st,
+Voteview fills only the 1989 votes, since it never replaces a vote loaded from the Clerk's files.
 Senate: Voteview's file for the whole Congress (one download), as for the current Congress.
 
 Safe to stop and re-run: votes already loaded are skipped, so a re-run carries on where it stopped.
@@ -36,6 +37,8 @@ def plan(first: int, last: int, chambers: list[str]) -> list[tuple[str, int, int
     for congress in range(last, first - 1, -1):
         if "house" in chambers:
             steps += [("house", congress, s) for s in house_sessions(congress)]
+            if congress <= FIRST_HOUSE_FILES[0]:          # votes before the Clerk's files: Voteview
+                steps.append(("house", congress, None))
         if "senate" in chambers:
             steps.append(("senate", congress, None))
     return steps
@@ -67,7 +70,10 @@ def main(argv: list[str]) -> int:
         for chamber, congress, session in plan(first, last, chambers):
             log.info("== %s, %sth Congress%s", chamber, congress, f", session {session}" if session else "")
             try:
-                if chamber == "house":
+                if chamber == "house" and session is None:
+                    result = record_run(conn, f"backfill_house_{congress}_voteview",
+                                        lambda: voteview.run(conn, "house", congress))
+                elif chamber == "house":
                     result = record_run(conn, f"backfill_house_{congress}_{session}",
                                         lambda: votes.sync(conn, "house", congress, session))
                 else:
