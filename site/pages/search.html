@@ -156,7 +156,7 @@ addEventListener("DOMContentLoaded", () => {
       topicLine(v),
       v.surveyed.length ? el("p", {}, v.surveyed.map((s, i) => [i ? " " : "",
         el("a", { class: `tag ${s.match === "same" ? "surveyed" : ""}`, href: window.CC.detailHref(s) },
-          s.match === "same" ? `Surveyed: ${s.question}` : `Related to a survey question: ${s.question}`)])) : null,
+          s.match === "same" ? `Surveyed: ${s.question} (${s.survey})` : `Related to a survey question: ${s.question} (${s.survey})`)])) : null,
       yourMembersLine(v.your_members),
       el("p", { class: "meta" }, el("a", { href: v.official_url }, "Official record"),
         v.bill ? [" · ", el("a", { href: v.bill.url }, `${v.bill.label} on Congress.gov`)] : ""),
