@@ -8,13 +8,12 @@ from congress_congruence.ingest import backfill
 
 def test_plan_goes_newest_first_and_skips_house_years_without_clerk_files():
     assert backfill.plan(117, 118, ["house", "senate"]) == [
-        ("house", 118, 1), ("house", 118, 2), ("senate", 118, None),
-        ("house", 117, 1), ("house", 117, 2), ("senate", 117, None)]
+        ("house", 118, 1), ("house", 118, 2), ("house", 118, None), ("senate", 118, None),
+        ("house", 117, 1), ("house", 117, 2), ("house", 117, None), ("senate", 117, None)]
     assert backfill.house_sessions(101) == [2] and backfill.house_sessions(100) == []
-    # Before the Clerk's files (1989 and earlier), House votes come from Voteview: the whole
-    # Congress, after the Clerk's files for the 101st, so Voteview only fills in 1989.
+    # After the Clerk's files, Voteview fills whatever they couldn't give (1989 and before, and
+    # files without member IDs); before 1990 it's the only source.
     assert backfill.plan(100, 101, ["house"]) == [("house", 101, 2), ("house", 101, None), ("house", 100, None)]
-    assert backfill.plan(102, 102, ["house"]) == [("house", 102, 1), ("house", 102, 2)]
 
 
 def test_refuses_the_current_congress_and_bad_arguments(capsys):

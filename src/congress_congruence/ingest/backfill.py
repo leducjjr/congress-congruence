@@ -5,8 +5,10 @@
 
 House: the Clerk's official vote files (clerk.house.gov/evs), one request per vote with a pause
 between them, so a Congress takes about an hour. They exist from 1990 (101st Congress, 2nd session).
-Earlier House votes (1989 and before) come from Voteview, one download per Congress; for the 101st,
-Voteview fills only the 1989 votes, since it never replaces a vote loaded from the Clerk's files.
+Each House Congress then gets Voteview's copy (one download) for any vote the Clerk's files couldn't
+give: 1989 and before, when there are no Clerk files, and sessions whose files name members without
+their IDs (the mid-1990s and before), which the loader stops on after their first few votes. Voteview
+never replaces a vote loaded from the Clerk's files.
 Senate: Voteview's file for the whole Congress (one download), as for the current Congress.
 
 Safe to stop and re-run: votes already loaded are skipped, so a re-run carries on where it stopped.
@@ -37,8 +39,10 @@ def plan(first: int, last: int, chambers: list[str]) -> list[tuple[str, int, int
     for congress in range(last, first - 1, -1):
         if "house" in chambers:
             steps += [("house", congress, s) for s in house_sessions(congress)]
-            if congress <= FIRST_HOUSE_FILES[0]:          # votes before the Clerk's files: Voteview
-                steps.append(("house", congress, None))
+            # Then Voteview, for any vote the Clerk's files couldn't give: before 1990 there are
+            # none, and the older files name members without their IDs. It never replaces a vote
+            # loaded from the Clerk's files, so where those are complete it adds nothing.
+            steps.append(("house", congress, None))
         if "senate" in chambers:
             steps.append(("senate", congress, None))
     return steps

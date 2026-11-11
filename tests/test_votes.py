@@ -381,3 +381,17 @@ def test_loading_a_vote_stores_how_each_party_voted(conn, tmp_path, monkeypatch)
 def party_select(where):
     from congress_congruence import party
     return party.SELECT.format(where=where)
+
+
+def test_sync_hands_a_session_without_member_ids_to_voteview(conn, monkeypatch):
+    """The Clerk's older files name members without IDs: after the first few, stop the session."""
+    monkeypatch.setattr(votes, "REQUEST_PAUSE_SECONDS", 0)
+    calls = []
+
+    def no_ids(conn_, chamber, congress, session_no, roll, http=None):
+        calls.append(roll)
+        raise votes.ValidationError(f"h-104-1-{roll}: member vote without an ID; member listed twice: [None]")
+    monkeypatch.setattr(votes, "fetch_one", no_ids)
+    assert votes.sync(conn, "house", 104, 1) == {"loaded": 0, "failed": 0, "vacated": 0, "next_roll": 3,
+                                                 "refused": False, "no_ids": True}
+    assert calls == [1, 2, 3]

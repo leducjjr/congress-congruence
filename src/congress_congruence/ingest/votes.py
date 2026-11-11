@@ -301,7 +301,7 @@ def sync(conn, chamber: str, congress: int, session_no: int) -> dict[str, int]:
     http, loaded, failed, vacated, roll = http_session(), 0, 0, 0, 1
     pause = SENATE_PAUSE_SECONDS if chamber == "senate" else REQUEST_PAUSE_SECONDS
     cap = SENATE_MAX_PER_RUN if chamber == "senate" else None
-    refused = False
+    refused = no_ids = False
     while True:
         if roll in have:
             roll += 1
@@ -315,6 +315,14 @@ def sync(conn, chamber: str, congress: int, session_no: int) -> dict[str, int]:
         try:
             n = fetch_one(conn, chamber, congress, session_no, roll, http)
         except ValidationError as e:
+            # The Clerk's older files (the mid-1990s and before) name members without their IDs, so
+            # their votes can't be matched to members. If a session's first votes are all like
+            # that, stop: Voteview, which has the IDs, fills the session (ingest.backfill).
+            if "member vote without an ID" in str(e) and not loaded and failed >= 2:
+                log.info("%s %s-%s: the Clerk's files for this session don't give member IDs; "
+                         "stopping here so Voteview's copy is used instead", chamber, congress, session_no)
+                no_ids, failed = True, 0
+                break
             # Keep going: one bad file shouldn't block the rest. It's logged and reported.
             log.error("%s", e)
             failed += 1
@@ -346,7 +354,8 @@ def sync(conn, chamber: str, congress: int, session_no: int) -> dict[str, int]:
             loaded += 1
         roll += 1
         time.sleep(pause)
-    return {"loaded": loaded, "failed": failed, "vacated": vacated, "next_roll": roll, "refused": refused}
+    out = {"loaded": loaded, "failed": failed, "vacated": vacated, "next_roll": roll, "refused": refused}
+    return {**out, "no_ids": True} if no_ids else out
 
 
 # ---------------------------------------------------------------- command line
