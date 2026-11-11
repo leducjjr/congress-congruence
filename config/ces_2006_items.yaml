@@ -1,0 +1,120 @@
+# CES 2006 (the first Cooperative Congressional Election Study): its "roll call" questions, matched
+# to the votes the survey describes. Draft for review. The survey's own guide (CCES_2006_Guide.doc)
+# gives each question's full wording; its columns v5022-v5035 record each senator's actual vote on
+# each measure, which names the Senate votes the survey's designers had in mind (e.g. the Levin
+# amendment on Iraq).
+#
+# Answer codes (v3060-v3078, "R Vote"): 1 = For, 2 = Against (3 = Don't know is left out, like a
+# skipped answer). The columns after each (Senator 1 / Senator 2) are what people thought their
+# senators did, not their own view, so they aren't used.
+#
+# Columns: v1001 = case weight, v1002 = state (postal code), v1003 = congressional district.
+#
+# District lines: the 109th Congress's (the 2002 redistricting). Georgia (redrawn in 2005 for the
+# 2006 election) and Texas (redrawn in 2003, and five districts again by a federal court in 2006)
+# changed around this survey, so their districts are left out of every House comparison here
+# (skip_district_states); their residents still count toward the state. The 108th Congress also used
+# the 2002 lines outside Texas, for the 2003 abortion vote (district_lines_also).
+#
+# Left out: v2103, a separate question on a constitutional amendment banning same-sex marriage,
+# asked on a four-point scale (strongly / somewhat support or oppose) of about 16,000 people.
+
+survey: CES 2006
+weight_preference: [v1001]
+district_column: v1003
+district_congress: 109
+district_lines_also: [108]
+state_column: v1002
+
+source:
+  title: Cooperative Congressional Election Study 2006
+  fielded: fall 2006, before and after the election
+  dataset_url: https://hdl.handle.net/1902.1/14002
+  about_url: https://tischcollege.tufts.edu/ces
+
+items:
+  v3060:
+    question: Ban "partial-birth" abortion (Partial-Birth Abortion Ban Act)
+    skip_district_states: [GA, TX]
+    votes:
+      house:
+        congress: 108
+        date: 2003-10-02
+        expect: "281-142"
+        note: Asked in 2006 about the final votes on the 2003 law (the conference report), the last floor votes on it.
+      senate:
+        congress: 108
+        date: 2003-10-21
+        expect: "64-34"
+        note: Asked in 2006 about the Senate's final vote on the 2003 law (the conference report).
+
+  v3063:
+    question: Federal funding for embryonic stem cell research (Stem Cell Research Enhancement Act)
+    skip_district_states: [GA, TX]
+    votes:
+      house:
+        date: 2005-05-24
+        expect: "238-194"
+        note: The House passed H.R. 810 in May 2005. (Its July 2006 vote to override the President's veto failed.)
+      senate:
+        date: 2006-07-18
+        expect: "63-37"
+        note: The Senate passed H.R. 810 in July 2006; the President vetoed it the next day.
+
+  v3066:
+    question: Begin withdrawing U.S. troops from Iraq this year, with a plan for further withdrawal (Levin amendment)
+    votes:
+      senate:
+        date: 2006-06-22
+        expect: "39-60"
+        note: >-
+          The Levin amendment to the 2007 defense bill, which the survey describes: begin phased
+          redeployment in 2006 and give Congress a plan with estimated dates by the end of 2006. The
+          House didn't vote on it.
+
+  v3069:
+    question: Offer illegal immigrants already in the U.S. a chance to become citizens (Comprehensive Immigration Reform Act)
+    votes:
+      senate:
+        date: 2006-05-25
+        expect: "62-36"
+        note: >-
+          The Senate's passage of S. 2611, the plan the survey describes. The House didn't vote on it;
+          its own bill (H.R. 4437) didn't offer citizenship.
+
+  v3072:
+    question: Raise the federal minimum wage from $5.15 to $6.25 within 18 months
+    votes:
+      senate:
+        date: 2006-06-21
+        expect: "45-53"
+        note: >-
+          The Enzi amendment to the 2007 defense bill: the $6.25 increase over 18 months the survey
+          describes, with other provisions (a larger small-business exemption, among them). It fell short
+          of the 60 votes agreed for it. The same day's Kennedy amendment proposed $7.25 instead.
+
+  v3075:
+    question: Extend the capital gains tax cuts (Tax Increase Prevention and Reconciliation Act)
+    skip_district_states: [GA, TX]
+    votes:
+      house:
+        date: 2006-05-10
+        expect: "244-185"
+        note: The final version of H.R. 4297 (the conference report), which extended the lower capital gains rates.
+      senate:
+        date: 2006-05-11
+        expect: "54-44"
+        note: The Senate's vote on the final version of H.R. 4297 (the conference report).
+
+  v3078:
+    question: Approve the Central America Free Trade Agreement (CAFTA)
+    skip_district_states: [GA, TX]
+    votes:
+      house:
+        date: 2005-07-28
+        expect: "217-215"
+        note: The House passed H.R. 3045, which put the agreement into effect, in July 2005.
+      senate:
+        date: 2005-06-30
+        expect: "54-45"
+        note: The Senate passed its version, S. 1307, in June 2005.

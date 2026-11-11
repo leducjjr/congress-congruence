@@ -131,3 +131,22 @@ def test_a_vote_rule_can_be_related_while_the_question_is_not():
     item = ces.load_config(2008)["items"]["CC316f"]
     assert item.get("match", "same") == "same" and item["votes"]["senate"]["match"] == "related"
     assert item["votes"]["house"]["congress"] == 109 and item["skip_district_states"] == ["GA", "TX"]
+
+
+def test_states_can_be_postal_codes_as_in_2006():
+    import pandas as pd
+    df = pd.DataFrame({"st": ["NC", "OH", " tx", "XX", 37], "cd": [10, 3, 2, 1, 4],
+                       "q": [1, 2, 1, 1, 2], "w": [1.0, 1.0, 1.0, 1.0, 1.0]})
+    seats = {"NC": list(range(1, 14)), "OH": list(range(1, 19)), "TX": list(range(1, 33))}
+    rows = ces.responses_for(df, "q", "st", "cd", "w", seats)
+    assert [(s, d, a) for s, d, a, _ in rows] == [("NC", 10, 1), ("OH", 3, 0), ("TX", 2, 1), ("NC", 4, 0)]
+
+
+def test_2006_items_file():
+    cfg = ces.load_config(2006)
+    assert cfg["state_column"] == "v1002" and cfg["district_congress"] == 109
+    assert set(cfg["items"]) == {"v3060", "v3063", "v3066", "v3069", "v3072", "v3075", "v3078"}
+    for var, item in cfg["items"].items():
+        assert all("expect" in r and "date" in r for r in item["votes"].values()), var   # exact votes only
+        if "house" in item["votes"]:
+            assert item.get("skip_district_states") == ["GA", "TX"], var

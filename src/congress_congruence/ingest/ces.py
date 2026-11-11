@@ -427,10 +427,15 @@ def responses_for(df, var: str, state_col: str, dist_col: str, weight_col: str,
     for st_code, cd, ans, w in zip(df[state_col], df[dist_col], df[var], df[weight_col]):
         if ans not in (SUPPORT, OPPOSE) or w != w or w is None:   # skipped / not asked / missing weight
             continue
-        try:
-            st = STATE_FIPS.get(int(st_code))
-        except (TypeError, ValueError):
-            st = None
+        # A FIPS number in most years; the postal code itself in 2006 ("NC").
+        if isinstance(st_code, str) and len(st_code.strip()) == 2 and st_code.strip().isalpha():
+            st = st_code.strip().upper()
+            st = st if st in STATE_FIPS.values() else None
+        else:
+            try:
+                st = STATE_FIPS.get(int(st_code))
+            except (TypeError, ValueError):
+                st = None
         if not st or st == "DC":
             continue
         if seats.get(st) == [0]:
