@@ -58,6 +58,10 @@ Newest first. Follow these and every correction in a feed reader: [updates feed 
 
 **November 11, 2026**
 
+- **[Members by the numbers](numbers.html):** every member who voted in a Congress, in one table you can
+  sort: time in Congress (members who left and came back are counted for the time they served), time in
+  their seat, how often they missed votes, and how often they voted Yea, Nay or with their party. Any
+  Congress since 1989, House or Senate.
 - **Voting records back to 1989.** Every House and Senate vote from 1989 through 2006, about 16,000
   more votes. Longer-serving members' pages now show their records from 1989, with attendance and
   party-line voting for each Congress. Survey comparisons still start in 2006, when surveys large

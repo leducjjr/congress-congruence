@@ -750,6 +750,61 @@ def member_scores(ids: list[str]) -> dict[str, list[dict]]:
     return out
 
 
+def months_between(a: date, b: date) -> int:
+    """Whole months from a to b (same rule as the member page's "13 years, 11 months")."""
+    return max(0, (b.year - a.year) * 12 + (b.month - a.month) - (b.day < a.day))
+
+
+@app.get("/v1/numbers")
+def numbers(response: Response, congress: int | None = None, chamber: str | None = Query(None, pattern="^(house|senate)$")):
+    """Members by the numbers: everyone who voted in one Congress, with the same counts as their member
+    pages (votes, Yea / Nay / Present / not voting, with their party) and how long they've served:
+    in Congress in all and in their latest seat, from the official member list (so service before the
+    votes on this site counts too). Plain counts; the page sorts them."""
+    available = sorted({r["congress"] for r in fetch(q.VOTE_CONGRESSES)}, reverse=True)
+    if not available:
+        raise HTTPException(404, "No votes loaded")
+    congress = congress or available[0]
+    if congress not in available:
+        raise HTTPException(404, "No votes loaded for that Congress")
+    rows = fetch(q.MEMBER_NUMBERS, {"congress": congress, "chamber": chamber})
+    today = date.today()
+    terms: dict[str, list[dict]] = {}
+    for t in fetch(q.TERMS_FOR, {"ids": [r["bioguide_id"] for r in rows]}):
+        terms.setdefault(t["bioguide_id"], []).append(t)
+    members = []
+    for r in rows:
+        spells = seat_history(terms.get(r["bioguide_id"], []), today)        # newest first
+        # Breaks in service: a gap of more than a month between one seat's end and the next's start
+        # (a member who left Congress and came back). Moving seat or chamber without a gap isn't one.
+        breaks = []
+        for later, earlier in zip(spells, spells[1:]):
+            if earlier["end"] and (later["start"] - earlier["end"]).days > 31:
+                breaks.append({"left": earlier["end"], "returned": later["start"]})
+        members.append({
+            "bioguide_id": r["bioguide_id"], "name": r["name"], "last_name": r["last_name"],
+            "chamber": r["chamber"], "state": r["state"], "district": r["district"],
+            "seat": q.seat_label(r["state"], r["district"], r["chamber"]) if r["state"] else None,
+            "party": r["party"], "caucus": r["caucus"],
+            "serving": bool(spells) and spells[0]["end"] is None,
+            "first_sworn_in": spells[-1]["start"] if spells else None,
+            "breaks": list(reversed(breaks)),                                      # oldest first
+            "months_in_congress": sum(months_between(s["start"], s["end"] or today) for s in spells),
+            "seat_since": spells[0]["start"] if spells else None,
+            "months_in_seat": months_between(spells[0]["start"], spells[0]["end"] or today) if spells else None,
+            "votes_total": r["votes_total"], "yea": r["yea"], "nay": r["nay"], "present": r["present"],
+            "not_voting": r["not_voting"],
+            "yea_pct": pct(r["yea"], r["votes_total"]), "nay_pct": pct(r["nay"], r["votes_total"]),
+            "missed_pct": pct(r["not_voting"], r["votes_total"]),
+            "party_votes": r["party_votes"], "with_party": r["with_party"],
+            "with_party_pct": pct(r["with_party"], r["party_votes"]),
+            "first_vote": r["first_vote"], "last_vote": r["last_vote"],
+        })
+    members.sort(key=lambda m: (m["chamber"] != "senate", m["state"] or "", m["district"] or 0, m["last_name"]))
+    response.headers["Cache-Control"] = CACHE
+    return {"congress": congress, "chamber": chamber, "congresses": available, "members": members}
+
+
 @app.get("/v1/states/{code}")
 def state(code: str, response: Response):
     """A state: its members today and those who've left (with votes on this site), each with their

@@ -275,3 +275,58 @@ def test_search_show_more(client):
     assert "members" not in more and "questions" not in more
     assert more["votes_total"] == 3 and [v["roll_call_id"] for v in more["votes"]] == [full["votes"][2]["roll_call_id"]]
     assert client.get("/v1/search", params={"q": "passage", "surveyed": "true"}).json()["votes_total"] == 0
+
+
+def test_numbers_match_each_member_page(client):
+    """Members by the numbers: the same counts as each member's own page, for every member."""
+    r = client.get("/v1/numbers?congress=119&chamber=house")
+    assert r.status_code == 200
+    d = r.json()
+    assert d["congress"] == 119 and 119 in d["congresses"]
+    assert {m["bioguide_id"] for m in d["members"]} == {b for b, *_ in MEMBERS if any(b in v for v in VOTES.values())}
+    for m in d["members"]:
+        s = stats(client, m["bioguide_id"])
+        assert (m["votes_total"], m["not_voting"], m["missed_pct"]) == (s["votes_total"], s["votes_missed"], s["missed_pct"]), m
+        assert (m["party_votes"], m["with_party"], m["with_party_pct"]) == (s["party_votes"], s["with_party"], s["with_party_pct"]), m
+        assert m["yea"] + m["nay"] + m["present"] + m["not_voting"] <= m["votes_total"]
+        assert m["serving"] and m["first_sworn_in"] == "2025-01-03" and m["seat"].startswith("TX-")
+        assert m["months_in_congress"] == m["months_in_seat"] > 0
+
+
+def test_numbers_defaults_and_errors(client):
+    assert client.get("/v1/numbers").json()["congress"] == 119       # the newest Congress with votes
+    assert client.get("/v1/numbers?congress=90").status_code == 404
+    assert client.get("/v1/numbers?chamber=both").status_code == 422
+    assert client.get("/v1/numbers?chamber=senate").json()["members"] == []
+
+
+def test_months_between():
+    from datetime import date
+    m = client_module_months()
+    assert m(date(2012, 11, 13), date(2026, 11, 10)) == 167          # 13 years, 11 months
+    assert m(date(2025, 1, 3), date(2025, 1, 2)) == 0
+
+
+def client_module_months():
+    from congress_congruence.api.app import months_between
+    return months_between
+
+
+def test_numbers_returning_member(client):
+    """A member who left and came back: time in Congress leaves out the gap, the current seat counts
+    from the return, and the break is listed."""
+    import psycopg
+    url = os.environ["TEST_DATABASE_URL"]
+    with psycopg.connect(url) as c, c.cursor() as cur:
+        cur.execute("""insert into core.term (bioguide_id, chamber, state, district, party, start_date, end_date)
+                       values ('R000001', 'house', 'TX', 9, 'Republican', '2011-01-03', '2015-01-03')""")
+        c.commit()
+    try:
+        m = next(x for x in client.get("/v1/numbers?congress=119").json()["members"] if x["bioguide_id"] == "R000001")
+        assert m["first_sworn_in"] == "2011-01-03"
+        assert m["breaks"] == [{"left": "2015-01-03", "returned": "2025-01-03"}]
+        assert m["months_in_congress"] == 48 + m["months_in_seat"]           # 2011-15, plus since 2025
+    finally:
+        with psycopg.connect(url) as c, c.cursor() as cur:
+            cur.execute("delete from core.term where bioguide_id = 'R000001' and start_date = '2011-01-03'")
+            c.commit()

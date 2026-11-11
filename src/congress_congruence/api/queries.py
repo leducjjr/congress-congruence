@@ -610,3 +610,62 @@ select siv.survey, siv.variable, siv.roll_call_id, siv.match_kind, siv.support_s
  where t.state = %(state)s
  order by r.vote_date, m.last_name
 """
+
+
+# Every member who voted in one Congress (one chamber, or both), with the same counts the member
+# page shows for that Congress: votes, Yea / Nay / Present / not voting, and how often they voted with
+# their party (the stored party positions, worked out on the spot for any roll call not stored).
+# A member who served in both chambers that Congress gets a row for each.
+MEMBER_NUMBERS = """
+with rc as (
+    select roll_call_id, chamber, vote_date from core.roll_call
+     where congress = %(congress)s and (%(chamber)s::text is null or chamber = %(chamber)s)
+),
+mv as (
+    select v.bioguide_id, v.roll_call_id, v.position, rc.chamber, rc.vote_date,
+           t.state, t.district, t.party, t.caucus, coalesce(t.caucus, t.party) as grp, t.start_date
+      from core.member_vote v
+      join rc using (roll_call_id)
+      left join core.term t on t.bioguide_id = v.bioguide_id and t.chamber = rc.chamber
+                           and rc.vote_date between t.start_date and t.end_date
+),
+unstored as materialized (
+    select roll_call_id from rc
+     where not exists (select 1 from core.party_position p where p.roll_call_id = rc.roll_call_id)
+),
+majority as (
+    select p.roll_call_id, p.grp, p.position from core.party_position p
+     where p.roll_call_id in (select roll_call_id from rc)
+    union all
+    select roll_call_id, grp,
+           case when count(*) filter (where position = 'yea') > count(*) filter (where position = 'nay') then 'yea'
+                when count(*) filter (where position = 'nay') > count(*) filter (where position = 'yea') then 'nay'
+           end
+      from mv where roll_call_id in (select roll_call_id from unstored) and grp is not null
+     group by 1, 2
+)
+select mv.bioguide_id, mv.chamber,
+       coalesce(m.official_full, m.first_name || ' ' || m.last_name) as name, m.last_name,
+       (array_agg(mv.state    order by mv.vote_date desc))[1] as state,
+       (array_agg(mv.district order by mv.vote_date desc))[1] as district,
+       (array_agg(mv.party    order by mv.vote_date desc))[1] as party,
+       (array_agg(mv.caucus   order by mv.vote_date desc))[1] as caucus,
+       count(*)                                                   as votes_total,
+       count(*) filter (where mv.position = 'yea')                as yea,
+       count(*) filter (where mv.position = 'nay')                as nay,
+       count(*) filter (where mv.position = 'present')            as present,
+       count(*) filter (where mv.position = 'not_voting')         as not_voting,
+       count(*) filter (where mv.position in ('yea', 'nay') and maj.position is not null) as party_votes,
+       count(*) filter (where mv.position = maj.position)         as with_party,
+       min(mv.vote_date) as first_vote, max(mv.vote_date) as last_vote
+  from mv
+  join core.member m using (bioguide_id)
+  left join majority maj on maj.roll_call_id = mv.roll_call_id and maj.grp = mv.grp
+ group by mv.bioguide_id, mv.chamber, m.official_full, m.first_name, m.last_name
+"""
+
+# All terms of the given members, oldest first (for time in office).
+TERMS_FOR = """
+select bioguide_id, chamber, state, district, party, caucus, start_date, end_date
+  from core.term where bioguide_id = any(%(ids)s) order by bioguide_id, start_date
+"""

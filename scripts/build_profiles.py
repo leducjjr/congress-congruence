@@ -390,6 +390,8 @@ def members_index(states: list[dict], slugs: dict) -> tuple[dict, str]:
          'site, by state. Each page shows their votes and how they compared with what the people they represent '
          'told independent surveys.</p></div>']
     jump = " · ".join(f'<a href="members/#{st["state"].lower()}">{e(st["state"])}</a>' for st in states if st["members"] or st["former"])
+    p.append('<p>To compare everyone at once (time in office, attendance, how often they voted Yea, Nay or with '
+             'their party), see <a href="numbers.html">Members by the numbers</a>.</p>')
     p.append(f'<p class="jump-list">{jump}</p>')
     for st in states:
         if not (st["members"] or st["former"]):
