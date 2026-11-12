@@ -14,8 +14,8 @@ independent surveys asked people about the same bills, how each member's vote co
 most people in their state or district said. Votes come from the official House and Senate records;
 opinion comes from published surveys such as the Cooperative Election Study and Nationscape, with
 each estimate shown with its likely range. It's an independent civic project, built and maintained by John LeDuc, not
-affiliated with any party, campaign, government body or survey organization. It takes no advertising and doesn't
-track visitors. The code is [public]({{source_url}}).
+affiliated with any party, campaign, government body or survey organization. It's volunteer work, with no funding,
+advertising or donations, and it doesn't track visitors. The code is [public]({{source_url}}).
 
 ## Pages you can link to {#links}
 
