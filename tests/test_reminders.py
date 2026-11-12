@@ -61,3 +61,39 @@ def test_reminders_file_is_well_formed():
         assert i["details"].strip() and i["title"]
         assert all(isinstance(d, int) and d >= 0 for d in i.get("lead_days", r.DEFAULT_LEAD_DAYS))
     assert "security-txt" in r.listing(date(2026, 11, 10), items)
+
+
+def test_calendar_feed():
+    from datetime import datetime, timezone
+    items = [item(id="a", title="Check the domains, renewals; and \\ things", lead_days=[14, 3, 0]),
+             item(id="b", done=True),
+             item(id="c", due=date(2026, 11, 1)),                                   # overdue
+             item(id="d", due=date(2027, 11, 1), repeat="yearly", lead_days=[30, 7, 0], done=True),
+             item(id="e", details="x" * 200)]
+    ics = r.calendar(items, today=date(2026, 11, 12), now=datetime(2026, 11, 12, 15, 0, tzinfo=timezone.utc))
+    assert ics.startswith("BEGIN:VCALENDAR\r\n") and ics.endswith("END:VCALENDAR\r\n")
+    assert all(len(line.encode()) <= 75 for line in ics.split("\r\n"))
+    events = ics.split("BEGIN:VEVENT")[1:]
+    uids = [e.split("UID:")[1].split("@")[0] for e in events]
+    assert uids == ["a", "c", "d", "e"]                                             # done one left out
+    a, c, d, e = events
+    assert r"SUMMARY:Check the domains\, renewals\; and \\ things" in a
+    assert "DTSTART;VALUE=DATE:20261210" in a and "DTEND;VALUE=DATE:20261211" in a
+    assert [l for l in a.split("\r\n") if l.startswith("TRIGGER")] == ["TRIGGER:-P13DT15H", "TRIGGER:-P2DT15H", "TRIGGER:PT9H"]
+    assert "DTSTART;VALUE=DATE:20261112" in c and "SUMMARY:Overdue: Do the thing" in c and "Was due November 1" in c
+    assert c.count("TRIGGER") == 1
+    assert "RRULE:FREQ=YEARLY" in d and "DTSTART;VALUE=DATE:20271101" in d
+    assert "\r\n " in e                                                             # long line folded
+
+
+def test_emails_can_be_switched_off(monkeypatch, tmp_path):
+    monkeypatch.setenv("REMINDERS_EMAIL", "off")
+    monkeypatch.setattr(r, "sent_log_path", lambda: tmp_path / "sent.json")
+    sent = []
+    assert r.run(today=date(2026, 12, 10), items=[item()], sender=lambda m, c: sent.append(m)) == 0
+    assert not sent
+
+
+def test_calendar_rejoins_wrapped_lines_but_keeps_commands():
+    assert r._reflow("Check the\nrenewal date.\n  curl -sI https://x\nThen done.") == \
+        "Check the renewal date.\n  curl -sI https://x\nThen done."

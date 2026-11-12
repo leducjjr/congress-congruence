@@ -655,6 +655,19 @@ def vote_url(r) -> str:
     return q.official_vote_url(r["chamber"], r["congress"], r["session"], r["roll_number"], r["vote_date"], earlier)
 
 
+@app.get("/v1/calendar/{name}", include_in_schema=False)
+def reminders_calendar(name: str):
+    """The maintainer's reminders (config/reminders.yaml) as a calendar feed, at an address only
+    they know: REMINDERS_CALENDAR_TOKEN in .env. Without it set, there's no feed."""
+    import hmac
+    from .. import reminders
+    token = os.environ.get("REMINDERS_CALENDAR_TOKEN", "").strip()
+    if len(token) < 24 or not hmac.compare_digest(name.encode(), f"{token}.ics".encode()):
+        raise HTTPException(404)
+    return Response(reminders.calendar(), media_type="text/calendar; charset=utf-8",
+                    headers={"Cache-Control": "no-store", "X-Robots-Tag": "noindex"})
+
+
 @app.get("/v1/votes/filters")
 def vote_filters(response: Response):
     """What the All votes page's filters can offer: Congresses loaded in each chamber, and the

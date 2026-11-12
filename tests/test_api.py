@@ -406,3 +406,12 @@ def test_numbers_says_when_a_member_left_during_the_congress(client):
         with psycopg.connect(url) as c, c.cursor() as cur:
             cur.execute("update core.term set end_date = '2099-01-03' where bioguide_id = 'R000001' and start_date = '2025-01-03'")
             c.commit()
+
+
+def test_reminders_calendar_only_at_its_private_address(client, monkeypatch):
+    assert client.get("/v1/calendar/anything.ics").status_code == 404           # no token set: no feed
+    monkeypatch.setenv("REMINDERS_CALENDAR_TOKEN", "t" * 32)
+    assert client.get("/v1/calendar/" + "x" * 32 + ".ics").status_code == 404
+    r = client.get("/v1/calendar/" + "t" * 32 + ".ics")
+    assert r.status_code == 200 and r.headers["content-type"].startswith("text/calendar")
+    assert r.text.startswith("BEGIN:VCALENDAR") and r.headers["cache-control"] == "no-store"

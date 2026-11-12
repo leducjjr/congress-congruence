@@ -9,6 +9,10 @@ lead_days (when to remind before the due date; default 14, 3 and 0) and optional
 An item reminds on each lead day and, once overdue, every 7 days until it's marked `done: true`.
 A yearly item instead moves on to next year's date a week after it falls due.
 
+The same items are also a calendar feed (calendar() below), which the API serves at a private
+address for subscribing in a calendar app: /v1/calendar/<REMINDERS_CALENDAR_TOKEN>.ics. With the
+calendar in use, REMINDERS_EMAIL=off in .env stops the emails.
+
 All of a day's reminders go out as one email, To: REMINDERS_TO from .env (kept out of the public
 code, so it can be a private address), or FEEDBACK_TO if that isn't set. It's sent through the
 contact form's mailbox (FEEDBACK_SMTP_USER / FEEDBACK_SMTP_PASSWORD). What has been sent is noted
@@ -105,6 +109,72 @@ def build_email(due_items: list[tuple[dict, date]], today: date, to: str, sender
     return msg
 
 
+def _ics_text(text: str) -> str:
+    return text.replace("\\", "\\\\").replace(";", "\\;").replace(",", "\\,").replace("\n", "\\n")
+
+
+def _fold(line: str) -> list[str]:
+    """iCalendar lines are at most 75 bytes; longer ones continue on lines starting with a space."""
+    out, raw = [], line.encode("utf-8")
+    while len(raw) > 75:
+        cut = 75 if not out else 74
+        while cut and (raw[cut] & 0xC0) == 0x80:      # don't split a UTF-8 character
+            cut -= 1
+        out.append(raw[:cut].decode("utf-8"))
+        raw = raw[cut:]
+    out.append(raw.decode("utf-8"))
+    return [out[0]] + [" " + part for part in out[1:]]
+
+
+def _reflow(text: str) -> str:
+    """Join lines wrapped in the YAML into sentences; keep blank lines and indented (command) lines."""
+    out = []
+    for line in text.strip().splitlines():
+        if out and line.strip() and not line.startswith(" ") and out[-1] and not out[-1].startswith(" "):
+            out[-1] += " " + line.strip()
+        else:
+            out.append(line.rstrip())
+    return "\n".join(out)
+
+
+def calendar(items=None, today: date | None = None, now=None) -> str:
+    """The reminders as an iCalendar feed: each open item is an all-day event on its due date, with
+    alerts at 9 a.m. on its lead days. An overdue item moves to today, marked overdue, so it stays
+    in sight until it's marked done; a yearly item repeats every year."""
+    from datetime import datetime, timezone
+    today = today or date.today()
+    now = now or datetime.now(timezone.utc)
+    items = items if items is not None else load_items()
+    lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//US Congress vs Voters//reminders//EN",
+             "CALSCALE:GREGORIAN", "METHOD:PUBLISH", "X-WR-CALNAME:US Congress vs Voters reminders",
+             "REFRESH-INTERVAL;VALUE=DURATION:PT6H", "X-PUBLISHED-TTL:PT6H"]
+    for it in items:
+        yearly = it.get("repeat") == "yearly"
+        if it.get("done") and not yearly:
+            continue
+        due = next_due(it, today)
+        day, title, details = due, it["title"], _reflow(it["details"])
+        if due < today and not yearly:
+            day, title = today, f"Overdue: {it['title']}"
+            details = f"Was due {due:%B %-d, %Y}.\n\n{details}"
+        details += ("\n\nThis repeats every year." if yearly else
+                    "\n\nTo stop this reminder, set done: true for it in config/reminders.yaml.")
+        lines += ["BEGIN:VEVENT", f"UID:{it['id']}@uscongressvsvoters.org", f"DTSTAMP:{now:%Y%m%dT%H%M%SZ}",
+                  f"DTSTART;VALUE=DATE:{day:%Y%m%d}", f"DTEND;VALUE=DATE:{day + timedelta(days=1):%Y%m%d}",
+                  f"SUMMARY:{_ics_text(title)}", f"DESCRIPTION:{_ics_text(details)}", "TRANSP:TRANSPARENT"]
+        if yearly:
+            lines.append("RRULE:FREQ=YEARLY")
+        for lead in sorted(set(it.get("lead_days", DEFAULT_LEAD_DAYS)), reverse=True):
+            if day != due and lead > 0:
+                continue                                  # moved to today: only the day-of alert
+            trigger = "PT9H" if lead == 0 else (f"-P{lead - 1}DT15H" if lead > 1 else "-PT15H")
+            lines += ["BEGIN:VALARM", "ACTION:DISPLAY", f"DESCRIPTION:{_ics_text(title)}",
+                      f"TRIGGER:{trigger}", "END:VALARM"]
+        lines.append("END:VEVENT")
+    lines.append("END:VCALENDAR")
+    return "\r\n".join(part for line in lines for part in _fold(line)) + "\r\n"
+
+
 def sent_log_path():
     return config.PROJECT_ROOT / "logs" / "reminders-sent.json"
 
@@ -124,6 +194,10 @@ def run(today: date | None = None, dry_run: bool = False, sender=None, items=Non
             due_items.append((it, due))
     if not due_items:
         log.info("No reminders today (%s)", today)
+        return 0
+    if os.environ.get("REMINDERS_EMAIL", "").strip().lower() == "off" and not dry_run:
+        log.info("%d reminder(s) due; emails are off (REMINDERS_EMAIL=off), the calendar feed has them",
+                 len(due_items))
         return 0
     from .api import feedback
     cfg = feedback.settings()
