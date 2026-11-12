@@ -650,6 +650,52 @@ def main() -> None:
     get = http_getter(args.api)
     wait_for_api(get)
     build(Path(args.out), get, args.version, images=False if args.no_images else None)
+    if fill_feature_counts(Path(args.out), get):
+        print("Updated the counts on the Features page")
+
+
+def fill_feature_counts(out: Path, get, today: date | None = None) -> bool:
+    """Put the current vote counts into the Features page (features.html, already built into
+    <out>), so they never go stale: total votes, each chamber, surveyed votes, the number of
+    topics and each topic chip's count (chips re-sorted, largest first). Marked in the page as
+    <span data-count="..."> and <span data-topic="...">."""
+    import re
+    page = out / "features.html"
+    if not page.exists():
+        return False
+    filters = get("/v1/votes/filters")
+    surveyed = get("/v1/votes?surveyed=true&limit=1")
+    if not filters:
+        return False
+    house = sum(c["votes"].get("house", 0) for c in filters["congresses"])
+    senate = sum(c["votes"].get("senate", 0) for c in filters["congresses"])
+    topics = {t["name"]: t["votes"] for t in filters["topics"]}
+    today = today or date.today()
+    html = page.read_text(encoding="utf-8")
+    shown = re.findall(r'data-topic="([^"]+)"', html)
+    values = {"votes": f"{house + senate:,}", "house": f"{house:,}", "senate": f"{senate:,}",
+              "topics": str(len(topics)), "more-topics": str(max(0, len(topics) - len(shown))),
+              "month": f"{today:%B %Y}"}
+    if surveyed:
+        values["surveyed"] = f"{surveyed['total']:,}"
+    for key, value in values.items():
+        html = re.sub(rf'(<span data-count="{key}">)[^<]*(</span>)', rf"\g<1>{value}\g<2>", html)
+    html = re.sub(r'(<span data-topic="([^"]+)">)[^<]*(</span>)',
+                  lambda m: f"{m.group(1)}{topics.get(html_unescape(m.group(2)), 0):,}{m.group(3)}", html)
+
+    def resort(m):
+        items = re.findall(r'\s*<li><a href="votes\.html\?topic=.*?</li>', m.group(2))
+        rest = m.group(2)[sum(len(i) for i in items):]
+        count = lambda i: int(re.search(r'data-topic="[^"]+">([\d,]+)<', i).group(1).replace(",", ""))
+        return m.group(1) + "".join(sorted(items, key=count, reverse=True)) + rest
+    html = re.sub(r'(<ul class="chips" data-topics>)(.*?)(?=</ul>)', resort, html, flags=re.S)
+    page.write_text(html, encoding="utf-8")
+    return True
+
+
+def html_unescape(text: str) -> str:
+    import html
+    return html.unescape(text)
 
 
 def wait_for_api(get, seconds: int = 60) -> None:

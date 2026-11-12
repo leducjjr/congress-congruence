@@ -165,3 +165,30 @@ def test_member_page_says_how_long_in_each_seat(tmp_path):
     built(tmp_path)
     page = (tmp_path / "members" / "ted-cruz" / "index.html").read_text()
     assert "<strong>Seat held:</strong> Senator for TX, 2013–now (13 years, 10 months)." in page
+
+
+def test_features_page_counts_come_from_the_api(tmp_path):
+    spec2 = importlib.util.spec_from_file_location("build_site", ROOT / "scripts" / "build_site.py")
+    bs = importlib.util.module_from_spec(spec2)
+    spec2.loader.exec_module(bs)
+    bs.build(tmp_path, "v1")
+
+    def api(path):
+        if path.startswith("/v1/votes/filters"):
+            return {"congresses": [{"congress": 119, "votes": {"house": 1000, "senate": 500}},
+                                   {"congress": 118, "votes": {"house": 2000}}],
+                    "topics": [{"name": "Health", "votes": 9000}, {"name": "Taxation", "votes": 10},
+                               {"name": "Economics and Public Finance", "votes": 7465},
+                               {"name": "Civil Rights and Liberties, Minority Issues", "votes": 180}]
+                              + [{"name": f"Other {i}", "votes": 1} for i in range(30)]}
+        return {"total": 160}
+    assert bp.fill_feature_counts(tmp_path, api, today=date(2026, 12, 1))
+    page = (tmp_path / "features.html").read_text()
+    assert '<span data-count="votes">3,500</span> House and Senate votes' in page
+    assert '<span data-count="house">3,000</span>' in page and '<span data-count="senate">500</span>' in page
+    assert '<span data-count="surveyed">160</span>' in page and '<span data-count="month">December 2026</span>' in page
+    assert '<span data-count="topics">34</span> subject areas' in page and '<span data-count="more-topics">18</span>' in page
+    assert '<span data-topic="Civil Rights and Liberties, Minority Issues">180</span>' in page
+    chips = page.split("data-topics>")[1].split("</ul>")[0]
+    assert chips.index('topic=Health"') < chips.index("topic=Economics") < chips.index("topic=Taxation")
+    assert chips.count("<li") == 17 and chips.rstrip().endswith("</li>")       # 16 topics + "and N more"
