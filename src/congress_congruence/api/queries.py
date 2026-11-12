@@ -32,11 +32,14 @@ def bill_info(congress: int | None, bill_type: str | None, number: int | None) -
             "url": f"https://www.congress.gov/bill/{ordinal(congress)}-congress/{path}/{number}"}
 
 
-def official_vote_url(chamber: str, congress: int, session: int, roll: int, vote_date: date) -> str:
-    if chamber == "house" and vote_date.year < 1990 and session == 1:
-        # The Clerk's site starts in 1990. Voteview numbers votes through the whole Congress,
-        # which matches the session's numbering in a Congress's first session.
-        return f"https://voteview.com/rollcall/RH{congress:03d}{roll:04d}"     # e.g. RH1010353
+def official_vote_url(chamber: str, congress: int, session: int, roll: int, vote_date: date,
+                      earlier_in_congress: int = 0) -> str:
+    """The vote's page on the chamber's own site, or on Voteview where the chamber has none: the
+    Clerk's House pages start in 1990 and the Senate's in 1989 (101st Congress). Voteview numbers
+    votes through the whole Congress, so a later session's vote adds the votes of the sessions
+    before it (earlier_in_congress)."""
+    if (chamber == "house" and vote_date.year < 1990) or (chamber == "senate" and congress < 101):
+        return f"https://voteview.com/rollcall/R{'H' if chamber == 'house' else 'S'}{congress:03d}{roll + earlier_in_congress:04d}"
     if chamber == "house":
         return f"https://clerk.house.gov/Votes/{vote_date.year}{roll:03d}"   # e.g. /Votes/2025069
     return ("https://www.senate.gov/legislative/LIS/roll_call_votes/"
@@ -45,6 +48,12 @@ def official_vote_url(chamber: str, congress: int, session: int, roll: int, vote
 
 # A member's party for a vote is the party of the term covering the vote date;
 # caucus is used where it differs (independents who caucus with a party).
+# Votes per session, for numbering Voteview links through a whole Congress (official_vote_url).
+SESSION_VOTES = """
+select chamber, congress, session, count(*) as votes from core.roll_call
+ where congress <= 101 group by chamber, congress, session
+"""
+
 CURRENT_MEMBERS = """
 select distinct on (t.bioguide_id)
        t.bioguide_id, coalesce(m.official_full, m.first_name || ' ' || m.last_name) as name,

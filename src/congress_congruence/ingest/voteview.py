@@ -124,7 +124,7 @@ def build_roll_calls(chamber: str, rollcalls: list[dict], votes: list[dict],
         if v["chamber"] == name and v["cast_code"] != SKIP_CODE and v["icpsr"] not in presidents:
             by_roll[v["rollnumber"]].append(v)
 
-    # A House session with no Clerk numbers at all (1989: the Clerk's records start in 1990) is
+    # A session with no Clerk numbers at all (the House before 1990, and older Senate records) is
     # numbered in Voteview's order, the order the votes were taken. A session with only some
     # numbers missing is left as it is: those votes are skipped rather than guessed.
     numbered, unnumbered = defaultdict(int), defaultdict(list)
@@ -136,7 +136,7 @@ def build_roll_calls(chamber: str, rollcalls: list[dict], votes: list[dict],
                 numbered[(r["congress"], session_of(r))] += 1
     assigned = {}
     for key, rows in unnumbered.items():
-        if chamber == "house" and not numbered[key]:
+        if not numbered[key]:
             for i, r in enumerate(sorted(rows, key=lambda r: int(r["rollnumber"])), start=1):
                 assigned[id(r)] = i
 

@@ -678,6 +678,10 @@ def fill_feature_counts(out: Path, get, today: date | None = None) -> bool:
               "month": f"{today:%B %Y}"}
     if surveyed:
         values["surveyed"] = f"{surveyed['total']:,}"
+    congresses = sorted((c for c in filters["congresses"] if c.get("first_vote")), key=lambda c: -c["congress"])
+    if congresses:
+        values["since"] = str(congresses[-1]["first_vote"])[:4]
+        values["congresses"] = number_words(len(congresses))
     for key, value in values.items():
         html = re.sub(rf'(<span data-count="{key}">)[^<]*(</span>)', rf"\g<1>{value}\g<2>", html)
     html = re.sub(r'(<span data-topic="([^"]+)">)[^<]*(</span>)',
@@ -689,8 +693,33 @@ def fill_feature_counts(out: Path, get, today: date | None = None) -> bool:
         count = lambda i: int(re.search(r'data-topic="[^"]+">([\d,]+)<', i).group(1).replace(",", ""))
         return m.group(1) + "".join(sorted(items, key=count, reverse=True)) + rest
     html = re.sub(r'(<ul class="chips" data-topics>)(.*?)(?=</ul>)', resort, html, flags=re.S)
+    if congresses:
+        chips = "".join(f'\n        <li><a href="votes.html?congress={c["congress"]}">{ordinal(c["congress"])} '
+                        f'<span>{years_of(c["congress"])}</span></a></li>' for c in congresses)
+        html = re.sub(r'(<ul class="chips" data-congresses>)(.*?)(?=\n    </ul>)', lambda m: m.group(1) + chips,
+                      html, flags=re.S)
     page.write_text(html, encoding="utf-8")
     return True
+
+
+def ordinal(n: int) -> str:
+    return f"{n}{'th' if 10 <= n % 100 <= 20 else {1: 'st', 2: 'nd', 3: 'rd'}.get(n % 10, 'th')}"
+
+
+def years_of(congress: int) -> str:
+    start = 1787 + 2 * congress
+    return f"{start}–{str(start + 1)[2:]}"
+
+
+def number_words(n: int) -> str:
+    ones = "zero one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen " \
+           "sixteen seventeen eighteen nineteen".split()
+    tens = {2: "twenty", 3: "thirty", 4: "forty", 5: "fifty"}
+    if n < 20:
+        return ones[n]
+    if n < 60:
+        return tens[n // 10] + ("" if n % 10 == 0 else "-" + ones[n % 10])
+    return str(n)
 
 
 def html_unescape(text: str) -> str:

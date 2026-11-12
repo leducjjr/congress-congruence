@@ -140,7 +140,7 @@ main_class: features-page
     <p class="kicker">Members by the numbers</p>
     <h2>Every member of a Congress in one sortable table</h2>
     <p>Time in Congress, time in their seat, votes cast, votes missed, and how often they voted Yea, Nay,
-      or with their party. Pick a Congress back to 1989 and either chamber, then sort by any column.</p>
+      or with their party. Pick a Congress back to <span data-count="since">1989</span> and either chamber, then sort by any column.</p>
     <ul>
       <li>Members who left and came back get the time they served, not the years in between</li>
       <li>Past Congresses are measured as of that time, so "longest serving" means then</li>
@@ -206,7 +206,7 @@ main_class: features-page
     <p>Filter by chamber, Congress, type of vote, result, topic, or only the votes a survey asked about.
       Open any vote to see how each member voted.</p>
     <ul>
-      <li>House and Senate votes from 1989, each one checked against the published totals</li>
+      <li>House and Senate votes from <span data-count="since">1989</span>, each one checked against the published totals</li>
       <li>Links to the official record and the bill on Congress.gov</li>
     </ul>
     <a class="try" href="#explore-h">See what you can filter by ↓</a>
@@ -220,7 +220,7 @@ main_class: features-page
 
 <section class="explore" aria-labelledby="explore-h">
   <p class="kicker">Explore every vote</p>
-  <h2 id="explore-h"><span data-count="votes">35,671</span> House and Senate votes since 1989, sorted the way you think about them</h2>
+  <h2 id="explore-h"><span data-count="votes">35,671</span> House and Senate votes since <span data-count="since">1989</span>, sorted the way you think about them</h2>
   <p class="explore-lede">Combine any of these filters on the <a href="votes.html">All votes</a> page. Every choice below
     opens that page already filtered. Counts are from <span data-count="month">November 2026</span> and grow as Congress votes.</p>
 
@@ -270,8 +270,8 @@ main_class: features-page
   </div>
 
   <div class="filter-group">
-    <h3>Congress <small>nineteen two-year Congresses</small></h3>
-    <ul class="chips">
+    <h3>Congress <small><span data-count="congresses">nineteen</span> two-year Congresses</small></h3>
+    <ul class="chips" data-congresses>
         <li><a href="votes.html?congress=119">119th <span>2025–26</span></a></li>
         <li><a href="votes.html?congress=118">118th <span>2023–24</span></a></li>
         <li><a href="votes.html?congress=117">117th <span>2021–22</span></a></li>

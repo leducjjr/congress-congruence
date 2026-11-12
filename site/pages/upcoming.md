@@ -7,7 +7,7 @@ description: What's being added to US Congress vs Voters next - new survey sourc
 <p class="lede">What we're working on next. Dates depend on when each source publishes its data, so
 they're estimates. Have an idea? <a href="contact.html#feedback">Tell us</a>.</p>
 
-*Last updated November 11, 2026.*
+*Last updated November 12, 2026.*
 
 ## In progress {#in-progress}
 
@@ -19,6 +19,12 @@ voting in Alaska, Arkansas, Kansas, South Dakota and West Virginia; voter ID in 
 Colorado, Nevada, North Carolina, Ohio and Oklahoma; and Colorado's measure on police cooperation with
 immigration authorities. Each state's result is added once that state certifies it, usually within a
 few weeks of the election.
+
+### Voting records back to 1973 {#records-1973}
+
+The votes of the 93rd to 100th Congresses (1973 to 1988), from Voteview, about 16,000 more. That
+covers the whole career of every member serving today, and Congress.gov's subject areas for bills
+also start in 1973. They're being loaded now, newest first, and appear as each Congress finishes.
 
 ## Coming in 2027 {#2027}
 
@@ -35,10 +41,12 @@ spring. Its questions about bills will be matched to votes and added when it's r
 
 ## Being considered {#considered}
 
-### Voting records back to 1973 {#records-1973}
+### Historical records, 1789 to 1972 {#history}
 
-The votes of the 93rd to 100th Congresses (1973 to 1988), from Voteview. That would cover the whole
-career of every member serving today, and Congress.gov's subject areas for bills also start in 1973.
+Every earlier recorded vote, from the 1st Congress on, in a separate historical section with the same
+look. Kept apart because the record is different: other parties (Federalists, Whigs and more),
+states and districts that changed over time, shorter descriptions of each vote, and no surveys to
+compare with.
 
 ### Voting trends over time {#trends}
 

@@ -155,6 +155,12 @@ def test_regular_pages_have_link_previews(tmp_path):
     assert "Sitemap: https://uscongressvsvoters.org/sitemap.xml" in (tmp_path / "robots.txt").read_text()
 
 
+def test_ordinals_years_and_words():
+    assert [bp.ordinal(n) for n in (93, 101, 102, 103, 111, 112, 113)] == ["93rd", "101st", "102nd", "103rd", "111th", "112th", "113th"]
+    assert bp.years_of(106) == "1999–00" and bp.years_of(93) == "1973–74"
+    assert bp.number_words(19) == "nineteen" and bp.number_words(27) == "twenty-seven" and bp.number_words(30) == "thirty"
+
+
 def test_time_in_office():
     assert bp.tenure_words(bp.months_between("2012-11-13", "2026-11-10")) == "13 years, 11 months"
     assert bp.tenure_words(bp.months_between("2019-01-03", "2023-01-03")) == "4 years"
@@ -175,8 +181,9 @@ def test_features_page_counts_come_from_the_api(tmp_path):
 
     def api(path):
         if path.startswith("/v1/votes/filters"):
-            return {"congresses": [{"congress": 119, "votes": {"house": 1000, "senate": 500}},
-                                   {"congress": 118, "votes": {"house": 2000}}],
+            return {"congresses": [{"congress": 119, "votes": {"house": 1000, "senate": 500}, "first_vote": "2025-01-03"},
+                                   {"congress": 118, "votes": {"house": 2000}, "first_vote": "2023-01-03"},
+                                   {"congress": 93, "votes": {}, "first_vote": "1973-01-03"}],
                     "topics": [{"name": "Health", "votes": 9000}, {"name": "Taxation", "votes": 10},
                                {"name": "Economics and Public Finance", "votes": 7465},
                                {"name": "Civil Rights and Liberties, Minority Issues", "votes": 180}]
@@ -189,6 +196,11 @@ def test_features_page_counts_come_from_the_api(tmp_path):
     assert '<span data-count="surveyed">160</span>' in page and '<span data-count="month">December 2026</span>' in page
     assert '<span data-count="topics">34</span> subject areas' in page and '<span data-count="more-topics">18</span>' in page
     assert '<span data-topic="Civil Rights and Liberties, Minority Issues">180</span>' in page
+    assert page.count('<span data-count="since">1973</span>') == 3
+    assert '<span data-count="congresses">three</span> two-year Congresses' in page
+    cong = page.split("data-congresses>")[1].split("</ul>")[0]
+    assert cong.count("<li") == 3 and '93rd <span>1973–74</span>' in cong and cong.index("119th") < cong.index("93rd")
+    assert "votes.html?congress=101" not in cong
     chips = page.split("data-topics>")[1].split("</ul>")[0]
     assert chips.index('topic=Health"') < chips.index("topic=Economics") < chips.index("topic=Taxation")
     assert chips.count("<li") == 17 and chips.rstrip().endswith("</li>")       # 16 topics + "and N more"

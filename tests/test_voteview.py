@@ -222,3 +222,18 @@ def test_house_votes_before_1990_link_to_voteview():
     from congress_congruence.api.queries import official_vote_url
     assert official_vote_url("house", 101, 1, 353, date(1989, 11, 17)) == "https://voteview.com/rollcall/RH1010353"
     assert official_vote_url("house", 101, 2, 1, date(1990, 1, 23)) == "https://clerk.house.gov/Votes/1990001"
+    # 1973–88: Voteview for both chambers, counting through the whole Congress.
+    assert official_vote_url("house", 95, 2, 4, date(1978, 1, 20), 706) == "https://voteview.com/rollcall/RH0950710"
+    assert official_vote_url("senate", 93, 1, 12, date(1973, 1, 20)) == "https://voteview.com/rollcall/RS0930012"
+    assert official_vote_url("senate", 101, 1, 12, date(1989, 2, 1)).startswith("https://www.senate.gov/")
+
+
+def test_an_older_senate_session_without_clerk_numbers_is_numbered_in_order():
+    """1973-88 Senate records can lack the Senate's own numbers too; they are numbered the same way."""
+    rollcalls = (HOUSE_1989.replace(b",House,", b",Senate,").replace(b"\n101,", b"\n95,")
+                 .replace(b"1989-", b"1977-").replace(b"1990-", b"1978-"))
+    votes = HOUSE_VOTES.replace(b",House,", b",Senate,").replace(b"\n101,", b"\n95,")
+    members = HOUSE_MEMBERS.replace(b",House,", b",Senate,").replace(b"\n101,", b"\n95,")
+    rcs, _ = voteview.build_roll_calls("senate", voteview.read_csv(rollcalls), voteview.read_csv(votes),
+                                       voteview.read_csv(members))
+    assert {"s-95-1-1", "s-95-1-2"} <= {rc.roll_call_id for rc in rcs}

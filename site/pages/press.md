@@ -13,8 +13,8 @@ US Congress vs Voters shows how every member of the House and Senate voted, and,
 independent surveys asked people about the same bills, how each member's vote compared with what
 most people in their state or district said. Votes come from the official House and Senate records;
 opinion comes from published surveys such as the Cooperative Election Study and Nationscape, with
-each estimate shown with its likely range. It's an independent civic project, not affiliated with
-any party, campaign, government body or survey organization. It takes no advertising and doesn't
+each estimate shown with its likely range. It's an independent civic project, built and maintained by John LeDuc, not
+affiliated with any party, campaign, government body or survey organization. It takes no advertising and doesn't
 track visitors. The code is [public]({{source_url}}).
 
 ## Pages you can link to {#links}
@@ -31,7 +31,7 @@ were built; the interactive views always show the latest.
 
 ## How to cite {#cite}
 
-> US Congress vs Voters, "*page title*," uscongressvsvoters.org, accessed *date*.
+> John LeDuc, US Congress vs Voters, "*page title*," uscongressvsvoters.org, accessed *date*.
 
 When you cite a survey figure, please also name the survey (for example, "estimates from the 2022
 Cooperative Election Study, via US Congress vs Voters"). The survey teams did the work of asking.
@@ -58,6 +58,6 @@ listed in the [corrections log](corrections.html). Write to
 
 ## How the site is built {#built}
 
-One person maintains the site and decides what it uses and shows. Much of the code is written by
+John LeDuc, a software developer since 1990, maintains the site and decides what it uses and shows. Much of the code is written by
 Claude, an AI model made by Anthropic, at the maintainer's direction; no AI is involved when you use
 the site. See [About](about.html#how-built).

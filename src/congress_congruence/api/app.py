@@ -218,8 +218,7 @@ def vote_summary(r: dict) -> dict:
         "yea": r["yea_total"], "nay": r["nay_total"], "present": r["present_total"],
         "not_voting": r["not_voting_total"],
         "bill": q.bill_info(r["bill_congress"] or r["congress"], r["bill_type"], r["bill_number"]),
-        "official_url": q.official_vote_url(r["chamber"], r["congress"], r["session"], r["roll_number"],
-                                            r["vote_date"]),
+        "official_url": vote_url(r),
     }
 
 
@@ -253,8 +252,7 @@ def question_cards(qrows: list[dict], members: list[str]) -> list[dict]:
             "chamber": t["chamber"], "match": t["match_kind"], "support_side": t["support_side"],
             "roll_call_id": t["roll_call_id"], "date": t["vote_date"], "question": t["question"],
             "result": t["result"], "yea": t["yea_total"], "nay": t["nay_total"],
-            "official_url": q.official_vote_url(t["chamber"], t["congress"], t["session"], t["roll_number"],
-                                                t["vote_date"]),
+            "official_url": vote_url(t),
             "members": {"with_majority": t["with_majority"], "against_majority": t["against_majority"],
                         "too_close": t["too_close"], "not_surveyed": t["not_surveyed"],
                         "did_not_vote": t["did_not_vote"]},
@@ -526,8 +524,7 @@ def member_votes(bioguide_id: str, response: Response, limit: int = Query(20, ge
         "position": r["position"],
         "position_detail": r["raw_position"],
         "source": r["source"],
-        "official_url": q.official_vote_url(r["chamber"], r["congress"], r["session"],
-                                            r["roll_number"], r["vote_date"]),
+        "official_url": vote_url(r),
     } for r in rows]}
 
 
@@ -585,8 +582,7 @@ def member_opinion(bioguide_id: str, response: Response):
             "roll_call_id": r["roll_call_id"], "date": r["vote_date"], "question": r["vote_question"],
             "result": r["result"], "yea_total": r["yea_total"], "nay_total": r["nay_total"],
             "congress": r["congress"],
-            "official_url": q.official_vote_url(r["chamber"], r["congress"], r["session"],
-                                                r["roll_number"], r["vote_date"]),
+            "official_url": vote_url(r),
         },
         "position": r["position"],
         # Which side of the proposal most of the member's party (or the party they caucus with) took on
@@ -643,6 +639,20 @@ def member_opinion(bioguide_id: str, response: Response):
 
 ROLL_CALL_RE = re.compile(r"^[hs]-\d{2,3}-\d-\d{1,5}$")
 VOTE_KINDS = ("passage", "amendment", "nomination", "procedural", "other")
+
+
+_session_votes: dict | None = None
+
+
+def vote_url(r) -> str:
+    """official_vote_url for a vote row, counting earlier sessions' votes where the link is Voteview's."""
+    global _session_votes
+    earlier = 0
+    if r["session"] > 1 and r["congress"] <= 101:
+        if _session_votes is None or (r["chamber"], r["congress"], 1) not in _session_votes:
+            _session_votes = {(x["chamber"], x["congress"], x["session"]): x["votes"] for x in fetch(q.SESSION_VOTES)}
+        earlier = sum(_session_votes.get((r["chamber"], r["congress"], s), 0) for s in range(1, r["session"]))
+    return q.official_vote_url(r["chamber"], r["congress"], r["session"], r["roll_number"], r["vote_date"], earlier)
 
 
 @app.get("/v1/votes/filters")
