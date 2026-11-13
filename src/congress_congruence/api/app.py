@@ -43,6 +43,7 @@ from .. import config  # noqa: F401  (loads .env)
 from ..ingest.ppc import STATE_NAMES as ppc_states
 from ..ingest.votes import current_session
 from . import feedback as fb
+from .titles import tidy
 from . import queries as q
 
 BIOGUIDE_RE = re.compile(r"^[A-Z]\d{6}$")
@@ -214,7 +215,7 @@ def build_tsquery(text: str) -> str | None:
 def vote_summary(r: dict) -> dict:
     return {
         "roll_call_id": r["roll_call_id"], "chamber": r["chamber"], "date": r["vote_date"],
-        "question": r["question"], "description": r["description"], "result": r["result"],
+        "question": tidy(r["question"]), "description": tidy(r["description"]), "result": r["result"],
         "yea": r["yea_total"], "nay": r["nay_total"], "present": r["present_total"],
         "not_voting": r["not_voting_total"],
         "bill": q.bill_info(r["bill_congress"] or r["congress"], r["bill_type"], r["bill_number"]),
@@ -250,7 +251,7 @@ def question_cards(qrows: list[dict], members: list[str]) -> list[dict]:
                    if r.get("kind") != "ballot" or k == "states"},
         "votes": [{
             "chamber": t["chamber"], "match": t["match_kind"], "support_side": t["support_side"],
-            "roll_call_id": t["roll_call_id"], "date": t["vote_date"], "question": t["question"],
+            "roll_call_id": t["roll_call_id"], "date": t["vote_date"], "question": tidy(t["question"]),
             "result": t["result"], "yea": t["yea_total"], "nay": t["nay_total"],
             "official_url": vote_url(t),
             "members": {"with_majority": t["with_majority"], "against_majority": t["against_majority"],
@@ -515,8 +516,8 @@ def member_votes(bioguide_id: str, response: Response, limit: int = Query(20, ge
         "roll_call_id": r["roll_call_id"],
         "chamber": r["chamber"],
         "date": r["vote_date"],
-        "question": r["question"],
-        "description": r["description"],
+        "question": tidy(r["question"]),
+        "description": tidy(r["description"]),
         "result": r["result"],
         "bill": q.bill_info(r["bill_congress"], r["bill_type"], r["bill_number"]),
         "yea_total": r["yea_total"],
@@ -579,7 +580,7 @@ def member_opinion(bioguide_id: str, response: Response):
         "question": r["question"],
         "note": r["note"],
         "vote": {
-            "roll_call_id": r["roll_call_id"], "date": r["vote_date"], "question": r["vote_question"],
+            "roll_call_id": r["roll_call_id"], "date": r["vote_date"], "question": tidy(r["vote_question"]),
             "result": r["result"], "yea_total": r["yea_total"], "nay_total": r["nay_total"],
             "congress": r["congress"],
             "official_url": vote_url(r),
