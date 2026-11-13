@@ -120,7 +120,7 @@ def conn(tmp_path, monkeypatch):
     monkeypatch.setenv("RAW_DATA_DIR", str(tmp_path / "raw"))
     with db.connect(url) as c:
         with c.cursor() as cur:
-            cur.execute("drop schema if exists core cascade")
+            cur.execute("drop schema if exists core, history cascade")
         c.commit()
         db.migrate(c)
         with c.cursor() as cur:

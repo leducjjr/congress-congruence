@@ -127,7 +127,7 @@ def conn():
         pytest.skip("TEST_DATABASE_URL not set")
     with db.connect(url) as c:
         with c.cursor() as cur:
-            cur.execute("drop schema if exists core cascade")
+            cur.execute("drop schema if exists core, history cascade")
         c.commit()
         db.migrate(c)
         # Minimal member rows for everyone in the two fixtures.
