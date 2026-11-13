@@ -183,6 +183,24 @@ def build_roll_calls(chamber: str, rollcalls: list[dict], votes: list[dict],
     return out, problems
 
 
+def drop_absent_non_members(rc: ParsedRollCall, terms: dict[str, list[tuple[date, date]]]) -> list[str]:
+    """Voteview sometimes keeps someone on the rolls as "Not Voting" after they've left (a senator
+    who resigned partway through a session, while their successor votes). Where the member list
+    shows they weren't serving that day, that entry is dropped. Only "Not Voting" is dropped: a
+    Yea or Nay from someone not serving is left in, so the vote fails its checks and is looked at."""
+    dropped = []
+    keep = []
+    for v in rc.votes:
+        spells = terms.get(v.member_id)
+        if (v.raw_position == "Not Voting" and spells
+                and not any(start <= rc.vote_date <= end for start, end in spells)):
+            dropped.append(v.member_id)
+        else:
+            keep.append(v)
+    rc.votes = keep
+    return dropped
+
+
 def validate_voteview(rc: ParsedRollCall) -> None:
     problems = []
     ids = [v.member_id for v in rc.votes]
@@ -258,18 +276,27 @@ def run(conn, chamber: str, congress: int, local_dir: Path | None = None) -> dic
     roll_calls, problems = build_roll_calls(
         chamber, read_csv(files["rollcalls"]), read_csv(files["votes"]), read_csv(files["members"]), known)
     skip = official_ids(conn, chamber, congress)
+    with conn.cursor() as cur:
+        cur.execute("select bioguide_id, start_date, end_date from core.term where chamber = %s", (chamber,))
+        terms: dict[str, list] = {}
+        for b, start, end in cur.fetchall():
+            terms.setdefault(b, []).append((start, end or date.max))
 
     loaded = skipped = failed = 0
+    not_serving = Counter()
     for rc in roll_calls:
         if rc.roll_call_id in skip:
             skipped += 1
             continue
+        not_serving.update(drop_absent_non_members(rc, terms))
         try:
             load_roll_call(conn, rc, raw_sha=sha, source="voteview", validator=validate_voteview)
             loaded += 1
         except ValidationError as e:
             log.error("%s", e)
             failed += 1
+    for b, n in not_serving.items():
+        log.info("Left out 'Not Voting' for %s on %d vote(s) when the member list shows them not serving", b, n)
     for p in problems:
         log.warning("%s", p)
     newest = max((rc.vote_date for rc in roll_calls), default=None)

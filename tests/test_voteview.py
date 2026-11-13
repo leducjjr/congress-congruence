@@ -237,3 +237,22 @@ def test_an_older_senate_session_without_clerk_numbers_is_numbered_in_order():
     rcs, _ = voteview.build_roll_calls("senate", voteview.read_csv(rollcalls), voteview.read_csv(votes),
                                        voteview.read_csv(members))
     assert {"s-95-1-1", "s-95-1-2"} <= {rc.roll_call_id for rc in rcs}
+
+
+def test_not_voting_after_leaving_is_dropped_but_real_votes_are_not():
+    """1974: Voteview kept a senator who had resigned as 'Not Voting' while his successor voted,
+    giving 101 senators. The member list shows he wasn't serving, so that entry is dropped."""
+    from datetime import date as d
+    from congress_congruence.ingest.vote_parsers import MemberVote, ParsedRollCall
+    rc = ParsedRollCall(chamber="senate", congress=93, session=2, roll_number=5, vote_date=d(1974, 3, 1), vote_time=None,
+                        question="On Passage", vote_type=None, result=None, description=None,
+                        bill_type=None, bill_number=None, amendment_number=None,
+                        yea_total=1, nay_total=0, present_total=None, not_voting_total=None)
+    rc.votes = [MemberVote("GONE", "bioguide", "not_voting", "Not Voting", None, "OH"),
+                MemberVote("NEW", "bioguide", "yea", "Yea", None, "OH"),
+                MemberVote("UNKNOWN", "bioguide", "not_voting", "Not Voting", None, "TX")]
+    terms = {"GONE": [(d(1969, 1, 3), d(1974, 1, 3))], "NEW": [(d(1974, 1, 4), d(1974, 12, 23))]}
+    assert voteview.drop_absent_non_members(rc, terms) == ["GONE"]
+    assert [v.member_id for v in rc.votes] == ["NEW", "UNKNOWN"]       # no terms known: left alone
+    rc.votes.append(MemberVote("GONE", "bioguide", "nay", "Nay", None, "OH"))
+    assert voteview.drop_absent_non_members(rc, terms) == []           # a real vote is never dropped
