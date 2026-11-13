@@ -14,7 +14,7 @@ from collections import Counter
 
 from fastapi import APIRouter, HTTPException, Query, Response
 
-from .titles import _title_words, tidy
+from .titles import _title_words, bill_label, tidy
 
 router = APIRouter(prefix="/v1/history")
 CACHE = "public, max-age=3600"        # the historical record changes only when it's reloaded
@@ -132,7 +132,7 @@ def vote_row(chamber, congress, r):
     return {"roll": r["rollnumber"], "session": r["session"], "date": r["vote_date"],
             "yea": r["yea_count"], "nay": r["nay_count"], "result": r["result"],
             "question": tidy(r["question"]), "description": tidy(r["description"]),
-            "bill": r["bill_number"], "totals_match": r["totals_match"],
+            "bill": bill_label(r["bill_number"]), "totals_match": r["totals_match"],
             "voteview_url": voteview_url(chamber, congress, r["rollnumber"])}
 
 

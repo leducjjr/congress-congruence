@@ -133,6 +133,22 @@ def build(out: Path, version: str) -> list[str]:
                     main_class=meta.get("main_class", "prose" if path.suffix == ".md" else ""))
         (out / name).write_text(page, encoding="utf-8")
         built.append(name)
+    # Pages in folders (site/pages/history/ -> /history/): links resolve from the site root.
+    for folder in sorted(p for p in (SITE / "pages").iterdir() if p.is_dir()):
+        for path in sorted(folder.glob("*")):
+            if path.suffix not in (".md", ".html"):
+                continue
+            meta, body = read_page(path)
+            if meta.get("draft"):
+                continue
+            name = path.stem + ".html"
+            url_path = f"{folder.name}/" if name == "index.html" else f"{folder.name}/{name}"
+            page = wrap(frame, settings, meta, render_body(path, body), f"{folder.name}/{name}", version,
+                        slug=f"{folder.name}-{path.stem}", url_path=url_path, base=True,
+                        main_class=meta.get("main_class", "prose" if path.suffix == ".md" else ""))
+            (out / folder.name).mkdir(exist_ok=True)
+            (out / folder.name / name).write_text(page, encoding="utf-8")
+            built.append(f"{folder.name}/{name}")
     (out / "feed.xml").write_text(feed_xml(settings), encoding="utf-8")
     for name, src in ASSETS.items():
         shutil.copyfile(src, out / name)

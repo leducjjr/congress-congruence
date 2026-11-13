@@ -1,0 +1,83 @@
+---
+title: The historical record, 1789–1972
+description: Every recorded House and Senate vote from the 1st Congress in 1789 to the 92nd in 1972, with how each member voted, from Voteview.
+head: |
+  <script src="cards.js" defer></script>
+---
+<section class="intro">
+  <h1>The historical record, 1789–1972</h1>
+  <p class="lede">Every recorded vote in the House and Senate from the 1st Congress, which met in New York in 1789,
+    to the 92nd, which ended in January 1973: who served, how each of them voted, and how often they voted with their party.
+    For 1973 to today, see <a href="votes.html">All votes</a> and <a href="numbers.html">Members by the numbers</a>.</p>
+</section>
+
+<aside class="hist-banner" role="note">
+  <strong>An older record, kept separately.</strong> Parties are those of the time, from Federalists and Whigs on;
+  states, territories and districts changed often; and each vote's description is the clerk's brief note. There
+  are no surveys of public opinion for these years, so there's no comparison with what voters said.
+  <a href="history/#about">More about this record</a>
+</aside>
+
+<section class="group" aria-labelledby="congresses-h">
+  <h2 id="congresses-h">Choose a Congress</h2>
+  <p id="status" class="count-line">Loading…</p>
+  <div id="list"></div>
+</section>
+
+<section class="group prose" aria-labelledby="about">
+  <h2 id="about">About this record</h2>
+  <p>Everything in this section comes from <a href="https://voteview.com">Voteview</a>, a long-running research
+    project at UCLA that has compiled every roll-call vote in the House and Senate since 1789 from the official
+    records of Congress. Each vote here links to its page on Voteview.</p>
+  <ul>
+    <li><strong>Who was a member.</strong> Voteview records, for every vote, whether each person was a member at the
+      time. Members who arrived or left partway through a Congress are counted only for the votes while they served.</li>
+    <li><strong>Parties.</strong> Each member's party is the one Voteview gives for that Congress, by its name at the
+      time. "With their party" means the same as elsewhere on this site: how often they voted the way most of their
+      party's members did, on votes where the party's majority took a side. In the earliest Congresses parties were
+      loose groupings, so this figure says less about them.</li>
+    <li><strong>Seats.</strong> States are shown as they were then. Some states elected all their representatives
+      statewide, and district numbers were redrawn after each census, so the same number can mean a different place
+      from one decade to the next.</li>
+    <li><strong>Descriptions.</strong> Many are short, and the older ones were typed in capitals; they're shown here in
+      ordinary sentence case, with the original kept on Voteview.</li>
+    <li><strong>Totals.</strong> Voteview publishes each vote's Yea and Nay totals from the same records as each
+      member's vote, so they always agree. That shows nothing was lost in loading, but it isn't an independent check
+      the way the House Clerk's and Senate's published totals are for recent votes.</li>
+    <li><strong>No surveys or topics.</strong> Large surveys of public opinion by state and district only begin in the
+      2000s, and Congress.gov's subject areas for bills begin in 1973, so neither appears here.</li>
+  </ul>
+</section>
+
+<script>
+addEventListener("DOMContentLoaded", async () => {
+  const { el, API, ordinal } = window.CC;
+  const $ = id => document.getElementById(id);
+  const ERAS = [[1, 18, "The early republic, 1789–1825"], [19, 36, "To the Civil War, 1825–1861"],
+                [37, 55, "Civil War to the 1890s, 1861–1899"], [56, 72, "Into the 20th century, 1899–1933"],
+                [73, 92, "The New Deal to 1972, 1933–1973"]];
+  try {
+    const r = await fetch(`${API}/v1/history/congresses`);
+    if (!r.ok) throw new Error(r.status);
+    const { congresses } = await r.json();
+    const total = congresses.reduce((n, c) => n + (c.house?.roll_calls || 0) + (c.senate?.roll_calls || 0), 0);
+    $("status").textContent = `${congresses.length} Congresses and ${total.toLocaleString()} roll-call votes.`;
+    const byNum = Object.fromEntries(congresses.map(c => [c.congress, c]));
+    for (const [lo, hi, label] of ERAS.slice().reverse()) {
+      const items = [];
+      for (let n = hi; n >= lo; n--) {
+        const c = byNum[n];
+        if (!c) continue;
+        const counts = ["house", "senate"].filter(ch => c[ch]).map(ch =>
+          `${ch === "house" ? "House" : "Senate"} ${c[ch].roll_calls.toLocaleString()}`).join(" · ");
+        items.push(el("li", {}, el("a", { href: `history/congress.html?n=${n}` },
+          el("span", { class: "c-name" }, `${ordinal(n)} Congress`),
+          el("span", { class: "c-sub" }, `${c.years.replace(/–(\d\d)(\d\d)$/, "–$2")} · ${counts} votes`))));
+      }
+      if (items.length) $("list").append(el("h3", { class: "era" }, label), el("ul", { class: "cong-grid" }, ...items));
+    }
+  } catch (e) {
+    $("status").textContent = "The historical record couldn't be loaded just now. Please try again in a minute.";
+  }
+});
+</script>

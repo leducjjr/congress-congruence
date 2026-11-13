@@ -43,7 +43,7 @@ BILL_LABEL = {("h", "r"): "H.R.", ("h", "res"): "H.Res.", ("h", "jres"): "H.J.Re
 
 def is_shouting(text: str) -> bool:
     letters = [c for c in text if c.isalpha()]
-    return len(letters) >= 8 and sum(c.isupper() for c in letters) / len(letters) > 0.85
+    return len(letters) >= 4 and sum(c.isupper() for c in letters) / len(letters) > 0.85
 
 
 def _bill(m: re.Match) -> str:
@@ -69,6 +69,14 @@ def _title_words(name: str) -> str:
     name = re.sub(r"\bMc([a-z])", lambda m: "Mc" + m.group(1).upper(), name)
     name = re.sub(r"\bO'([a-z])", lambda m: "O'" + m.group(1).upper(), name)
     return name
+
+
+def bill_label(raw: str | None) -> str | None:
+    """Voteview's bill numbers ("HR5", "SJRES12") as people write them ("H.R. 5", "S.J.Res. 12")."""
+    if not raw:
+        return raw
+    out = BILL_RE.sub(_bill, raw.strip().lower())
+    return out if out != raw.strip().lower() else raw
 
 
 def tidy(text: str | None) -> str | None:

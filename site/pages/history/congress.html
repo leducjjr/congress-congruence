@@ -1,0 +1,245 @@
+---
+title: A Congress in the historical record
+description: One Congress from 1789 to 1972 - every member with their votes, missed votes and votes with their party, and every roll call with how each member voted.
+head: |
+  <script src="cards.js" defer></script>
+  <style>
+    .num-table th button { font: inherit; font-weight: 600; color: inherit; background: none; border: 0; padding: 0;
+      cursor: pointer; text-align: left; }
+    .num-table th[aria-sort] button::after { content: " \25BC"; font-size: 0.7em; }
+    .num-table th[aria-sort="ascending"] button::after { content: " \25B2"; }
+    .num-table td.n, .num-table th.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .num-table td.nw { white-space: nowrap; }
+    .num-table .sub { display: block; font-size: 0.8rem; color: var(--ink-soft); }
+    .table-scroll { overflow-x: auto; }
+    .count-line { font-size: 0.9rem; color: var(--ink-soft); margin: 0 0 8px; }
+    .controls { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; margin: 0 0 14px; }
+    .controls label { display: grid; gap: 4px; font-size: 0.9rem; }
+    @media (max-width: 720px) {
+      .num-table thead { display: none; }
+      .num-table tr { display: block; padding: 10px 0; border-bottom: 1px solid var(--rule); }
+      .num-table td { display: flex; justify-content: space-between; gap: 12px; padding: 2px 0; border: 0;
+        text-align: right; white-space: normal !important; }
+      .num-table td::before { content: attr(data-label); color: var(--ink-soft); text-align: left; }
+      .num-table td.member { display: block; text-align: left; font-weight: 600; }
+      .num-table td.member::before { content: none; }
+    }
+  </style>
+---
+<section class="intro">
+  <h1 id="title">Congress</h1>
+  <nav class="hist-nav" aria-label="Other Congresses">
+    <a id="prev" href="history/">‹ Earlier</a>
+    <a href="history/">All Congresses, 1789–1972</a>
+    <a id="next" href="history/">Later ›</a>
+  </nav>
+</section>
+
+<aside class="hist-banner" role="note">
+  <strong>From the historical record.</strong> Parties are those of the time, seats and districts changed often,
+  and the descriptions are the clerk's brief notes; there are no surveys of opinion for these years.
+  <a href="history/#about">More about this record</a>
+</aside>
+
+<div class="controls">
+  <label>Chamber
+    <select id="chamber"><option value="house">House</option><option value="senate">Senate</option></select>
+  </label>
+</div>
+<div class="tabs" role="tablist" aria-label="Show">
+  <button role="tab" id="tab-numbers" aria-controls="panel-numbers" aria-selected="true">By the numbers</button>
+  <button role="tab" id="tab-votes" aria-controls="panel-votes" aria-selected="false">Votes</button>
+</div>
+
+<section class="group" id="panel-numbers" role="tabpanel" aria-labelledby="tab-numbers">
+  <p id="num-status" class="count-line">Loading…</p>
+  <p id="parties" class="count-line party"></p>
+  <div class="table-scroll"><table class="data-table num-table">
+    <caption class="sr">Each member's votes in this Congress; select a column heading to sort.</caption>
+    <thead><tr id="num-head"></tr></thead><tbody id="num-body"></tbody>
+  </table></div>
+</section>
+
+<section class="group" id="panel-votes" role="tabpanel" aria-labelledby="tab-votes" hidden>
+  <form id="vote-form" class="controls" role="search">
+    <label>Words in the description <input id="q" type="search" placeholder="e.g. tariff, slavery, H.R. 12"></label>
+    <button type="submit" class="show-more">Search</button>
+  </form>
+  <p id="vote-status" class="count-line">Loading…</p>
+  <div id="vote-list"></div>
+  <button id="more" type="button" class="show-more" hidden>Show more votes</button>
+</section>
+
+<script>
+addEventListener("DOMContentLoaded", () => {
+  const { el, API, ordinal, partiesHidden } = window.CC;
+  const $ = id => document.getElementById(id);
+  const params = new URLSearchParams(location.search);
+  const n = parseInt(params.get("n"), 10);
+  let chamber = params.get("chamber") === "senate" ? "senate" : "house";
+  let tab = params.get("tab") === "votes" ? "votes" : "numbers";
+  let sort = params.get("sort") || "seat", dir = params.get("dir") || "asc";
+  let members = [], voteOffset = 0;
+
+  const longDate = iso => iso ? new Date(iso + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "";
+  const pctText = x => x == null ? "–" : `${x.toFixed(1)}%`;
+  const yearsOf = c => `${1787 + 2 * c}–${String(1789 + 2 * c).slice(2)}`;
+  const seat = m => m.district ? `${m.state}-${m.district}` : (m.state || "");
+  const memberHref = m => `history/member.html?id=${encodeURIComponent(m.id)}`;
+
+  if (!(n >= 1 && n <= 92)) {
+    $("title").textContent = "Choose a Congress";
+    $("num-status").innerHTML = 'That isn\'t a Congress in the historical record. <a href="history/">Choose one from the list</a>.';
+    return;
+  }
+  document.title = `${ordinal(n)} Congress, ${yearsOf(n)} · Historical record · US Congress vs Voters`;
+  $("title").textContent = `${ordinal(n)} Congress, ${1787 + 2 * n}–${1789 + 2 * n}`;
+  if (n > 1) { $("prev").href = `history/congress.html?n=${n - 1}&chamber=${chamber}`; $("prev").textContent = `‹ ${ordinal(n - 1)}`; } else $("prev").remove();
+  if (n < 92) { $("next").href = `history/congress.html?n=${n + 1}&chamber=${chamber}`; $("next").textContent = `${ordinal(n + 1)} ›`; }
+  else { $("next").href = "numbers.html?congress=93"; $("next").textContent = "93rd (1973–74) on the main site ›"; }
+  $("chamber").value = chamber;
+
+  function setUrl() {
+    const p = new URLSearchParams({ n, chamber });
+    if (tab === "votes") p.set("tab", "votes");
+    if (tab === "numbers" && sort !== "seat") { p.set("sort", sort); p.set("dir", dir); }
+    const q = $("q").value.trim();
+    if (tab === "votes" && q) p.set("q", q);
+    history.replaceState(null, "", `?${p}`);
+  }
+
+  // ---- By the numbers
+  const COLS = [ // key, label, value for sorting, cell, numeric, party-only
+    ["seat", "Member", m => `${m.state} ${String(m.district || 0).padStart(3, "0")} ${m.name}`, null, false],
+    ["party", "Party", m => m.party || "", null, false, true],
+    ["votes", "Votes", m => m.votes_total, null, true],
+    ["missed", "Didn't vote", m => m.missed_pct ?? -1, null, true],
+    ["yea", "Yea", m => m.yea_pct ?? -1, null, true],
+    ["nay", "Nay", m => m.nay_pct ?? -1, null, true],
+    ["with", "With their party", m => m.with_party_pct ?? -1, null, true, true],
+  ];
+  function drawHead() {
+    $("num-head").replaceChildren(el("th", { scope: "col" }, "#"), ...COLS.map(([key, label, , , num, party]) => {
+      const th = el("th", { scope: "col", class: [num ? "n" : "", party ? "party" : ""].join(" ").trim() },
+        el("button", { type: "button" }, label));
+      if (key === sort) th.setAttribute("aria-sort", dir === "asc" ? "ascending" : "descending");
+      th.querySelector("button").addEventListener("click", () => {
+        if (sort === key) dir = dir === "asc" ? "desc" : "asc"; else { sort = key; dir = num ? "desc" : "asc"; }
+        setUrl(); drawNumbers();
+      });
+      return th;
+    }));
+  }
+  function drawNumbers() {
+    drawHead();
+    const col = COLS.find(c => c[0] === sort) || COLS[0];
+    const rows = members.slice().sort((a, b) => {
+      const x = col[2](a), y = col[2](b);
+      const c = typeof x === "number" ? x - y : String(x).localeCompare(String(y));
+      return dir === "asc" ? c : -c;
+    });
+    $("num-body").replaceChildren(...rows.map((m, i) => el("tr", {},
+      el("td", { "data-label": "#", class: "n" }, String(i + 1)),
+      el("td", { class: "member", "data-label": "Member" }, el("a", { href: memberHref(m) }, m.name),
+        el("span", { class: "sub" }, seat(m) + (m.on_main_site ? " · also on the main site" : ""))),
+      el("td", { class: "party", "data-label": "Party" }, m.party || ""),
+      el("td", { class: "n", "data-label": "Votes" }, m.votes_total.toLocaleString()),
+      el("td", { class: "n", "data-label": "Didn't vote" }, pctText(m.missed_pct),
+        el("span", { class: "sub" }, `${m.not_voting.toLocaleString()} vote${m.not_voting === 1 ? "" : "s"}`)),
+      el("td", { class: "n", "data-label": "Yea" }, pctText(m.yea_pct)),
+      el("td", { class: "n", "data-label": "Nay" }, pctText(m.nay_pct)),
+      el("td", { class: "n party", "data-label": "With their party" }, pctText(m.with_party_pct)))));
+  }
+  async function loadNumbers() {
+    $("num-status").textContent = "Loading…";
+    try {
+      const r = await fetch(`${API}/v1/history/congresses/${n}/numbers?chamber=${chamber}`);
+      if (!r.ok) throw new Error(r.status);
+      const d = await r.json();
+      members = d.members;
+      $("num-status").textContent = `${members.length} ${chamber === "senate" ? "senators" : "representatives"} voted in the ${ordinal(n)} Congress` +
+        ` (including any who arrived or left partway through). Select a heading to sort.`;
+      $("parties").textContent = "Members by party: " + d.parties.map(p => `${p.party || "Unknown"} ${p.members}`).join(" · ");
+      drawNumbers();
+    } catch (e) {
+      $("num-status").textContent = "This Congress couldn't be loaded just now. Please try again in a minute.";
+    }
+  }
+
+  // ---- Votes
+  const POS_ORDER = [["yea", "Yea"], ["nay", "Nay"], ["present", "Present"], ["not_voting", "Didn't vote"]];
+  const group = p => p.startsWith("paired") || p.startsWith("announced") ? "not_voting" : p;
+  function voteItem(v) {
+    const title = v.description || v.question || `Roll call ${v.roll}`;
+    const details = el("details", {}, el("summary", {}, "How each member voted"));
+    details.addEventListener("toggle", async () => {
+      if (!details.open || details.dataset.loaded) return;
+      details.dataset.loaded = "1";
+      const box = el("div", {}, "Loading…");
+      details.append(box);
+      try {
+        const r = await fetch(`${API}/v1/history/votes/${chamber}/${n}/${v.roll}`);
+        const d = await r.json();
+        const kids = [el("p", { class: "meta party" }, "By party: " + d.by_party.map(p => `${p.party} ${p.yea}–${p.nay}`).join(" · "))];
+        for (const [key, label] of POS_ORDER) {
+          const who = d.members.filter(m => group(m.position) === key);
+          if (!who.length) continue;
+          kids.push(el("h4", {}, `${label} (${who.length})`), el("ul", { class: "who" }, ...who.map(m =>
+            el("li", {}, el("a", { href: memberHref(m) }, m.name), ` (${seat(m)}${partiesHidden() ? "" : ", " + (m.party || "?")})` +
+              (m.position_detail !== label && key === "not_voting" && m.position_detail !== "Not Voting" ? ` – ${m.position_detail.toLowerCase()}` : "")))));
+        }
+        box.replaceChildren(...kids);
+      } catch (e) { box.textContent = "Couldn't load this vote just now."; }
+    });
+    return el("article", { class: "hvote" },
+      el("h3", {}, (v.bill ? `${v.bill}: ` : "") + title),
+      el("p", { class: "meta" }, [longDate(v.date), v.session ? `session ${v.session}` : "", `roll call ${v.roll}`,
+        v.yea != null ? `${v.yea}–${v.nay}` : "", v.result || ""].filter(Boolean).join(" · ")),
+      el("p", { class: "meta" }, el("a", { href: v.voteview_url, rel: "noopener" }, "On Voteview")),
+      details);
+  }
+  async function loadVotes(more = false) {
+    if (!more) { voteOffset = 0; $("vote-list").replaceChildren(); }
+    $("vote-status").textContent = "Loading…";
+    const q = $("q").value.trim();
+    try {
+      const r = await fetch(`${API}/v1/history/congresses/${n}/votes?` + new URLSearchParams({ chamber, offset: voteOffset, limit: 50, ...(q ? { q } : {}) }));
+      if (!r.ok) throw new Error(r.status);
+      const d = await r.json();
+      $("vote-list").append(...d.votes.map(voteItem));
+      voteOffset += d.votes.length;
+      $("vote-status").textContent = `${d.total.toLocaleString()} ${chamber === "senate" ? "Senate" : "House"} roll calls` +
+        (q ? ` matching “${q}”` : "") + `, oldest first; showing ${voteOffset.toLocaleString()}.`;
+      $("more").hidden = voteOffset >= d.total;
+    } catch (e) {
+      $("vote-status").textContent = "The votes couldn't be loaded just now. Please try again in a minute.";
+    }
+  }
+
+  // ---- Tabs and chamber
+  function showTab(t, load = true) {
+    tab = t;
+    for (const x of ["numbers", "votes"]) {
+      $(`tab-${x}`).setAttribute("aria-selected", String(x === t));
+      $(`panel-${x}`).hidden = x !== t;
+    }
+    setUrl();
+    if (load && t === "votes" && !$("vote-list").children.length) loadVotes();
+  }
+  $("tab-numbers").addEventListener("click", () => showTab("numbers"));
+  $("tab-votes").addEventListener("click", () => showTab("votes"));
+  $("chamber").addEventListener("change", () => {
+    chamber = $("chamber").value;
+    for (const a of [$("prev"), $("next")]) if (a && a.href.includes("history/congress")) a.href = a.href.replace(/chamber=\w+/, `chamber=${chamber}`);
+    setUrl(); loadNumbers();
+    $("vote-list").replaceChildren();
+    if (tab === "votes") loadVotes();
+  });
+  $("vote-form").addEventListener("submit", e => { e.preventDefault(); setUrl(); loadVotes(); });
+  $("more").addEventListener("click", () => loadVotes(true));
+
+  $("q").value = params.get("q") || "";
+  loadNumbers();
+  showTab(tab);
+});
+</script>

@@ -204,3 +204,15 @@ def test_features_page_counts_come_from_the_api(tmp_path):
     chips = page.split("data-topics>")[1].split("</ul>")[0]
     assert chips.index('topic=Health"') < chips.index("topic=Economics") < chips.index("topic=Taxation")
     assert chips.count("<li") == 17 and chips.rstrip().endswith("</li>")       # 16 topics + "and N more"
+
+
+def test_history_pages_are_built_in_their_folder(tmp_path):
+    spec2 = importlib.util.spec_from_file_location("build_site", ROOT / "scripts" / "build_site.py")
+    bs = importlib.util.module_from_spec(spec2)
+    spec2.loader.exec_module(bs)
+    built = bs.build(tmp_path, "v1")
+    assert {"history/index.html", "history/congress.html", "history/member.html"} <= set(built)
+    page = (tmp_path / "history" / "index.html").read_text()
+    assert '<base href="/">' in page and 'href="/history/#main"' in page
+    assert '<link rel="canonical" href="https://uscongressvsvoters.org/history/">' in page
+    assert "hist-banner" in (tmp_path / "history" / "congress.html").read_text()

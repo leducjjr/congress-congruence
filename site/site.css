@@ -180,3 +180,25 @@ a.tag { white-space: normal; max-width: 100%; margin: 2px 4px 2px 0; border-radi
 
 /* Long web addresses and code break onto the next line instead of running off a small phone. */
 .prose-body a, .prose-body code, main code { overflow-wrap: anywhere; }
+
+/* Historical section (/history/): a banner on every page saying how the older record differs. */
+.hist-banner { background: var(--against-soft); border-left: 4px solid var(--against); border-radius: 8px;
+  padding: 12px 16px; margin: 0 0 20px; font-size: 0.92rem; line-height: 1.5; }
+.hist-banner strong { color: var(--ink); }
+.hist-nav { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; font-size: 0.92rem; margin: -4px 0 16px; }
+.cong-grid { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(min(15rem, 100%), 1fr)); }
+.cong-grid a { display: block; background: var(--surface); border: 1px solid var(--rule); border-radius: 10px;
+  padding: 10px 14px; text-decoration: none; color: var(--ink); }
+.cong-grid a:hover, .cong-grid a:focus-visible { border-color: var(--mark); }
+.cong-grid .c-name { font-weight: 700; }
+.cong-grid .c-sub { display: block; font-size: 0.85rem; color: var(--ink-soft); }
+.era { margin: 26px 0 8px; font-size: 1.05rem; }
+.tabs { display: flex; gap: 6px; margin: 0 0 14px; }
+.tabs button { font: inherit; font-weight: 600; background: var(--surface); color: var(--ink); border: 1px solid var(--rule);
+  border-radius: 999px; padding: 6px 14px; cursor: pointer; }
+.tabs button[aria-selected="true"] { background: var(--mark); border-color: var(--mark); color: var(--surface); }
+.hvote { border-bottom: 1px solid var(--rule); padding: 12px 0; }
+.hvote h3 { font-size: 1rem; margin: 0 0 4px; }
+.hvote .meta { font-size: 0.9rem; color: var(--ink-soft); margin: 0 0 4px; }
+.hvote ul.who { columns: 3 14rem; font-size: 0.88rem; padding-left: 1.1rem; }
