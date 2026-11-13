@@ -630,7 +630,9 @@ def build(out: Path, get, version: str, today: date | None = None, images: bool 
 
     top = sorted(p.name for p in out.glob("*.html") if p.name not in ("search.html",))
     top = ["" if n == "index.html" else n for n in top]
-    (out / "sitemap.xml").write_text(sitemap(site_url, sorted(top) + ["members/", "states/"] + sorted(paths), today),
+    history = ["history/"] + [f"history/congress.html?n={n}" for n in range(92, 0, -1)] \
+        if (out / "history" / "index.html").exists() else []
+    (out / "sitemap.xml").write_text(sitemap(site_url, sorted(top) + ["members/", "states/"] + history + sorted(paths), today),
                                      encoding="utf-8")
     log(f"Wrote {len(paths)} member and state pages{' with preview images' if images else ''}, and sitemap.xml")
     return {"members": len(paths) - len(states), "states": len(states), "slugs": slugs}

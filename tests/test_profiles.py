@@ -216,3 +216,12 @@ def test_history_pages_are_built_in_their_folder(tmp_path):
     assert '<base href="/">' in page and 'href="/history/#main"' in page
     assert '<link rel="canonical" href="https://uscongressvsvoters.org/history/">' in page
     assert "hist-banner" in (tmp_path / "history" / "congress.html").read_text()
+
+
+def test_sitemap_lists_the_historical_congresses(tmp_path):
+    (tmp_path / "history").mkdir()
+    (tmp_path / "history" / "index.html").write_text("x")
+    built(tmp_path)
+    sm = (tmp_path / "sitemap.xml").read_text()
+    assert "<loc>https://uscongressvsvoters.org/history/</loc>" in sm
+    assert "<loc>https://uscongressvsvoters.org/history/congress.html?n=37</loc>" in sm and "?n=93<" not in sm

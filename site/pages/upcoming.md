@@ -7,7 +7,7 @@ description: What's being added to US Congress vs Voters next - new survey sourc
 <p class="lede">What we're working on next. Dates depend on when each source publishes its data, so
 they're estimates. Have an idea? <a href="contact.html#feedback">Tell us</a>.</p>
 
-*Last updated November 12, 2026.*
+*Last updated November 13, 2026.*
 
 ## In progress {#in-progress}
 
@@ -35,13 +35,6 @@ spring. Its questions about bills will be matched to votes and added when it's r
 
 ## Being considered {#considered}
 
-### Historical records, 1789 to 1972 {#history}
-
-Every earlier recorded vote, from the 1st Congress on, in a separate historical section with the same
-look. Kept apart because the record is different: other parties (Federalists, Whigs and more),
-states and districts that changed over time, shorter descriptions of each vote, and no surveys to
-compare with.
-
 ### Voting trends over time {#trends}
 
 Charts of how things have changed from one Congress to the next: a member's attendance and how often
@@ -57,6 +50,13 @@ republished, and only its questions about proposals Congress actually voted on a
 ## Recently added {#recent}
 
 Newest first. Follow these and every correction in a feed reader: [updates feed (RSS)](feed.xml).
+
+**November 13, 2026**
+
+- **The historical record, 1789 to 1972.** Every House and Senate roll call from the 1st Congress to the
+  92nd, about 61,000 votes, in a [separate section](history/) with the same look: a page for each Congress
+  with every member's figures and every vote, and a page for each member. Kept apart because the record
+  differs, with the parties of the time, changing seats and no surveys; each page says how.
 
 **November 12, 2026**
 
