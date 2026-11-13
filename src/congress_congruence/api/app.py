@@ -113,6 +113,10 @@ def pct(part: int, whole: int) -> float | None:
     return round(100 * part / whole, 1) if whole else None
 
 
+from . import history as history_api   # noqa: E402 - the /history/ section's endpoints (api/history.py)
+app.include_router(history_api.router)
+
+
 @app.get("/v1/health")
 def health(response: Response):
     response.headers["Cache-Control"] = "no-cache"

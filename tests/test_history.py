@@ -84,3 +84,50 @@ def test_store_replaces_a_congress_and_reports_status(conn):
         assert cur.fetchone() == (None, "CARTER, Ann")
     s = history.status(conn)
     assert "house: 1 Congresses (5-5), 3 roll calls, 1 with totals that don't match" in s and "Space used" in s
+
+
+@pytest.fixture()
+def client(conn):
+    from fastapi.testclient import TestClient
+    data = history.build("house", MEMBERS, ROLLCALLS, VOTES)
+    history.store(conn, "house", 5, data)
+    with conn.cursor() as cur:
+        cur.execute("insert into history.party values (38, 'Federalist'), (13, 'Democratic-Republican')")
+    conn.commit()
+    os.environ["API_DATABASE_URL"] = os.environ["TEST_DATABASE_URL"]
+    from congress_congruence.api import app as api_module
+    with TestClient(api_module.app) as tc:
+        yield tc
+    os.environ.pop("API_DATABASE_URL", None)
+
+
+def test_names_read_naturally():
+    from congress_congruence.api.history import display_name
+    assert display_name("LINCOLN, Abraham") == "Abraham Lincoln"
+    assert display_name("VAN BUREN, Martin") == "Martin Van Buren"
+    assert display_name("McKINLEY, William (Jr.)") == "William McKinley, Jr."
+    assert display_name("O'NEILL, Thomas Phillip (Tip)") == "Thomas Phillip (Tip) O'Neill"
+
+
+def test_history_api(client):
+    c = client.get("/v1/history/congresses").json()["congresses"]
+    assert c[0]["congress"] == 5 and c[0]["years"] == "1797–1799" and c[0]["house"]["roll_calls"] == 3
+    n = client.get("/v1/history/congresses/5/numbers?chamber=house").json()
+    adams = next(m for m in n["members"] if m["icpsr"] == 101)
+    assert adams["name"] == "Fisher Adams" and adams["party"] == "Federalist" and adams["with_party_pct"] == 100.0
+    assert adams["id"] == "A000001" and adams["district"] == 1 and adams["on_main_site"] is False
+    assert {p["party"]: p["members"] for p in n["parties"]} == {"Federalist": 2, "Democratic-Republican": 2}
+    v = client.get("/v1/history/congresses/5/votes?chamber=house&q=adjourn").json()
+    assert v["total"] == 1 and v["votes"][0]["description"] == "To adjourn" and v["votes"][0]["totals_match"] is False
+    assert v["votes"][0]["voteview_url"] == "https://voteview.com/rollcall/RH0050002"
+    one = client.get("/v1/history/votes/house/5/1").json()
+    assert len(one["members"]) == 4 and {"party": "Federalist", "yea": 2, "nay": 0} in one["by_party"]
+    gone = client.get("/v1/history/votes/house/5/3").json()
+    assert "D000001" not in [m["id"] for m in gone["members"]]                  # had left by then
+    m = client.get("/v1/history/members/A000001").json()
+    assert m["name"] == "Fisher Adams" and m["congresses"][0]["congress"] == 5 and m["votes_total"] == 3
+    assert client.get("/v1/history/members/103").json()["name"] == "Ann Carter"     # no Bioguide ID: by number
+    mv = client.get("/v1/history/members/D000001/votes?congress=5&chamber=house").json()["votes"]
+    assert [(x["roll"], x["position"]) for x in mv] == [(1, "yea"), (2, "not_voting")]
+    assert client.get("/v1/history/congresses/40/numbers").status_code == 404
+    assert client.get("/v1/history/members/Z999999").status_code == 404
