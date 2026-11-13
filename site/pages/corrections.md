@@ -14,7 +14,17 @@ or small, is in the [source code]({{source_url}}/commits/main).
 
 ## Since launch {#since-launch}
 
-None yet.
+**November 12, 2026**
+
+- **When members who joined partway through a Congress started.** The member list this site uses gave the
+  first day of the Congress as the start date for 40 members who actually arrived later, mostly by special
+  election (for example Steny Hoyer, who began on May 19, 1981, not January 5). That overstated their time
+  in Congress by up to two years. Each date was checked against the roll calls and the official record and
+  corrected; the [list of corrections](https://github.com/leducjjr/congress-congruence/blob/main/config/term_corrections.yaml)
+  gives each one and its source.
+- **Links to members from Members by the numbers.** For a member whose last vote fell just after their term
+  ended (Matt Gaetz, November 2024), the link opened an empty page and the Seat column was blank. Both now
+  show the seat they held.
 
 ## During the preview, before launch {#preview}
 

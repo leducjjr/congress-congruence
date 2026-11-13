@@ -26,7 +26,8 @@ must add up to the Clerk's published totals.
 
 **Earlier votes:** the Clerk's files from 2003 on. The Clerk's files before 2003 name representatives
 without the ID that matches a vote to a member, and there are none before 1990, so House votes from
-1989 to 2002 come from [Voteview](https://voteview.com), which has the IDs. Their totals match the
+1973 to 2002 come from [Voteview](https://voteview.com), which has the IDs. A vote from before 1990
+links to its Voteview page, since the Clerk's site has none. Their totals match the
 Congressional Research Service's published counts. In 1993–94, delegates could vote in the Committee
 of the Whole; their votes are shown, but as the official totals do, those totals leave them out.
 
@@ -46,7 +47,10 @@ this way, a few dozen a day.
 **Votes not yet loaded from the Senate's files** come from [Voteview](https://voteview.com), a
 long-running research project at UCLA that republishes every Senate and House roll call. Voteview can
 be days to weeks behind the official record. When the Senate's own file for a vote is loaded, it
-replaces the Voteview copy. Earlier Senate votes, from 1989, also come from Voteview. Each vote on
+replaces the Voteview copy. Earlier Senate votes, from 1973, also come from Voteview; those before 1989,
+when senate.gov's own records begin, link to their Voteview page. Voteview occasionally still lists a
+senator who had left (resigned or died) as "not voting" while their successor votes; where the member
+list shows they weren't serving that day, that entry is left out. Each vote on
 this site says which record it came from, and the footer of every page shows how current each
 chamber is.
 

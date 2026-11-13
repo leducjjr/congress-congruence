@@ -20,12 +20,6 @@ Colorado, Nevada, North Carolina, Ohio and Oklahoma; and Colorado's measure on p
 immigration authorities. Each state's result is added once that state certifies it, usually within a
 few weeks of the election.
 
-### Voting records back to 1973 {#records-1973}
-
-The votes of the 93rd to 100th Congresses (1973 to 1988), from Voteview, about 16,000 more. That
-covers the whole career of every member serving today, and Congress.gov's subject areas for bills
-also start in 1973. They're being loaded now, newest first, and appear as each Congress finishes.
-
 ## Coming in 2027 {#2027}
 
 ### The new Congress {#new-congress}
@@ -63,6 +57,13 @@ republished, and only its questions about proposals Congress actually voted on a
 ## Recently added {#recent}
 
 Newest first. Follow these and every correction in a feed reader: [updates feed (RSS)](feed.xml).
+
+**November 12, 2026**
+
+- **Voting records back to 1973.** Every House and Senate vote of the 93rd to 100th Congresses (1973 to
+  1988), about 16,500 more, from Voteview. Every member serving today now has their whole voting record
+  here, and [Members by the numbers](numbers.html) and [All votes](votes.html) reach back to January 1973.
+- **Who runs this site.** The [About page](about.html#who) now names the site's builder and maintainer.
 
 **November 11, 2026**
 
