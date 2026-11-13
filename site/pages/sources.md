@@ -41,8 +41,8 @@ question, the result, the date, the bill, and how each senator voted. Each vote 
 is stored: every senator's vote must add up to the Senate's published totals.
 
 **How often:** checked daily. We download them slowly, a few seconds apart, as the Senate's website
-asks of automated downloads. Since November 2026 we've been catching up on the votes of 2026 so far
-this way, a few dozen a day.
+asks of automated downloads. Every Senate vote of 2026 so far has been loaded from the Senate's own
+files this way, and each new vote is added the morning after it's posted.
 
 **Votes not yet loaded from the Senate's files** come from [Voteview](https://voteview.com), a
 long-running research project at UCLA that republishes every Senate and House roll call. Voteview can
