@@ -1,4 +1,5 @@
-"""Residents per state and House district, from the Census Bureau's American Community Survey.
+"""Residents per state and House district, with how many are U.S. citizens and adult citizens, from
+the Census Bureau's American Community Survey.
 
     python -m congress_congruence.ingest.population 2024     # ACS 2024 1-year (119th Congress lines)
     python -m congress_congruence.ingest.population 2023     # ACS 2023 1-year (118th Congress lines)
@@ -24,6 +25,9 @@ log = logging.getLogger(__name__)
 
 API = "https://api.census.gov/data/{year}/acs/acs1"
 TOTAL_POPULATION = "B01003_001E"
+NON_CITIZENS = "B05001_006E"          # "Not a U.S. citizen" (table B05001, citizenship status)
+ADULT_CITIZENS = "B29001_001E"        # citizen voting-age population: citizens 18 and over
+VARIABLES = [TOTAL_POPULATION, NON_CITIZENS, ADULT_CITIZENS]
 FIPS = {
     "01": "AL", "02": "AK", "04": "AZ", "05": "AR", "06": "CA", "08": "CO", "09": "CT", "10": "DE", "11": "DC",
     "12": "FL", "13": "GA", "15": "HI", "16": "ID", "17": "IL", "18": "IN", "19": "IA", "20": "KS", "21": "KY",
@@ -36,7 +40,27 @@ CONGRESS_IN_NAME = re.compile(r"\((\d+)(?:st|nd|rd|th) Congress\)")
 
 
 def fetch(year: int, geography: str, within: str | None = None, http=None) -> list[list[str]]:
-    return api_get(year, [TOTAL_POPULATION], geography, within, http)
+    return api_get(year, VARIABLES, geography, within, http)
+
+
+def _count(r: list[str], header: list[str], var: str) -> int | None:
+    """A count from a row, or None if the column isn't there or the Census left it blank (or gave one
+    of its negative annotation codes, such as -666666666 for 'not available')."""
+    if var not in header:
+        return None
+    v = r[header.index(var)]
+    try:
+        n = int(float(v))
+    except (TypeError, ValueError):
+        return None
+    return n if n >= 0 else None
+
+
+def citizen_counts(r: list[str], header: list[str], total: int) -> tuple[int | None, int | None]:
+    """(citizens of any age, adult citizens) for a row."""
+    non = _count(r, header, NON_CITIZENS)
+    citizens = total - non if non is not None and non <= total else None
+    return citizens, _count(r, header, ADULT_CITIZENS)
 
 
 def api_get(year: int, variables: list[str], geography: str, within: str | None = None, http=None) -> list[list[str]]:
@@ -61,8 +85,9 @@ def api_get(year: int, variables: list[str], geography: str, within: str | None 
                            f"It said: {resp.text.strip()[:300] or '(empty reply)'}") from None
 
 
-def parse_districts(table: list[list[str]]) -> tuple[int, list[tuple[str, int, int]]]:
-    """(congress, [(state, district, population)]) from a 'congressional district' response."""
+def parse_districts(table: list[list[str]]) -> tuple[int, list[tuple]]:
+    """(congress, [(state, district, population, citizens, adult_citizens)]) from a 'congressional
+    district' response. The citizen counts are None where the Census gives none."""
     header, rows = table[0], table[1:]
     i_name, i_pop = header.index("NAME"), header.index(TOTAL_POPULATION)
     i_state, i_cd = header.index("state"), header.index("congressional district")
@@ -74,16 +99,19 @@ def parse_districts(table: list[list[str]]) -> tuple[int, list[tuple[str, int, i
             continue
         congresses.add(int(m.group(1)))
         code = int(r[i_cd])
-        out.append((st, 0 if code in (0, 98) else code, int(r[i_pop])))   # 00 at-large, 98 delegate
+        pop = int(r[i_pop])
+        out.append((st, 0 if code in (0, 98) else code, pop, *citizen_counts(r, header, pop)))  # 00 at-large, 98 delegate
     if len(congresses) != 1:
         raise ValueError(f"Expected district names for one Congress, found {sorted(congresses) or 'none'}")
     return congresses.pop(), out
 
 
-def parse_states(table: list[list[str]]) -> list[tuple[str, int]]:
+def parse_states(table: list[list[str]]) -> list[tuple]:
+    """[(state, population, citizens, adult_citizens)]."""
     header, rows = table[0], table[1:]
     i_pop, i_state = header.index(TOTAL_POPULATION), header.index("state")
-    return [(FIPS[r[i_state]], int(r[i_pop])) for r in rows if r[i_state] in FIPS and r[i_pop]]
+    return [(FIPS[r[i_state]], int(r[i_pop]), *citizen_counts(r, header, int(r[i_pop])))
+            for r in rows if r[i_state] in FIPS and r[i_pop]]
 
 
 def load(conn, year: int, http=None) -> dict:
@@ -92,10 +120,12 @@ def load(conn, year: int, http=None) -> dict:
     source = f"ACS {year} 1-year estimate"
     with conn.transaction(), conn.cursor() as cur:
         cur.execute("delete from core.area_population where congress = %s", (congress,))
-        cur.executemany("insert into core.area_population (congress, state, district, population, source) "
-                        "values (%s, %s, %s, %s, %s)", [(congress, s, d, p, source) for s, d, p in districts])
-        cur.executemany("insert into core.area_population (congress, state, district, population, source) "
-                        "values (%s, %s, null, %s, %s)", [(congress, s, p, source) for s, p in states])
+        cur.executemany("insert into core.area_population (congress, state, district, population, citizens, "
+                        "adult_citizens, source) values (%s, %s, %s, %s, %s, %s, %s)",
+                        [(congress, s, d, p, c, a, source) for s, d, p, c, a in districts])
+        cur.executemany("insert into core.area_population (congress, state, district, population, citizens, "
+                        "adult_citizens, source) values (%s, %s, null, %s, %s, %s, %s)",
+                        [(congress, s, p, c, a, source) for s, p, c, a in states])
     return {"congress": congress, "districts": len(districts), "states": len(states), "source": source}
 
 

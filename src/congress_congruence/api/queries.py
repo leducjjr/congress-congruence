@@ -197,15 +197,21 @@ select survey, title, fielded, respondents, dataset_url, guide_url, about_url,
 
 # Residents of an area as drawn for a given Congress (district null = whole state).
 AREA_POPULATION = """
-select population, source, congress from core.area_population
+select population, citizens, adult_citizens, source, congress from core.area_population
  where congress = %(congress)s and state = %(state)s and district is not distinct from %(district)s
 """
 
 # A whole state's residents don't depend on district lines: use the most recent figure.
 STATE_POPULATION = """
-select population, source, congress from core.area_population
+select population, citizens, adult_citizens, source, congress from core.area_population
  where state = %(state)s and district is null
  order by congress desc limit 1
+"""
+
+# Every area's residents and citizens as drawn for one Congress (Members by the numbers).
+CONGRESS_POPULATIONS = """
+select state, district, population, citizens, adult_citizens, source from core.area_population
+ where congress = %(congress)s
 """
 
 # For context: the average House district, and the smallest and largest states (50 states only).

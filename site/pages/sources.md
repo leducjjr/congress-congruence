@@ -212,11 +212,19 @@ no matching vote in Congress (for example on abortion or the minimum wage) are l
 
 ## Population {#population}
 
-**Source:** the Census Bureau's American Community Survey, 1-year estimates of total population for
-every state and House district, from [api.census.gov](https://www.census.gov/data/developers.html).
+**Source:** the Census Bureau's American Community Survey, 1-year estimates for every state and House
+district, from [api.census.gov](https://www.census.gov/data/developers.html):
 
-**How we use it:** to show how many people each member represents, and how many of them a survey
-reached. Each year's figures are matched to the district lines in use at the time.
+- **Residents:** total population (table [B01003](https://data.census.gov/table/ACSDT1Y2024.B01003)).
+- **U.S. citizens:** residents minus those who are not U.S. citizens (table
+  [B05001](https://data.census.gov/table/ACSDT1Y2024.B05001), citizenship status).
+- **Citizens 18 and over:** the citizen voting-age population (table
+  [B29001](https://data.census.gov/table/ACSDT1Y2024.B29001)).
+
+**How we use it:** to show how many people each member represents, how many of them are U.S. citizens
+and citizens 18 and over, and how many a survey reached. Each year's figures are matched to the district
+lines in use at the time. These are the Census Bureau's own estimates, shown as published. Puerto Rico's
+citizenship figures are in separate tables and aren't shown.
 
 **How often:** a new year's figures are released each September and loaded automatically.
 

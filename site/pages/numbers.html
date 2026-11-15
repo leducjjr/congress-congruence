@@ -65,6 +65,9 @@ main_class: numbers-page
       held on the day they were sworn in or left. It isn't a measure of effort.</li>
     <li><strong>Yea and Nay</strong> are shares of all their roll-call votes that Congress. They mostly reflect what came
       up for a vote and who was in the majority, not how agreeable a member is.</li>
+    <li><strong>Residents</strong> and <strong>Citizens 18 and over</strong> are the Census Bureau's estimates for the
+      member's state or district as drawn for that Congress, with the number of U.S. citizens of any age under the
+      residents figure. They appear only for Congresses the Census figures cover. <a href="sources.html#population">About these figures</a>.</li>
     <li class="party"><strong>With their party</strong> counts votes where most of their party (or the party they
       caucus with) voted one way, and how often they voted the same way. Votes where the party split evenly aren't counted.</li>
     <li>A member who served in part of a Congress is compared on the votes while they were there, and
@@ -101,6 +104,8 @@ addEventListener("DOMContentLoaded", () => {
     yea:     ["Yea", m => m.yea_pct, "desc"],
     nay:     ["Nay", m => m.nay_pct, "desc"],
     party:   ["With their party", m => m.with_party_pct, "desc", true],
+    res:     ["Residents", m => m.residents, "desc"],
+    adultc:  ["Citizens 18 and over", m => m.adult_citizens, "desc"],
   };
   const QUICK = [
     ["Longest in Congress", "tenure", "desc"], ["Newest", "tenure", "asc"],
@@ -191,7 +196,10 @@ addEventListener("DOMContentLoaded", () => {
         el("span", { class: "sub" }, `${m.not_voting.toLocaleString()} vote${m.not_voting === 1 ? "" : "s"}`)),
       el("td", { class: "n", "data-label": "Yea" }, pctText(m.yea_pct)),
       el("td", { class: "n", "data-label": "Nay" }, pctText(m.nay_pct)),
-      el("td", { class: "n party", "data-label": "With their party" }, pctText(m.with_party_pct))));
+      el("td", { class: "n party", "data-label": "With their party" }, pctText(m.with_party_pct)),
+      el("td", { class: "n", "data-label": "Residents" }, m.residents ? m.residents.toLocaleString() : "–",
+        m.citizens ? el("span", { class: "sub" }, `${m.citizens.toLocaleString()} citizens`) : null),
+      el("td", { class: "n", "data-label": "Citizens 18 and over" }, m.adult_citizens ? m.adult_citizens.toLocaleString() : "–")));
     const table = el("table", { class: "data-table num-table" },
       el("caption", { class: "sr" }, `${chamber} members, ${congressLabel(data.congress)}`),
       el("thead", {}, el("tr", {},
@@ -199,7 +207,8 @@ addEventListener("DOMContentLoaded", () => {
         head("name", "Member"), head("seat", "Seat"), el("th", { scope: "col", class: "party" }, "Party"),
         head("tenure", "Time in Congress", "n"), head("seat_t", "Started in this seat"),
         head("votes", "Votes", "n"), head("missed", "Didn't vote", "n"), head("yea", "Yea", "n"),
-        head("nay", "Nay", "n"), hidden ? null : head("party", "With their party", "n party"))),
+        head("nay", "Nay", "n"), hidden ? null : head("party", "With their party", "n party"),
+        head("res", "Residents", "n"), head("adultc", "Citizens 18 and over", "n"))),
       el("tbody", {}, rows));
     $("out").replaceChildren(el("section", { class: "group" },
       el("p", { class: "count-line" }, `${list.length.toLocaleString()} ${chamber} member${list.length === 1 ? "" : "s"} who voted in the ${congressLabel(data.congress)}`,

@@ -156,6 +156,16 @@ def people(n: int | None) -> str:
     return f"{round(n, -3):,}"
 
 
+def citizens_line(pop: dict) -> str:
+    """Of an area's residents, how many are U.S. citizens and citizens 18 and over: Census figures, no comment."""
+    c, a = pop.get("citizens"), pop.get("adult_citizens")
+    if not (c or a):
+        return ""
+    bits = [f"about {people(c)} are U.S. citizens" if c else "", f"about {people(a)} are citizens 18 and over" if a else ""]
+    return (f"<p>Of those residents, {', and '.join(b for b in bits if b)}. "
+            f'<a href="sources.html#population">Census Bureau figures</a></p>')
+
+
 def title_name(m: dict, sname: str, serving: bool) -> str:
     """How a member is named in their page title, as people search for them:
     'Sen. Ted Cruz (Texas)', 'Rep. Pat Fox (TX-7)', 'Pat Fox, former Texas representative'."""
@@ -288,6 +298,7 @@ def member_page(m: dict, opinion: dict | None, votes: list[dict], slugs: dict, t
             p.append(f"<p>{e(sname)} has about {people(pop['residents'])} residents, represented by two senators.</p>")
         else:
             p.append(f"<p>{e(pop['area'])} has about {people(pop['residents'])} residents.</p>")
+        p.append(citizens_line(pop))
 
     # ---- surveyed votes
     items = (opinion or {}).get("items") or []
@@ -392,6 +403,7 @@ def state_page(st: dict, slugs: dict, today: date) -> tuple[dict, str]:
          f"<h1>{e(name)}</h1>",
          f'<p class="lede">{"About " + people(st["residents"]) + " residents. " if st.get("residents") else ""}'
          f"{len(senators)} senator{'s' if len(senators) != 1 else ''} and {len(house)} House member{'s' if len(house) != 1 else ''} serving now.</p>",
+         citizens_line(st),
          f'<p class="profile-actions">{view_switch(f"state.html?s={code}", "summary")}</p>',
          "</div>"]
     if senators:

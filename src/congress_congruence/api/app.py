@@ -438,6 +438,9 @@ def seat_population(row: dict) -> dict | None:
     ctx = fetch(q.POPULATION_CONTEXT, {"congress": congress})[0]
     return {
         "residents": found[0]["population"],
+        # From the same Census release: U.S. citizens of any age, and citizens 18 and over.
+        "citizens": found[0]["citizens"],
+        "adult_citizens": found[0]["adult_citizens"],
         "source": found[0]["source"],
         "congress": congress,
         "area": q.seat_label(row["state"], row["district"], row["chamber"]),
@@ -786,6 +789,12 @@ def months_between(a: date, b: date) -> int:
     return max(0, (b.year - a.year) * 12 + (b.month - a.month) - (b.day < a.day))
 
 
+def area_counts(p: dict | None) -> dict:
+    """Residents, citizens and adult citizens of an area, each None if not available."""
+    p = p or {}
+    return {"residents": p.get("population"), "citizens": p.get("citizens"), "adult_citizens": p.get("adult_citizens")}
+
+
 @app.get("/v1/numbers")
 def numbers(response: Response, congress: int | None = None, chamber: str | None = Query(None, pattern="^(house|senate)$")):
     """Members by the numbers: everyone who voted in one Congress, with the same counts as their member
@@ -804,6 +813,8 @@ def numbers(response: Response, congress: int | None = None, chamber: str | None
     # one (a new Congress begins January 3 of odd years), so "longest in Congress" means at the time.
     congress_end = date(1789 + 2 * congress, 1, 3)
     as_of = min(today, congress_end)
+    # Residents and citizens of each seat as drawn for this Congress (none before the Census figures begin).
+    areas = {(p["state"], p["district"]): p for p in fetch(q.CONGRESS_POPULATIONS, {"congress": congress})}
     terms: dict[str, list[dict]] = {}
     for t in fetch(q.TERMS_FOR, {"ids": [r["bioguide_id"] for r in rows]}):
         terms.setdefault(t["bioguide_id"], []).append(t)
@@ -841,6 +852,7 @@ def numbers(response: Response, congress: int | None = None, chamber: str | None
             "party_votes": r["party_votes"], "with_party": r["with_party"],
             "with_party_pct": pct(r["with_party"], r["party_votes"]),
             "first_vote": r["first_vote"], "last_vote": r["last_vote"],
+            **area_counts(areas.get((r["state"], None if r["chamber"] == "senate" else r["district"]))),
         })
     members.sort(key=lambda m: (m["chamber"] != "senate", m["state"] or "", m["district"] or 0, m["last_name"]))
     response.headers["Cache-Control"] = CACHE
@@ -882,6 +894,9 @@ def state(code: str, response: Response):
         "state": code,
         "name": STATE_NAME.get(code, code),
         "residents": pop[0]["population"] if pop else None,
+        "citizens": pop[0]["citizens"] if pop else None,
+        "adult_citizens": pop[0]["adult_citizens"] if pop else None,
+        "population_source": pop[0]["source"] if pop else None,
         "members": [{**member_summary(r), "scores": scores.get(r["bioguide_id"], [])} for r in current],
         "former": [{**member_summary(r), "left_office": r["end_date"], "scores": scores.get(r["bioguide_id"], [])}
                    for r in former],

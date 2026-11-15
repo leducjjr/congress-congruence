@@ -128,6 +128,9 @@ addEventListener("DOMContentLoaded", () => {
           el("a", { href: `states/${d.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}/`,
                     title: "A plain summary page, quick to load, with a preview when the link is shared" }, "Summary"))),
         el("p", { class: "lede" }, d.residents ? `${people(d.residents)} residents (Census Bureau). ` : "",
+          d.citizens ? `About ${people(d.citizens)} are U.S. citizens` : "",
+          d.citizens && d.adult_citizens ? `, and about ${people(d.adult_citizens)} are citizens 18 and over. `
+            : d.adult_citizens ? `About ${people(d.adult_citizens)} are citizens 18 and over. ` : d.citizens ? ". " : "",
           `${plural(senators.length, "senator", "senators")} and ${plural(reps.length, "representative", "representatives")} serving today. `,
           el("a", { href: `votes.html` }, "All votes"), " · ", el("a", { href: "compare.html" }, "Compare two members"))),
       el("section", { class: "group" }, el("h2", {}, "Members serving today"),

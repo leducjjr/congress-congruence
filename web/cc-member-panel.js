@@ -502,6 +502,16 @@
             ? ` States range from about ${people(pop.smallest_state.residents)} (${stateName(pop.smallest_state.state)}) to ${people(pop.largest_state.residents)} (${stateName(pop.largest_state.state)}) residents, each with two senators.`
             : pop.average_district ? ` The average House district has about ${people(pop.average_district)}.` : "",
           h("span", { class: "people-src" }, ` Census Bureau estimate${year ? `, ${year}` : ""}.`)));
+        // Of those residents: how many are U.S. citizens, and citizens 18 and over. Census figures only.
+        if (pop.citizens || pop.adult_citizens) {
+          parts.push(h("p", { class: "people" },
+            "Of those residents, ",
+            pop.citizens ? `about ${people(pop.citizens)} are U.S. citizens` : "",
+            pop.citizens && pop.adult_citizens ? ", and " : "",
+            pop.adult_citizens ? `about ${people(pop.adult_citizens)} are citizens 18 and over` : "",
+            ". ",
+            h("a", { class: "people-src", href: `${siteBase}sources.html#population` }, "Census Bureau figures")));
+        }
       }
       const jumps = [];
       if (this.opinion?.items?.length) {

@@ -98,7 +98,9 @@ Sources differ in whom they ask. Most of the surveys here (the Cooperative Elect
 for Public Consultation and Nationscape) ask all adults, whether or not they're registered to vote: a
 member of Congress represents everyone in their state or district, and the site compares votes with what
 "people where they live" want. The Texas Politics Project asks registered voters only, and a state ballot
-measure is the votes actually cast. These groups can differ, sometimes by a few points, so every
+measure is the votes actually cast. Surveys of all adults can include
+some adults who aren't U.S. citizens, unlike surveys of registered voters and ballot measures, where
+only citizens take part. These groups can differ, sometimes by a few points, so every
 comparison says who was asked (for example "from 412 adults surveyed in Texas"), and the sources are never
 blended into one figure.
 
