@@ -807,7 +807,11 @@ def numbers(response: Response, congress: int | None = None, chamber: str | None
     congress = congress or available[0]
     if congress not in available:
         raise HTTPException(404, "No votes loaded for that Congress")
-    rows = fetch(q.MEMBER_NUMBERS, {"congress": congress, "chamber": chamber})
+    # A record can list someone who never held the seat that Congress, only as "not voting" (e.g. a
+    # member-elect who resigned before being sworn in): with no term covering any of those votes and
+    # no vote cast, they weren't a member, so they're left out.
+    rows = [r for r in fetch(q.MEMBER_NUMBERS, {"congress": congress, "chamber": chamber})
+            if r["state"] or r["not_voting"] < r["votes_total"]]
     today = date.today()
     # Time in office is as of the Congress shown: today for the current one, its last day for a past
     # one (a new Congress begins January 3 of odd years), so "longest in Congress" means at the time.

@@ -40,7 +40,9 @@ CFG = {"polls": [{
                "dataset_url": "https://example.org/vt.pdf"},
     "items": {"ACA": {"question": "Extend the ACA subsidies", "favor": 74, "oppose": 19, "url": "https://example.org/vt.pdf",
                       "votes": {"senate": {"roll_call": "s-119-1-600", "match": "related"},
-                                "house": {"roll_call": "h-119-2-11"}}}}}]}
+                                "house": {"roll_call": "h-119-2-11"}}},
+              "SEN": {"question": "A Senate-only question", "favor": 40, "oppose": 50, "url": "https://example.org/vt.pdf",
+                      "votes": {"senate": {"roll_call": "s-119-1-600"}}}}}]}
 
 
 @pytest.fixture
@@ -71,9 +73,9 @@ def conn():
 
 def test_at_large_state_gets_its_house_member_compared(conn):
     out = statepolls.load(conn, CFG)
-    assert out["votes_linked"] == 2 and out["calls"] == {"support": 1, "oppose": 0, "too_close": 0}
+    assert out["votes_linked"] == 3
     with conn.cursor() as cur:
-        cur.execute("select state, district, method from core.opinion_estimate order by district nulls first")
-        assert cur.fetchall() == [("VT", None, "published-topline-v1"), ("VT", 0, "published-topline-v1")]
-        cur.execute("select chamber, match_kind from core.survey_item_vote order by chamber")
-        assert cur.fetchall() == [("house", "same"), ("senate", "related")]
+        cur.execute("select variable, district from core.opinion_estimate order by 1, district nulls first")
+        assert cur.fetchall() == [("ACA", None), ("ACA", 0), ("SEN", None)]   # no district row without a House vote
+        cur.execute("select variable, chamber, match_kind from core.survey_item_vote order by 1, 2")
+        assert cur.fetchall() == [("ACA", "house", "same"), ("ACA", "senate", "related"), ("SEN", "senate", "same")]

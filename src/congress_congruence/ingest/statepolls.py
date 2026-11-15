@@ -102,7 +102,8 @@ def load(conn, cfg: dict | None = None) -> dict:
                            [(v, item, None) for v, item in poll["items"].items()], links[survey])
             for var, item in poll["items"].items():
                 # Statewide; repeated for a single at-large seat so its House member is compared too.
-                for district in [None] + ([0] if poll.get("at_large") else []):
+                # Only for questions compared with a House vote, so the others don't list a "district surveyed".
+                for district in [None] + ([0] if poll.get("at_large") and "house" in item["votes"] else []):
                     a = estimate(item["favor"], item["oppose"], poll["moe"], poll["respondents"], poll["state"],
                                  district, float(poll.get("design_effect") or 1.0))
                     cur.execute(

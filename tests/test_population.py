@@ -142,6 +142,10 @@ def test_numbers_carry_each_seats_citizen_counts(conn, monkeypatch):
                        values ('h-119-1-1', 'house', 119, 1, 1, '2025-02-01', 'On Passage', 'Passed', 1, 0, 'test')""")
         cur.execute("insert into core.member_vote (roll_call_id, bioguide_id, position, raw_position) "
                     "values ('h-119-1-1', 'H000006', 'yea', 'Yea')")
+        # Listed as not voting with no term that Congress (a member-elect who never took the seat): left out.
+        cur.execute("insert into core.member (bioguide_id, first_name, last_name) values ('G000578', 'M', 'Elect')")
+        cur.execute("insert into core.member_vote (roll_call_id, bioguide_id, position, raw_position) "
+                    "values ('h-119-1-1', 'G000578', 'not_voting', 'Not Voting')")
     conn.commit()
     monkeypatch.setenv("API_DATABASE_URL", os.environ["TEST_DATABASE_URL"])
     from fastapi.testclient import TestClient
