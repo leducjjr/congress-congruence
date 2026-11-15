@@ -92,6 +92,16 @@ didn't answer. Because these are real votes rather than a sample, there is no ra
 whichever side won, and only an exact tie would be too close to call. Each result is compared only
 with members who represent the whole state, and always as a related vote that isn't counted.
 
+## Who was asked {#who-was-asked}
+
+Sources differ in whom they ask. Most of the surveys here (the Cooperative Election Study, the Program
+for Public Consultation and Nationscape) ask all adults, whether or not they're registered to vote: a
+member of Congress represents everyone in their state or district, and the site compares votes with what
+"people where they live" want. The Texas Politics Project asks registered voters only, and a state ballot
+measure is the votes actually cast. These groups can differ, sometimes by a few points, so every
+comparison says who was asked (for example "from 412 adults surveyed in Texas"), and the sources are never
+blended into one figure.
+
 ## Showing the sources side by side {#side-by-side}
 
 Different surveys ask different questions, in different years, in different ways. Rather than blend

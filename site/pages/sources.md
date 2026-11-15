@@ -93,6 +93,10 @@ We compare votes with what people said in independent, published surveys. We use
 organization, and we **show each one separately**, never combined into a single score, so you can see
 where they agree.
 
+**Who was asked differs by source:** most surveys here ask all adults, because members of Congress
+represent everyone where they live, not only voters; some ask registered voters only; ballot measures
+are votes actually cast. Each source below says which, and so does every comparison on the site.
+
 We only compare a vote with a survey question when both are about the same proposal. See
 [Methods](methods.html) for how votes and questions are matched. Other surveys we've looked at, and why
 each is or isn't used yet, are listed [below](sources.html#not-used).
@@ -105,6 +109,8 @@ cces.gov.harvard.edu); its data are published on [Harvard Dataverse](https://dat
 
 **What it is:** one of the largest academic surveys of U.S. adults, run every year since 2006. Each
 year it asks whether people support specific actions Congress has voted on.
+
+**Who was asked:** adults (18 and over), whether or not they're registered to vote.
 
 **What we use:** each person's state, House district and answers, with the survey's own weights.
 House districts have only a few dozen respondents each, so we estimate each district's opinion with
@@ -126,6 +132,8 @@ they favor or oppose it. Its 2026 "Common Ground in the Battlegrounds" series su
 states and 28 competitive House districts, with samples of several hundred to 2,000 people in each.
 Respondents come from online panels and are weighted to Census figures.
 
+**Who was asked:** adults (18 and over), whether or not they're registered to vote.
+
 **What we use:** the published results for each state and district, taken from the questionnaires on
 [vop.org](https://vop.org/battlegrounds-aggregate/), with each sample's size and margin of error.
 Only members from the states and districts it surveyed get these comparisons.
@@ -142,6 +150,8 @@ Only members from the states and districts it surveyed get these comparisons.
 **What it is:** a survey of about 6,250 people a week from July 2019 to February 2021, nearly half a
 million interviews in all, conducted online and weighted to Census figures. Respondents said whether
 they agree or disagree with specific policy proposals.
+
+**Who was asked:** adults (18 and over), whether or not they're registered to vote.
 
 **What we use:** the answers to the proposals Congress actually voted on, from the published data
 files, pooled across the weeks each question was asked. Its size allows an estimate for nearly every
@@ -162,6 +172,8 @@ Texas voters several times a year, conducted online by YouGov.
 **What it is:** about 1,200 registered Texas voters per poll, weighted to the state's voters. Most of its
 questions are about Texas, but some ask about federal laws and actions.
 
+**Who was asked:** registered voters only.
+
 **What we use:** the published statewide results (the "topline" for each poll) for the few questions
 that a Senate vote answers, with each poll's margin of error. "Neither" and "don't know" answers are
 left out, as with every survey here. The polls cover Texas only, so only Texas's two senators get these
@@ -179,6 +191,8 @@ results.
 **What they are:** questions a state's voters decided themselves on the ballot, such as a
 constitutional amendment. These aren't surveys: they are certified counts of votes actually cast, so
 there is no sample and no margin of error.
+
+**Who was asked:** voters themselves: these are the votes actually cast, not a survey.
 
 **What we use:** each measure's certified statewide Yes and No totals, as compiled by
 [Ballotpedia](https://ballotpedia.org/2024_ballot_measure_election_results), with a link to each

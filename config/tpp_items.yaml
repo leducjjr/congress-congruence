@@ -28,6 +28,7 @@ polls:
     source:
       title: University of Texas / Texas Politics Project Poll, August 2025
       organization: Texas Politics Project
+      asked: registered_voters
       description: >-
         a University of Texas at Austin poll of about 1,200 registered Texas voters, conducted online by
         YouGov and weighted to the state's voters; statewide results only
@@ -59,6 +60,7 @@ polls:
     source:
       title: University of Texas / Texas Politics Project Poll, June 2026
       organization: Texas Politics Project
+      asked: registered_voters
       description: >-
         a University of Texas at Austin poll of about 1,200 registered Texas voters, conducted online by
         YouGov and weighted to the state's voters; statewide results only
@@ -92,6 +94,7 @@ polls:
     source:
       title: University of Texas / Texas Politics Project Poll, August 2026
       organization: Texas Politics Project
+      asked: registered_voters
       description: >-
         a University of Texas at Austin poll of about 1,200 registered Texas voters, conducted online by
         YouGov and weighted to the state's voters; statewide results only

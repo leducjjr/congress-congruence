@@ -152,7 +152,7 @@ select si.survey, si.variable, si.question, coalesce(siv.reader_note, si.note) a
        t.state, t.district as seat_district, t.party_name, t.own_party,
        pv.party_yea, pv.party_nay,
        oe.support, oe.support_low, oe.support_high, oe.majority, oe.respondents, oe.district,
-       oe.source_url, oe.area_note, s.kind,
+       oe.source_url, oe.area_note, s.kind, s.asked,
        ap.population as residents
   from core.member_vote mv
   join core.survey_item_vote siv on siv.roll_call_id = mv.roll_call_id
@@ -190,7 +190,7 @@ select si.survey, si.variable, si.question, coalesce(siv.reader_note, si.note) a
 # Where each survey comes from (title, when, size, links).
 SURVEYS = """
 select survey, title, fielded, respondents, dataset_url, guide_url, about_url,
-       coalesce(organization, survey) as organization, description, kind
+       coalesce(organization, survey) as organization, description, kind, asked
   from core.survey order by survey
 """
 
@@ -225,7 +225,7 @@ select (select round(avg(population)) from core.area_population
 # Every survey loaded, for the Sources page, with how many of its questions are compared with votes.
 SURVEY_LIST = """
 select s.survey, s.title, s.fielded, s.respondents, s.dataset_url, s.guide_url, s.about_url,
-       coalesce(s.organization, s.survey) as organization, s.description, s.kind,
+       coalesce(s.organization, s.survey) as organization, s.description, s.kind, s.asked,
        (select count(distinct v.variable) from core.survey_item_vote v where v.survey = s.survey) as items
   from core.survey s
  order by coalesce(s.organization, s.survey), s.survey desc
@@ -311,7 +311,7 @@ select v.roll_call_id, v.bioguide_id, v.position,
 
 QUESTION_SEARCH = """
 select si.survey, si.variable, si.question, si.note, s.title, s.fielded,
-       coalesce(s.organization, s.survey) as organization, s.guide_url, s.kind, s.about_url,
+       coalesce(s.organization, s.survey) as organization, s.guide_url, s.kind, s.about_url, s.asked,
        count(*) over () as total
   from core.survey_item si join core.survey s using (survey)
   -- A question can also be found by the official title and main topic (policy area) of the bills
@@ -386,7 +386,7 @@ select survey, variable, district is null as statewide, count(*) as areas,
 # ---------------------------------------------------------------- Surveyed votes page
 
 QUESTION_COLUMNS = """si.survey, si.variable, si.question, si.note, s.title, s.fielded,
-       coalesce(s.organization, s.survey) as organization, s.guide_url, s.kind, s.about_url"""
+       coalesce(s.organization, s.survey) as organization, s.guide_url, s.kind, s.about_url, s.asked"""
 
 # Every question compared with at least one vote: by organization, newest survey first.
 QUESTION_LIST = f"""
@@ -593,7 +593,7 @@ select mv.bioguide_id, coalesce(s.organization, s.survey) as organization,
 # Statewide estimates for one state, for every question compared with a vote.
 STATE_OPINION = """
 select si.survey, si.variable, si.question, coalesce(s.organization, s.survey) as organization,
-       s.title, s.fielded, s.kind, oe.support, oe.support_low, oe.support_high, oe.majority,
+       s.title, s.fielded, s.kind, s.asked, oe.support, oe.support_low, oe.support_high, oe.majority,
        oe.respondents, oe.area_note, oe.source_url
   from core.opinion_estimate oe
   join core.survey_item si on si.survey = oe.survey and si.variable = oe.variable

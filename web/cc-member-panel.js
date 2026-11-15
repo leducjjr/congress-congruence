@@ -243,6 +243,9 @@
     .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   `;
 
+  // Who a survey's figures come from (core.survey.asked): "from 412 adults surveyed in ...".
+  const ASKED_PEOPLE = { adults: ["adult", "adults"], registered_voters: ["registered voter", "registered voters"],
+                         residents: ["resident", "residents"] };
   const POSITION_TEXT = { yea: "Yea", nay: "Nay", present: "Present", not_voting: "Did not vote", other: "Other" };
 
   // Shape per position: filled dot, ring, square for present, dash for not voting.
@@ -745,7 +748,7 @@
               `${c.respondents.toLocaleString()} votes cast (certified result).`)
           : h("p", { class: "op-est" },
             `${here}: ${Math.round(c.support_pct)}% support (likely ${Math.round(lo)}–${Math.round(hi)}%), `,
-            `from ${c.respondents.toLocaleString()} ${c.respondents === 1 ? "person" : "people"} surveyed in ${here}`,
+            `from ${c.respondents.toLocaleString()} ${(ASKED_PEOPLE[i.asked] || ["person", "people"])[c.respondents === 1 ? 0 : 1]} surveyed in ${here}`,
             c.respondents < 20 && c.area === "district" ? ", so this leans mostly on statewide answers" : "",
             several && sv ? ` (${sv.title})` : "",
             ".");

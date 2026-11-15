@@ -386,22 +386,30 @@ def district_congress(cfg: dict, default: int) -> int:
     return int(m.group(1)) if m else default
 
 
+# Who a source's figures come from: shown with every comparison (sql/013_survey_asked.sql).
+ASKED = {"adults", "registered_voters", "voters", "residents"}
+
+
 def save_items(cur, survey: str, src: dict, respondents: int | None,
                items: list[tuple[str, dict, str | None]], links: list[tuple]) -> None:
     """Record the survey's source, replace its items (which cascades to links and estimates),
-    and write the item-to-vote links. items: (variable, config entry, label in the data file)."""
+    and write the item-to-vote links. items: (variable, config entry, label in the data file).
+    src["asked"] says who the figures come from (see ASKED); a ballot measure is always "voters"."""
+    asked = "voters" if src.get("kind") == "ballot" else src.get("asked")
+    if asked not in ASKED:
+        raise ValueError(f"{survey}: source needs asked: one of {sorted(ASKED)} (who was asked)")
     cur.execute(
         """insert into core.survey (survey, title, fielded, respondents, dataset_url, guide_url, about_url,
-                                    organization, description, kind)
-           values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                                    organization, description, kind, asked)
+           values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
            on conflict (survey) do update set title = excluded.title, fielded = excluded.fielded,
                respondents = excluded.respondents, dataset_url = excluded.dataset_url,
                guide_url = excluded.guide_url, about_url = excluded.about_url,
                organization = excluded.organization, description = excluded.description,
-               kind = excluded.kind""",
+               kind = excluded.kind, asked = excluded.asked""",
         (survey, src.get("title", survey), src.get("fielded"), respondents, src.get("dataset_url"),
          src.get("guide_url"), src.get("about_url"), src.get("organization"), src.get("description"),
-         src.get("kind", "survey")))
+         src.get("kind", "survey"), asked))
     cur.execute("delete from core.survey_item where survey = %s", (survey,))   # cascades
     for var, item, label in items:
         cur.execute("insert into core.survey_item (survey, variable, question, survey_label, note) "
@@ -487,7 +495,7 @@ def load(conn, year: int, local_file: Path | None = None) -> dict:
     summary = {"respondents": nrows, "weight": weight_col, "items": len(items), "votes_linked": len(links),
                "method": method}
     with conn.transaction(), conn.cursor() as cur:
-        src = {"organization": "Cooperative Election Study",
+        src = {"organization": "Cooperative Election Study", "asked": "adults",
                "description": "a large academic survey of U.S. adults", **cfg.get("source", {})}
         if not src.get("guide_url"):
             src["guide_url"] = guide_url_for(year)

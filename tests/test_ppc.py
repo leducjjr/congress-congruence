@@ -298,7 +298,7 @@ def test_rules_pick_by_date_and_tally(conn):
 def test_load_and_compare(conn, monkeypatch, tmp_path):
     from congress_congruence.api import app as api
     cfg = {"survey": "PPC 2026", "congress": 119,
-           "source": {"title": "Test PPC", "organization": "Program for Public Consultation", "description": "d"},
+           "source": {"title": "Test PPC", "organization": "Program for Public Consultation", "description": "d", "asked": "adults"},
            "pages": [],
            "items": {
                "ACA": {"question": "Renew ACA subsidies", "pdf": ["healthcare"], "find": "x",

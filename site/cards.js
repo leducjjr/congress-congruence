@@ -13,6 +13,8 @@
   const chamberName = c => c === "senate" ? "Senate" : "House";
   const POS = { yea: "Yea", nay: "Nay", present: "Present", not_voting: "didn't vote" };
   const slug = t => t.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  // Who a survey's figures come from (core.survey.asked).
+  const ASKED = { adults: "adults", registered_voters: "registered voters", residents: "residents", voters: "voters" };
   const STORE = "cc-my-members";
 
   // "Recently viewed members": the members most recently opened on this device (kept only in this
@@ -84,7 +86,8 @@
       q.source.kind === "ballot"
         ? el("p", { class: "meta" }, `${q.source.title}`, q.source.fielded ? ` · voted ${q.source.fielded}` : "", " · ",
             el("a", { href: `sources.html#${slug(q.source.organization)}` }, "About ballot measures"))
-        : el("p", { class: "meta" }, `${q.source.organization} · ${q.source.title}`, q.source.fielded ? ` · asked ${q.source.fielded}` : "", " · ",
+        : el("p", { class: "meta" }, `${q.source.organization} · ${q.source.title}`, q.source.fielded ? ` · asked ${q.source.fielded}` : "",
+            ASKED[q.source.asked] ? ` · asked of ${ASKED[q.source.asked]}` : "", " · ",
             el("a", { href: q.source.guide_url || `sources.html#${slug(q.source.organization)}` },
                q.source.guide_url ? "Survey questions" : "About this survey")),
       q.note ? el("p", { class: "meta" }, q.note) : null,

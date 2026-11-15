@@ -323,7 +323,7 @@ def load(conn, folder: Path | None = None) -> dict:
         profiles, method = None, opinion.METHOD
     conn.commit()     # end the read-only transaction the lookups opened (see ces.load)
 
-    src = {"organization": ORGANIZATION, "description": "a weekly survey of about 6,250 U.S. adults, 2019-2021",
+    src = {"organization": ORGANIZATION, "asked": "adults", "description": "a weekly survey of about 6,250 U.S. adults, 2019-2021",
            "dataset_url": f"https://doi.org/{DATASET.removeprefix('doi:')}", **cfg.get("source", {})}
     items = list(cfg["items"])
     summary = {"respondents": len(df), "weeks": len(weeks), "items": len(items), "votes_linked": len(links),

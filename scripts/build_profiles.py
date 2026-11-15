@@ -57,6 +57,9 @@ POSITION = {"yea": "Yea", "nay": "Nay", "present": "Present", "not_voting": "Did
 MAJORITY = {"support": "Most support", "oppose": "Most oppose", "too_close": "Too close to call"}
 SIDE = {"support": "for the proposal", "oppose": "against the proposal"}
 
+# Who a survey's figures come from (core.survey.asked), as shown beside each question.
+ASKED = {"adults": "adults", "registered_voters": "registered voters", "residents": "residents", "voters": "voters"}
+
 def e(text) -> str:
     """Escaped for HTML text and double-quoted attributes (apostrophes kept as they are)."""
     return html.escape(str(text)).replace("&#x27;", "'")
@@ -412,8 +415,10 @@ def state_page(st: dict, slugs: dict, today: date) -> tuple[dict, str]:
                 + (SIDE.get(s.get("sided_with") or "", "didn't vote") + (", related vote" if s.get("match") == "related" else ""))
                 for s in o.get("senate_votes", [])) or '<span class="meta">No Senate vote by a senator from here</span>'
             src = o.get("source") or {}
+            asked = ASKED.get(src.get("asked") or "")
             rows.append(f"<tr><td class=\"lead\">{e(o['question'])}<br><span class=\"meta\">{e(src.get('organization') or o['survey'])}"
-                        f"{' · ' + e(str(src['fielded'])) if src.get('fielded') else ''}</span></td>"
+                        f"{' · ' + e(str(src['fielded'])) if src.get('fielded') else ''}"
+                        f"{' · asked of ' + asked if asked and o.get('kind') != 'ballot' else ''}</span></td>"
                         f"<td data-label=\"Residents\">{MAJORITY[o['majority']]}: {support}</td>"
                         f"<td data-label=\"Senators\">{sen}</td></tr>")
         p.append('<div class="table-scroll"><table class="data-table stack"><thead><tr><th scope="col">Question</th>'

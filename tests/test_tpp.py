@@ -43,6 +43,7 @@ def test_rejects_house_comparisons(tmp_path):
 CFG = {"polls": [{
     "survey": "Texas Politics Project, Jun 2026", "congress": 119, "moe": 3.47, "respondents": 1200,
     "source": {"title": "t", "organization": "Texas Politics Project", "description": "d", "fielded": "June 2026",
+               "asked": "registered_voters",
                "dataset_url": "https://example.org/topline.pdf"},
     "items": {"Q36": {"question": "Approve of U.S. military actions against Iran", "favor": 30, "oppose": 60,
                       "url": "https://example.org/topline.pdf", "match": "related",
@@ -78,8 +79,8 @@ def test_load_stores_a_statewide_row_per_question(conn):
     out = tpp.load(conn, CFG)
     assert out == {"polls": 1, "items": 1, "votes_linked": 1, "calls": {"support": 0, "oppose": 1, "too_close": 0}}
     with conn.cursor() as cur:
-        cur.execute("select organization, kind, respondents from core.survey")
-        assert cur.fetchall() == [("Texas Politics Project", "survey", 1200)]
+        cur.execute("select organization, kind, respondents, asked from core.survey")
+        assert cur.fetchall() == [("Texas Politics Project", "survey", 1200, "registered_voters")]
         cur.execute("select state, district, method, source_url from core.opinion_estimate")
         assert cur.fetchall() == [("TX", None, "published-topline-v1", "https://example.org/topline.pdf")]
         cur.execute("select support_side, match_kind from core.survey_item_vote")
@@ -94,3 +95,7 @@ def test_a_question_without_a_vote_loads_nothing(conn):
     with conn.cursor() as cur:
         cur.execute("select count(*) from core.survey")
         assert cur.fetchone() == (0,)
+
+
+def test_every_poll_says_registered_voters():
+    assert {p["source"]["asked"] for p in tpp.load_config()["polls"]} == {"registered_voters"}

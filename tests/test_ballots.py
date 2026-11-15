@@ -86,8 +86,8 @@ def test_load_compares_senators_and_at_large_seats_only(conn, monkeypatch):
     out = ballots.load(conn, 2024)
     assert out == {"items": 1, "votes_linked": 2, "area_rows": 3, "not_certified_yet": 0}   # ID, WY, WY's at-large seat
     with conn.cursor() as cur:
-        cur.execute("select kind from core.survey")
-        assert cur.fetchone() == ("ballot",)
+        cur.execute("select kind, asked from core.survey")
+        assert cur.fetchone() == ("ballot", "voters")
         cur.execute("select state, district, support_low = support_high, area_note from core.opinion_estimate order by 1, 2")
         assert cur.fetchall() == [("ID", None, True, "Idaho HJR 5"), ("WY", 0, True, "Wyoming Amendment A"),
                                   ("WY", None, True, "Wyoming Amendment A")]
@@ -104,7 +104,8 @@ def test_load_compares_senators_and_at_large_seats_only(conn, monkeypatch):
     assert item["wording_url"] == "https://example.org/id" and item["wording_hint"] is None
     assert s["summary"]["related_votes"] == 1 and s["summary"]["surveyed_votes"] == 0   # never scored
     assert s["samples"] == []                                                          # votes cast, not people surveyed
-    assert s["surveys"][0]["kind"] == "ballot"
+    assert s["surveys"][0]["kind"] == "ballot" and s["surveys"][0]["asked"] == "voters"
+    assert item["asked"] == "voters" and listed[0]["asked"] == "voters"
     assert wy["items"][0]["constituents"]["support_pct"] == 40.0                       # at-large seat compared
     assert id1["items"] == []                                                          # a district isn't the state
     assert card["source"]["kind"] == "ballot" and set(card["spread"]) == {"states"}

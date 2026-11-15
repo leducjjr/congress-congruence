@@ -267,8 +267,9 @@ def test_older_votes_use_the_seat_held_at_the_time(conn, survey_file, monkeypatc
                        question, result, source) values ('h-118-2-50', 'house', 118, 2, 50, '2024-03-01',
                        'On Passage', 'Passed', 'test')""")
         cur.execute("insert into core.member_vote values ('h-118-2-50', 'H000001', 'yea', 'Yea', null, null)")
-        cur.execute("""insert into core.survey values ('CES 2024', 'Cooperative Election Study 2024', 'Fall 2024',
-                       60000, 'https://example/data', 'https://example/guide24.pdf', 'https://example/about')""")
+        cur.execute("""insert into core.survey (survey, title, fielded, respondents, dataset_url, guide_url, about_url, asked)
+                       values ('CES 2024', 'Cooperative Election Study 2024', 'Fall 2024',
+                       60000, 'https://example/data', 'https://example/guide24.pdf', 'https://example/about', 'adults')""")
         cur.execute("insert into core.survey_item (survey, variable, question) values ('CES 2024', 'CC24_300', 'A 2024 item')")
         cur.execute("insert into core.survey_item_vote (survey, variable, chamber, roll_call_id) "
                     "values ('CES 2024', 'CC24_300', 'house', 'h-118-2-50')")

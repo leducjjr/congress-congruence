@@ -133,7 +133,7 @@ def surveys(response: Response):
     """Every survey loaded, newest first within each organization (for the Sources page)."""
     response.headers["Cache-Control"] = CACHE
     keys = ("survey", "title", "fielded", "respondents", "dataset_url", "guide_url", "about_url",
-            "organization", "description", "kind", "items")
+            "organization", "description", "kind", "asked", "items")
     return {"surveys": [{k: r[k] for k in keys} for r in fetch(q.SURVEY_LIST)]}
 
 
@@ -249,7 +249,8 @@ def question_cards(qrows: list[dict], members: list[str]) -> list[dict]:
     return [{
         "survey": r["survey"], "item": r["variable"], "question": r["question"], "note": r["note"],
         "source": {"title": r["title"], "organization": r["organization"], "fielded": r["fielded"],
-                   "guide_url": r["guide_url"], "about_url": r.get("about_url"), "kind": r.get("kind", "survey")},
+                   "guide_url": r["guide_url"], "about_url": r.get("about_url"), "kind": r.get("kind", "survey"),
+                   "asked": r.get("asked")},
         # A ballot measure's result is statewide; its copies for at-large House seats aren't districts.
         "spread": {k: v for k, v in spreads.get((r["survey"], r["variable"]), {}).items()
                    if r.get("kind") != "ballot" or k == "states"},
@@ -580,6 +581,7 @@ def member_opinion(bioguide_id: str, response: Response):
     items = [{
         "survey": r["survey"],
         "kind": r["kind"],                              # survey | ballot (certified votes on a state measure)
+        "asked": r["asked"],                            # adults | registered_voters | voters | residents
         "item": r["variable"],
         "question": r["question"],
         "note": r["note"],
@@ -635,6 +637,7 @@ def member_opinion(bioguide_id: str, response: Response):
             "name": s["survey"], "title": s["title"], "fielded": s["fielded"], "respondents": s["respondents"],
             "dataset_url": s["dataset_url"], "guide_url": s["guide_url"], "about_url": s["about_url"],
             "organization": s["organization"], "description": s["description"], "kind": s["kind"],
+            "asked": s["asked"],
         } for s in surveys.values() if any(i["survey"] == s["survey"] for i in items)],
         "items": items,
     }
@@ -866,7 +869,8 @@ def state(code: str, response: Response):
             "sided_with": sided_with(r["position"], r["support_side"])})
     opinion = [{
         "survey": r["survey"], "item": r["variable"], "question": r["question"], "kind": r["kind"],
-        "source": {"organization": r["organization"], "title": r["title"], "fielded": r["fielded"]},
+        "source": {"organization": r["organization"], "title": r["title"], "fielded": r["fielded"],
+                   "asked": r["asked"]},
         "support_pct": round(100 * r["support"], 1),
         "range_pct": [round(100 * r["support_low"], 1), round(100 * r["support_high"], 1)],
         "majority": r["majority"], "respondents": r["respondents"], "area_note": r["area_note"],

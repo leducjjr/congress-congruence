@@ -173,8 +173,10 @@
         const link = (href, text) => href ? `<a href="${href}">${text}</a>` : "";
         const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
         box.innerHTML = `<table class="survey-table"><thead><tr><th>Survey</th><th>Interviewed</th>
-          <th>People surveyed</th><th>Questions compared</th><th>Links</th></tr></thead><tbody>${
+          <th>Who was asked</th><th>People surveyed</th><th>Questions compared</th><th>Links</th></tr></thead><tbody>${
           mine.map(s => `<tr><td>${esc(s.title)}</td><td>${esc(s.fielded || "")}</td>
+            <td>${{ adults: "Adults", registered_voters: "Registered voters", residents: "Residents",
+                    voters: "Voters (votes cast)" }[s.asked] || ""}</td>
             <td>${s.kind === "ballot" ? "voters in each state (certified results)"
                   : s.respondents ? s.respondents.toLocaleString() : "see the survey"}</td>
             <td>${s.items}</td>
