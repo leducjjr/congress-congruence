@@ -10,7 +10,7 @@ What it does:
 - Loads House and Senate roll-call votes (House Clerk, Senate via Voteview), members and terms, and
   bill titles and subjects (Congress.gov), each checked against official totals.
 - Matches survey questions to the votes on the same proposals (Cooperative Election Study 2008-2025,
-  Program for Public Consultation, state ballot measures; Nationscape 2019-2021 in progress).
+  Program for Public Consultation, Nationscape 2019-2021, Texas Politics Project, state ballot measures).
 - Estimates support in every state and congressional district, using Census district profiles.
 - Serves a read-only API and a static site: member pages, state pages, comparing two members, all
   votes with filters, and a party-blind view.

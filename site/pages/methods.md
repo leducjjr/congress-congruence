@@ -76,6 +76,14 @@ range comes from the published margin of error, converted to the same 90% level 
 Where one margin is given as a range for several districts, we use the larger figure, so our ranges are
 never narrower than the survey supports.
 
+### Texas Politics Project {#estimates-tpp}
+
+The Texas Politics Project publishes statewide results for each of its polls of about 1,200 registered
+Texas voters, with the poll's margin of error. We use them the same way: support is the share who
+approved (or chose the side matching the proposal) among people who took a side, leaving out "neither"
+and "don't know", and the range comes from the published margin, converted to the 90% level. These are
+statewide figures, so they're compared with Texas's two senators only.
+
 ### State ballot measures {#estimates-ballot}
 
 For a state ballot measure, the figure is the share of votes cast that were Yes: Yes ÷ (Yes + No),

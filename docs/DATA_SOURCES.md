@@ -420,6 +420,30 @@ Special handling:
   (Paris agreement bill), border wall (ending the 2019 emergency, Nay side), chokeholds (Justice in
   Policing Act, 2020).
 
+## 5c. Constituent opinion: University of Texas / Texas Politics Project (TPP)
+
+- **What:** polls of ~1,200 registered Texas voters, several a year, online by YouGov, weighted.
+  Statewide only, so compared with Texas's senators only (never House members).
+- **Terms (checked Nov 15, 2026):** the polling data archive says the project makes its results and data
+  available for public use; no licence or credit terms stated. Credited on the Sources page and footer,
+  and each question links to its topline. A note describing the use is to be sent to the project (draft Nov 15, 2026).
+- **What's used:** the published topline PDFs, not the respondent files. favor / oppose are the summed
+  approve / disapprove (or the two answer options); neither and don't know are dropped.
+- **Estimate** (`published-topline-v1`): support = favor / (favor + oppose); range = support +/- MOE *
+  (Z90 / 1.96) / (favor + oppose), MOE being the poll's weighting-adjusted margin; effective n =
+  (0.98 / MOE)^2. Same arithmetic as PPC.
+- **Code:** `ingest/tpp.py` (`link`, `load`), item file `config/tpp_items.yaml`; each poll is its own
+  survey ("Texas Politics Project, Aug 2025"), all under the organization "Texas Politics Project".
+  Load fails, storing nothing, if any question has no matching vote.
+- **Questions loaded (approved Nov 15, 2026):**
+  - Aug 2025 Q28, approve of the One Big Beautiful Bill Act: same; Senate passage of H.R. 1, July 1, 2025.
+  - Jun 2026 Q36, approve of U.S. military actions against Iran: related, Nay side; Senate Iran war
+    powers resolution passed 50-48 on June 23, 2026.
+  - Aug 2026 Q33, end the conflict with Iran now: related, Yea side; same vote.
+- **Reviewed and left out:** tariffs (expected effects, not support), SAVE America Act (awareness only),
+  immigration enforcement, troops in cities, Venezuela, Greenland (no matching floor vote). Not yet
+  reviewed: Feb 2025, Oct 2025, Apr 2026, Oct 2026 polls.
+
 ## 6a. District profiles: Census Bureau (for district opinion estimates)
 
 | | |
@@ -501,8 +525,6 @@ nothing, results matched v1.1.
     survey) on climate and energy policies. License: research, academic or personal non-commercial use;
     no redistribution or derived products; credit line and Howe et al. (2015) citation required. Ask
     permission before any use; matches would mostly be `related`.
-  - University of Texas / Texas Politics Project poll: ~1,200 registered Texas voters per poll, respondent
-    files (.sav, .feather) and codebooks in its polling archive. Download terms not yet checked. Texas only.
   - Statewide university polls (Marist, Quinnipiac, Siena, ...): toplines and crosstabs; case by case,
     only where a question clearly matches a floor vote.
 - **Not used:** national-only surveys (ANES, GSS, Pew, Gallup, KFF: too few respondents per area);

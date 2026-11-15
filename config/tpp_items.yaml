@@ -1,0 +1,120 @@
+# University of Texas / Texas Politics Project polls: statewide published results for questions that a
+# Senate vote of the 119th Congress answers. Load with
+#   python -m congress_congruence.ingest.tpp link
+#   python -m congress_congruence.ingest.tpp load
+#
+# Each poll is about 1,200 registered Texas voters, conducted online by YouGov and weighted. The project
+# "makes the results and data available for public use" (polling data archive); no other terms are
+# stated. Results are statewide only, so they're compared with Texas's two senators, never with House
+# members (too few respondents per district). Approved by John LeDuc, Nov 15, 2026.
+#
+# Per item: favor / oppose are the published percentages for the two sides (other answers, such as
+# "neither" or "don't know", are left out, as with every survey here); match and votes as in
+# ces_2025_items.yaml. moe is the poll's margin of error adjusted for weighting, in points (95%).
+#
+# Polls reviewed Nov 15, 2026 and left out: tariff questions (they ask about expected effects, not
+# support for a proposal), the SAVE America Act (asked only how much people had heard), immigration
+# enforcement, troops in cities, Venezuela and Greenland (no matching floor vote). Not yet reviewed:
+# Feb 2025, Oct 2025, Apr 2026 and Oct 2026 polls.
+
+organization: Texas Politics Project
+archive_url: https://texaspolitics.utexas.edu/polling-data-archive
+
+polls:
+  - survey: Texas Politics Project, Aug 2025
+    congress: 119
+    moe: 3.28
+    respondents: 1200
+    source:
+      title: University of Texas / Texas Politics Project Poll, August 2025
+      organization: Texas Politics Project
+      description: >-
+        a University of Texas at Austin poll of about 1,200 registered Texas voters, conducted online by
+        YouGov and weighted to the state's voters; statewide results only
+      fielded: August 22 to September 1, 2025
+      dataset_url: https://texaspolitics.utexas.edu/files/202508-poll-topline-2pMn.pdf
+      about_url: https://texaspolitics.utexas.edu/polling-data-archive
+    items:
+      TPP2508_Q28:
+        question: Approve of the "One Big Beautiful Bill Act" passed by Congress
+        wording: >-
+          From what you have seen or heard about it so far, do you approve or disapprove of the "One Big
+          Beautiful Bill Act" passed by Congress?
+        favor: 32      # approve strongly 13 + approve somewhat 19
+        oppose: 45     # disapprove somewhat 8 + disapprove strongly 37 (neither 13, don't know 10)
+        url: https://texaspolitics.utexas.edu/files/202508-poll-topline-2pMn.pdf
+        votes:
+          senate:
+            bill: [hr, 1]
+            date: 2025-07-01
+            questions: [Passage]
+            note: >-
+              The Senate's final vote to pass the bill on July 1, 2025. It passed 51-50, with the Vice
+              President breaking a tie.
+
+  - survey: Texas Politics Project, Jun 2026
+    congress: 119
+    moe: 3.47
+    respondents: 1200
+    source:
+      title: University of Texas / Texas Politics Project Poll, June 2026
+      organization: Texas Politics Project
+      description: >-
+        a University of Texas at Austin poll of about 1,200 registered Texas voters, conducted online by
+        YouGov and weighted to the state's voters; statewide results only
+      fielded: June 5 to 12, 2026
+      dataset_url: https://texaspolitics.utexas.edu/files/202606_POLL_TOPLINE-723970a4.pdf
+      about_url: https://texaspolitics.utexas.edu/polling-data-archive
+    items:
+      TPP2606_Q36:
+        question: Approve of U.S. military actions against Iran
+        wording: Do you approve or disapprove of U.S. military actions against Iran?
+        favor: 41      # approve strongly 24 + approve somewhat 17
+        oppose: 47     # disapprove somewhat 12 + disapprove strongly 35 (neither 8, don't know 4)
+        url: https://texaspolitics.utexas.edu/files/202606_POLL_TOPLINE-723970a4.pdf
+        match: related
+        note: >-
+          Related, not the same: the poll asked whether people approve of U.S. military action against
+          Iran; the Senate voted on a war powers resolution to end it.
+        votes:
+          senate: &iran_wpr
+            date: 2026-06-23
+            expect: "50-48"
+            support_side: nay
+            note: >-
+              The Senate passed this war powers resolution on Iran 50-48 on June 23, 2026, after several
+              earlier attempts failed. Voting No was the side that supports continuing the military action.
+
+  - survey: Texas Politics Project, Aug 2026
+    congress: 119
+    moe: 3.58
+    respondents: 1200
+    source:
+      title: University of Texas / Texas Politics Project Poll, August 2026
+      organization: Texas Politics Project
+      description: >-
+        a University of Texas at Austin poll of about 1,200 registered Texas voters, conducted online by
+        YouGov and weighted to the state's voters; statewide results only
+      fielded: August 5 to 13, 2026
+      dataset_url: https://texaspolitics.utexas.edu/files/202608_POLL_TOPLINE-c5d4ba53.pdf
+      about_url: https://texaspolitics.utexas.edu/polling-data-archive
+    items:
+      TPP2608_Q33:
+        question: End the U.S. conflict with Iran now, rather than continue it until Iran gives up more
+        wording: >-
+          Do you think the U.S. should end the conflict with Iran now, or should it continue the conflict
+          until Iran gives up more?
+        favor: 54      # end now (continue until Iran gives up more 30, don't know 16)
+        oppose: 30
+        url: https://texaspolitics.utexas.edu/files/202608_POLL_TOPLINE-c5d4ba53.pdf
+        match: related
+        note: >-
+          Related, not the same: the poll asked whether the U.S. should end the conflict now; the Senate
+          voted on a war powers resolution directing an end to U.S. hostilities against Iran.
+        votes:
+          senate:
+            <<: *iran_wpr
+            support_side: yea
+            note: >-
+              The Senate passed this war powers resolution on Iran 50-48 on June 23, 2026, after several
+              earlier attempts failed. Voting Yes was the side that supports ending the conflict.

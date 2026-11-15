@@ -7,7 +7,7 @@ description: What's being added to US Congress vs Voters next - new survey sourc
 <p class="lede">What we're working on next. Dates depend on when each source publishes its data, so
 they're estimates. Have an idea? <a href="contact.html#feedback">Tell us</a>.</p>
 
-*Last updated November 13, 2026.*
+*Last updated November 15, 2026.*
 
 ## In progress {#in-progress}
 
@@ -50,6 +50,14 @@ republished, and only its questions about proposals Congress actually voted on a
 ## Recently added {#recent}
 
 Newest first. Follow these and every correction in a feed reader: [updates feed (RSS)](feed.xml).
+
+**November 15, 2026**
+
+- **Texas Politics Project polls.** Three questions from the University of Texas at Austin's polls of
+  registered Texas voters, compared with how Texas's two senators voted: approval of the One Big
+  Beautiful Bill Act (August 2025), compared with the Senate's vote to pass it, and two questions on the
+  conflict with Iran (June and August 2026), shown beside the Senate's June 2026 war powers vote as
+  related votes. See [Sources](sources.html#texas-politics-project).
 
 **November 13, 2026**
 

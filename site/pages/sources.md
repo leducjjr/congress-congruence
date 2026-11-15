@@ -153,6 +153,27 @@ votes from 2019-2020.
 
 <div data-surveys="Democracy Fund + UCLA Nationscape"><p class="note">Loading the list…</p></div>
 
+### University of Texas / Texas Politics Project {#texas-politics-project}
+
+**Who runs it:** the Texas Politics Project at the University of Texas at Austin, which polls registered
+Texas voters several times a year, conducted online by YouGov.
+[texaspolitics.utexas.edu](https://texaspolitics.utexas.edu/polling-data-archive)
+
+**What it is:** about 1,200 registered Texas voters per poll, weighted to the state's voters. Most of its
+questions are about Texas, but some ask about federal laws and actions.
+
+**What we use:** the published statewide results (the "topline" for each poll) for the few questions
+that a Senate vote answers, with each poll's margin of error. "Neither" and "don't know" answers are
+left out, as with every survey here. The polls cover Texas only, so only Texas's two senators get these
+comparisons; House districts have too few respondents. Each question links to the poll's published
+results.
+
+**Data:** the project makes its results and data [available for public use](https://texaspolitics.utexas.edu/polling-data-archive).
+
+**Loaded on this site:**
+
+<div data-surveys="Texas Politics Project"><p class="note">Loading the list…</p></div>
+
 ## State ballot measures {#state-ballot-measures}
 
 **What they are:** questions a state's voters decided themselves on the ballot, such as a
@@ -208,13 +229,10 @@ can check it. This list is updated as things change; last reviewed November 15, 
   national survey, not direct answers from each area, and the questions are general policies, so most
   would count as "related" rather than the same proposal. Their terms limit how the data may be reused,
   so we'd ask permission first.
-- **University of Texas / Texas Politics Project poll:** about 1,200 registered Texas voters several
-  times a year, with each respondent's answers published. It sometimes asks about federal legislation.
-  It covers Texas only, so it would add comparisons only for Texas's two senators.
 - **Statewide university polls** (for example Marist, Quinnipiac and Siena): these publish detailed
   results and occasionally ask about a specific bill. Each covers one state at a time and asks such
   questions only now and then, so they'd be added one question at a time, where one clearly matches a
-  vote.
+  vote, as with the [Texas Politics Project](sources.html#texas-politics-project) questions above.
 
 ### Not used
 
