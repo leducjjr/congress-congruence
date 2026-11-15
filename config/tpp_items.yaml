@@ -1,7 +1,7 @@
 # University of Texas / Texas Politics Project polls: statewide published results for questions that a
 # Senate vote of the 119th Congress answers. Load with
-#   python -m congress_congruence.ingest.tpp link
-#   python -m congress_congruence.ingest.tpp load
+#   python -m congress_congruence.ingest.statepolls link tpp
+#   python -m congress_congruence.ingest.statepolls load tpp
 #
 # Each poll is about 1,200 registered Texas voters, conducted online by YouGov and weighted. The project
 # "makes the results and data available for public use" (polling data archive); no other terms are
@@ -14,10 +14,12 @@
 #
 # Polls reviewed Nov 15, 2026 and left out: tariff questions (they ask about expected effects, not
 # support for a proposal), the SAVE America Act (asked only how much people had heard), immigration
-# enforcement, troops in cities, Venezuela and Greenland (no matching floor vote). Not yet reviewed:
+# enforcement, troops in cities and Greenland (no matching floor vote). Venezuela: the Senate did vote
+# on war powers resolutions (Oct 8 and Nov 6, 2025); the question is to be rechecked against them. Not yet reviewed:
 # Feb 2025, Oct 2025, Apr 2026 and Oct 2026 polls.
 
 organization: Texas Politics Project
+state: TX
 archive_url: https://texaspolitics.utexas.edu/polling-data-archive
 
 polls:

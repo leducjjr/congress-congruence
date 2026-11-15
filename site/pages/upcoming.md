@@ -53,6 +53,16 @@ Newest first. Follow these and every correction in a feed reader: [updates feed 
 
 **November 15, 2026**
 
+- **UNH Survey Center polls.** Sixteen questions from the University of New Hampshire's polls of New
+  Hampshire, Maine, Vermont and Massachusetts adults (June 2025 to January 2026), compared with how those
+  states' senators, and Vermont's representative, voted: the One Big Beautiful Bill Act and its 10-year
+  ban on state AI rules, the deal that ended the 2025 shutdown, extending the health insurance premium
+  subsidies, and U.S. military action toward Venezuela. See [Sources](sources.html#unh-survey-center).
+- **Who was asked.** Every comparison now says whether a source asked adults, registered voters, or is a
+  count of votes cast. See [Methods](methods.html#who-was-asked).
+- **Citizens among residents.** Member and state pages and [Members by the numbers](numbers.html) now show
+  how many of an area's residents are U.S. citizens and citizens 18 and over, from the Census Bureau.
+
 - **Texas Politics Project polls.** Three questions from the University of Texas at Austin's polls of
   registered Texas voters, compared with how Texas's two senators voted: approval of the One Big
   Beautiful Bill Act (August 2025), compared with the Senate's vote to pass it, and two questions on the

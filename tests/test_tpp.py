@@ -34,14 +34,14 @@ def test_items_file_is_well_formed():
 
 def test_rejects_house_comparisons(tmp_path):
     p = tmp_path / "t.yaml"
-    p.write_text("polls:\n  - {survey: s, congress: 119, moe: 3, respondents: 1200, source: {}, items: "
+    p.write_text("polls:\n  - {survey: s, state: TX, congress: 119, moe: 3, respondents: 1200, source: {t: 1}, items: "
                  "{A: {question: q, favor: 40, oppose: 50, url: u, votes: {house: {roll_call: x}}}}}\n")
     with pytest.raises(ValueError, match="senators only"):
         tpp.load_config(p)
 
 
 CFG = {"polls": [{
-    "survey": "Texas Politics Project, Jun 2026", "congress": 119, "moe": 3.47, "respondents": 1200,
+    "survey": "Texas Politics Project, Jun 2026", "state": "TX", "congress": 119, "moe": 3.47, "respondents": 1200,
     "source": {"title": "t", "organization": "Texas Politics Project", "description": "d", "fielded": "June 2026",
                "asked": "registered_voters",
                "dataset_url": "https://example.org/topline.pdf"},

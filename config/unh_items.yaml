@@ -1,0 +1,379 @@
+# University of New Hampshire Survey Center polls (Granite State Poll, Pine Tree State Poll, Green
+# Mountain State Poll, Bay State Poll): statewide published results for questions that a vote of the
+# 119th Congress answers. Load with
+#   python -m congress_congruence.ingest.statepolls link unh
+#   python -m congress_congruence.ingest.statepolls load unh
+#
+# Each poll is a probability-based web panel of the state's adult residents (recruited by phone, text
+# and mail), weighted to Census figures and the state's 2024 results. They ask all adults, not only
+# registered voters, and report no registered-only figures (their "Undeclared/Not registered" group
+# combines the two), so asked: adults. Figures are read from each release's statewide crosstab row
+# (two answers on each side added together, as published); "neutral" and "don't know" are left out.
+# The margins of error are "not adjusted for design effect", and each release gives the design effect,
+# so ranges use MOE * sqrt(design effect): wider, never narrower than the poll supports.
+#
+# Statewide results are compared with senators, and with the House member only for Vermont (one
+# at-large seat). Approved by John LeDuc, Nov 15, 2026. Releases are at
+# https://scholars.unh.edu/survey_center_polls/ (PDF per poll, linked below).
+#
+# Vote rules (checked with `link` before loading):
+#   OBBBA Senate passage: H.R. 1, July 1, 2025, 51-50 (Vice President breaking the tie)
+#   OBBBA House final passage (concurring in the Senate's changes): July 3, 2025, 218-214
+#   AI moratorium: Senate amendment to strike the 10-year ban on state AI rules, July 1, 2025, 99-1
+#   Shutdown deal: Senate passage, Nov 10, 2025, 60-40
+#   ACA subsidies: Senate vote on a 3-year extension, Dec 11, 2025, 51-48 (60 needed, so procedural:
+#     related); House passage of a 3-year extension, Jan 8, 2026, 230-196
+#   Boat strikes: Senate war powers resolution to bar hostilities against drug cartels, Oct 8, 2025, 48-51
+#   Venezuela: Senate war powers resolution to bar hostilities against Venezuela, Nov 6, 2025, 49-51
+
+organization: UNH Survey Center
+
+about: &about https://cola.unh.edu/unh-survey-center
+
+votes:
+  obbba_senate: &obbba_senate          # as in tpp_items.yaml (the tie-break isn't in the tally)
+    bill: [hr, 1]
+    date: 2025-07-01
+    questions: [Passage]
+    note: The Senate's vote to pass the bill on July 1, 2025. It passed 51-50, with the Vice President breaking a tie.
+  obbba_house: &obbba_house
+    bill: [hr, 1]
+    date: 2025-07-03
+    expect: "218-214"
+    note: The House's final vote on July 3, 2025, agreeing to the Senate's version, which sent the bill to the President.
+  ai_strike: &ai_strike
+    date: 2025-07-01
+    expect: "99-1"
+    support_side: nay
+    note: >-
+      The Senate voted 99-1 to strike the 10-year ban on state regulation of artificial intelligence from the
+      bill. Voting No was the side that supports the ban.
+  shutdown_senate: &shutdown_senate
+    date: 2025-11-10
+    expect: "60-40"
+    note: The Senate's vote to pass the funding deal that ended the shutdown, November 10, 2025.
+  aca_senate: &aca_senate
+    date: 2025-12-11
+    expect: "51-48"
+    find: premium tax credit
+    match: related
+    note: >-
+      The Senate's December 11, 2025 vote on a three-year extension of the enhanced premium tax credits. It
+      got 51 votes but needed 60 to advance, so it's shown as a related vote.
+  aca_house: &aca_house
+    date: 2026-01-08
+    expect: "230-196"
+    note: The House's January 8, 2026 vote to pass a three-year extension of the enhanced premium tax credits.
+  boats_senate: &boats_senate
+    date: 2025-10-08
+    expect: "48-51"
+    support_side: nay
+    note: >-
+      A war powers resolution to bar U.S. hostilities against drug-trafficking groups without approval from
+      Congress, aimed at the boat strikes. It failed 48-51. Voting No was the side that supports the strikes.
+  venezuela_senate: &venezuela_senate
+    date: 2025-11-06
+    expect: "49-51"
+    support_side: nay
+    note: >-
+      A war powers resolution to bar U.S. hostilities within or against Venezuela without approval from
+      Congress. It failed 49-51. Voting No was the side that leaves military action open.
+
+polls:
+  # ---------------------------------------------------------------- June 2025: One Big Beautiful Bill
+  - survey: Granite State Poll, Jun 2025
+    state: NH
+    congress: 119
+    respondents: 1320
+    moe: 2.7
+    design_effect: 2.1
+    source:
+      title: Granite State Poll, June 2025 (University of New Hampshire Survey Center)
+      organization: UNH Survey Center
+      asked: adults
+      description: >-
+        a University of New Hampshire poll of about 1,300 New Hampshire adults from a probability-based web
+        panel, weighted to Census figures and 2024 results; statewide results only
+      fielded: June 19 to 23, 2025
+      dataset_url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1875&context=survey_center_polls
+      about_url: *about
+    items:
+      UNH2506_PASS:
+        question: Want Congress to pass the "One Big Beautiful Bill Act"
+        wording: >-
+          Based on what you know now, do you want Congress to pass "One Big Beautiful Bill Act" or do you not
+          have an opinion on this?
+        favor: 33      # definitely 15 + probably 18 (neutral 6, don't know 4)
+        oppose: 56     # probably not 8 + definitely not 48
+        url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1875&context=survey_center_polls
+        votes: {senate: *obbba_senate}
+      UNH2506_AI:
+        question: Ban state regulation of artificial intelligence (AI) for 10 years, as in the "One Big Beautiful Bill Act"
+        wording: >-
+          Generally speaking, do you support or oppose the following provisions in the "One Big Beautiful
+          Bill Act" or do you not have an opinion on these issues? Bans state regulation of artificial
+          intelligence (AI) for 10 years
+        favor: 24      # strongly 8 + somewhat 16 (neutral 12, don't know 10)
+        oppose: 54     # somewhat 13 + strongly 41
+        url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1875&context=survey_center_polls
+        votes: {senate: *ai_strike}
+
+  - survey: Pine Tree State Poll, Jun 2025
+    state: ME
+    congress: 119
+    respondents: 846
+    moe: 3.4
+    design_effect: 2.3
+    source:
+      title: Pine Tree State Poll, June 2025 (University of New Hampshire Survey Center)
+      organization: UNH Survey Center
+      asked: adults
+      description: >-
+        a University of New Hampshire poll of about 850 Maine adults from a probability-based web panel,
+        weighted to Census figures and 2024 results; statewide results only
+      fielded: June 19 to 23, 2025
+      dataset_url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1876&context=survey_center_polls
+      about_url: *about
+    items:
+      UNH2506_PASS:
+        question: Want Congress to pass the "One Big Beautiful Bill Act"
+        wording: >-
+          Based on what you know now, do you want Congress to pass "One Big Beautiful Bill Act" or do you not
+          have an opinion on this?
+        favor: 31      # definitely 14 + probably 17 (neutral 6, don't know 6); the release rounds this to 30
+        oppose: 58     # probably not 4 + definitely not 54
+        url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1876&context=survey_center_polls
+        votes: {senate: *obbba_senate}
+      UNH2506_AI:
+        question: Ban state regulation of artificial intelligence (AI) for 10 years, as in the "One Big Beautiful Bill Act"
+        wording: >-
+          Generally speaking, do you support or oppose the following provisions in the "One Big Beautiful
+          Bill Act" or do you not have an opinion on these issues? Bans state regulation of artificial
+          intelligence (AI) for 10 years
+        favor: 22      # strongly 12 + somewhat 10 (neutral 17, don't know 5)
+        oppose: 56     # somewhat 10 + strongly 46
+        url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1876&context=survey_center_polls
+        votes: {senate: *ai_strike}
+
+  - survey: Green Mountain State Poll, Jun 2025
+    state: VT
+    at_large: true
+    congress: 119
+    respondents: 869
+    moe: 3.3
+    design_effect: 2.1
+    source:
+      title: Green Mountain State Poll, June 2025 (University of New Hampshire Survey Center)
+      organization: UNH Survey Center
+      asked: adults
+      description: >-
+        a University of New Hampshire poll of about 870 Vermont adults from a probability-based web panel,
+        weighted to Census figures and 2024 results; statewide results only
+      fielded: June 19 to 23, 2025
+      dataset_url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1877&context=survey_center_polls
+      about_url: *about
+    items:
+      UNH2506_PASS:
+        question: Want Congress to pass the "One Big Beautiful Bill Act"
+        wording: >-
+          Based on what you know now, do you want Congress to pass "One Big Beautiful Bill Act" or do you not
+          have an opinion on this?
+        favor: 22      # definitely 13 + probably 9 (neutral 6, don't know 6)
+        oppose: 67     # probably not 7 + definitely not 60
+        url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1877&context=survey_center_polls
+        votes: {senate: *obbba_senate, house: *obbba_house}
+      UNH2506_AI:
+        question: Ban state regulation of artificial intelligence (AI) for 10 years, as in the "One Big Beautiful Bill Act"
+        wording: >-
+          Generally speaking, do you support or oppose the following provisions in the "One Big Beautiful
+          Bill Act" or do you not have an opinion on these issues? Bans state regulation of artificial
+          intelligence (AI) for 10 years
+        favor: 19      # strongly 11 + somewhat 8 (neutral 12, don't know 9)
+        oppose: 60     # somewhat 11 + strongly 49
+        url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1877&context=survey_center_polls
+        votes: {senate: *ai_strike}
+
+  # ---------------------------------------------------------------- November 2025: shutdown, ACA, Venezuela
+  - survey: Granite State Poll, Nov 2025
+    state: NH
+    congress: 119
+    respondents: 1402
+    moe: 2.6
+    design_effect: 2.2
+    source:
+      title: Granite State Poll, November 2025 (University of New Hampshire Survey Center)
+      organization: UNH Survey Center
+      asked: adults
+      description: >-
+        a University of New Hampshire poll of about 1,400 New Hampshire adults from a probability-based web
+        panel, weighted to Census figures and 2024 results; statewide results only
+      fielded: November 13 to 17, 2025
+      dataset_url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1906&context=survey_center_polls
+      about_url: *about
+    items:
+      UNH2511_DEAL:
+        question: Support the deal to end the 2025 shutdown, funding the federal government through January 2026
+        wording: >-
+          The U.S. Senate has agreed to a deal to end the shutdown which provides funding for the federal
+          government through January 2026. Generally speaking, do you support or oppose this deal to end the
+          shutdown or do you not have an opinion on this?
+        favor: 52      # strongly 26 + somewhat 26 (neutral 5, don't know 4)
+        oppose: 39     # somewhat 14 + strongly 25
+        url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1906&context=survey_center_polls
+        votes: {senate: *shutdown_senate}
+      UNH2511_ACA:
+        question: Extend the Affordable Care Act (Obamacare) premium subsidies
+        wording: >-
+          Generally speaking, do you support or oppose Affordable Care Act (Obamacare) premium subsidies being
+          extended or do you not have an opinion on this?
+        favor: 50      # strongly 42 + somewhat 8 (neutral 3, don't know 6)
+        oppose: 41     # somewhat 10 + strongly 31
+        url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1906&context=survey_center_polls
+        votes: {senate: *aca_senate}
+      UNH2511_BOATS:
+        question: Approve of the U.S. military destroying suspected drug-trafficking boats off the coast of Venezuela
+        wording: >-
+          Generally speaking, do you approve or disapprove of the U.S. military destroying boats off of the
+          coast of Venezuela if it suspects they are involved in trafficking drugs into the United States or do
+          you not have an opinion on this?
+        favor: 42      # strongly 30 + somewhat 12 (neutral 4, don't know 4)
+        oppose: 50     # somewhat 8 + strongly 42
+        url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1906&context=survey_center_polls
+        match: related
+        note: >-
+          Related, not the same: the poll asked about the boat strikes; the Senate voted on a war powers
+          resolution that would have required Congress's approval for them.
+        votes: {senate: *boats_senate}
+      UNH2511_MADURO:
+        question: Use the U.S. military to remove Venezuelan President Nicolás Maduro from office
+        wording: >-
+          Do you support or oppose using the U.S. military to remove Venezuelan President Nicholas Maduro from
+          office or do you not have an opinion on this?
+        favor: 15      # strongly 7 + somewhat 8 (neutral 15, don't know 7)
+        oppose: 63     # somewhat 12 + strongly 51
+        url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1906&context=survey_center_polls
+        match: related
+        note: >-
+          Related, not the same: the poll asked about using the military to remove Maduro; the Senate voted on a
+          war powers resolution that would have required Congress's approval for hostilities against Venezuela.
+        votes: {senate: *venezuela_senate}
+
+  - survey: Bay State Poll, Nov 2025
+    state: MA
+    congress: 119
+    respondents: 693
+    moe: 3.7
+    design_effect: 2.6
+    source:
+      title: Bay State Poll, November 2025 (University of New Hampshire Survey Center)
+      organization: UNH Survey Center
+      asked: adults
+      description: >-
+        a University of New Hampshire poll of about 690 Massachusetts adults from a probability-based web
+        panel, weighted to Census figures and 2024 results; statewide results only
+      fielded: November 13 to 17, 2025
+      dataset_url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1907&context=survey_center_polls
+      about_url: *about
+    items:
+      UNH2511_DEAL:
+        question: Support the deal to end the 2025 shutdown, funding the federal government through January 2026
+        wording: >-
+          The U.S. Senate has agreed to a deal to end the shutdown which provides funding for the federal
+          government through January 2026. Generally speaking, do you support or oppose this deal to end the
+          shutdown or do you not have an opinion on this?
+        favor: 45      # strongly 27 + somewhat 18 (neutral 7, don't know 5)
+        oppose: 44     # somewhat 16 + strongly 28
+        url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1907&context=survey_center_polls
+        votes: {senate: *shutdown_senate}
+      UNH2511_ACA:
+        question: Extend the Affordable Care Act (Obamacare) premium subsidies
+        wording: >-
+          Generally speaking, do you support or oppose Affordable Care Act (Obamacare) premium subsidies being
+          extended or do you not have an opinion on this?
+        favor: 65      # strongly 55 + somewhat 10 (neutral 5, don't know 3)
+        oppose: 28     # somewhat 10 + strongly 18
+        url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1907&context=survey_center_polls
+        votes: {senate: *aca_senate}
+      UNH2511_BOATS:
+        question: Approve of the U.S. military destroying suspected drug-trafficking boats off the coast of Venezuela
+        wording: >-
+          Generally speaking, do you approve or disapprove of the U.S. military destroying boats off of the
+          coast of Venezuela if it suspects they are involved in trafficking drugs into the United States or do
+          you not have an opinion on this?
+        favor: 32      # strongly 23 + somewhat 9 (neutral 0, don't know 2)
+        oppose: 66     # somewhat 14 + strongly 52
+        url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1907&context=survey_center_polls
+        match: related
+        note: >-
+          Related, not the same: the poll asked about the boat strikes; the Senate voted on a war powers
+          resolution that would have required Congress's approval for them.
+        votes: {senate: *boats_senate}
+      UNH2511_MADURO:
+        question: Use the U.S. military to remove Venezuelan President Nicolás Maduro from office
+        wording: >-
+          Do you support or oppose using the U.S. military to remove Venezuelan President Nicholas Maduro from
+          office or do you not have an opinion on this?
+        favor: 18      # strongly 11 + somewhat 7 (neutral 12, don't know 9)
+        oppose: 61     # somewhat 16 + strongly 45
+        url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1907&context=survey_center_polls
+        match: related
+        note: >-
+          Related, not the same: the poll asked about using the military to remove Maduro; the Senate voted on a
+          war powers resolution that would have required Congress's approval for hostilities against Venezuela.
+        votes: {senate: *venezuela_senate}
+
+  # ---------------------------------------------------------------- January 2026: ACA subsidies
+  - survey: Granite State Poll, Jan 2026
+    state: NH
+    congress: 119
+    respondents: 2239
+    moe: 2.1
+    design_effect: 2.6
+    source:
+      title: Granite State Poll, January 2026 (University of New Hampshire Survey Center)
+      organization: UNH Survey Center
+      asked: adults
+      description: >-
+        a University of New Hampshire poll of about 2,200 New Hampshire adults from a probability-based web
+        panel, weighted to Census figures and 2024 results; statewide results only
+      fielded: January 15 to 19, 2026
+      dataset_url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1924&context=survey_center_polls
+      about_url: *about
+    items:
+      UNH2601_ACA:
+        question: Extend the Affordable Care Act (Obamacare) premium subsidies
+        wording: >-
+          Generally speaking, do you support or oppose Affordable Care Act (Obamacare) premium subsidies being
+          extended or do you not have an opinion on this?
+        favor: 52      # strongly 43 + somewhat 9 (neutral 5, don't know 5)
+        oppose: 38     # somewhat 11 + strongly 27
+        url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1924&context=survey_center_polls
+        votes: {senate: *aca_senate}
+
+  - survey: Green Mountain State Poll, Jan 2026
+    state: VT
+    at_large: true
+    congress: 119
+    respondents: 765
+    moe: 3.5
+    design_effect: 2.3
+    source:
+      title: Green Mountain State Poll, January 2026 (University of New Hampshire Survey Center)
+      organization: UNH Survey Center
+      asked: adults
+      description: >-
+        a University of New Hampshire poll of about 770 Vermont adults from a probability-based web panel,
+        weighted to Census figures and 2024 results; statewide results only
+      fielded: January 15 to 19, 2026
+      dataset_url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1925&context=survey_center_polls
+      about_url: *about
+    items:
+      UNH2601_ACA:
+        question: Extend the Affordable Care Act (Obamacare) premium subsidies
+        wording: >-
+          Generally speaking, do you support or oppose Affordable Care Act (Obamacare) premium subsidies being
+          extended or do you not have an opinion on this?
+        favor: 74      # strongly 60 + somewhat 14 (neutral 1, don't know 5)
+        oppose: 19     # somewhat 5 + strongly 14
+        url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1925&context=survey_center_polls
+        votes: {senate: *aca_senate, house: *aca_house}

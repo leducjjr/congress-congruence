@@ -432,7 +432,7 @@ Special handling:
 - **Estimate** (`published-topline-v1`): support = favor / (favor + oppose); range = support +/- MOE *
   (Z90 / 1.96) / (favor + oppose), MOE being the poll's weighting-adjusted margin; effective n =
   (0.98 / MOE)^2. Same arithmetic as PPC.
-- **Code:** `ingest/tpp.py` (`link`, `load`), item file `config/tpp_items.yaml`; each poll is its own
+- **Code:** `ingest/statepolls.py` (`link tpp`, `load tpp`; `ingest/tpp.py` still works), item file `config/tpp_items.yaml`; each poll is its own
   survey ("Texas Politics Project, Aug 2025"), all under the organization "Texas Politics Project".
   Load fails, storing nothing, if any question has no matching vote.
 - **Questions loaded (approved Nov 15, 2026):**
@@ -443,6 +443,27 @@ Special handling:
 - **Reviewed and left out:** tariffs (expected effects, not support), SAVE America Act (awareness only),
   immigration enforcement, troops in cities, Venezuela, Greenland (no matching floor vote). Not yet
   reviewed: Feb 2025, Oct 2025, Apr 2026, Oct 2026 polls.
+
+## 5d. Constituent opinion: University of New Hampshire Survey Center (UNH)
+
+- **What:** Granite State Poll (NH), Pine Tree State Poll (ME), Green Mountain State Poll (VT), Bay State
+  Poll (MA). Probability-based web panels of each state's adults, weighted to ACS and 2024 results.
+  `asked: adults`: no registered-only figures (their "Undeclared/Not registered" group combines both).
+- **Where:** release PDFs (narrative + statewide crosstabs) at https://scholars.unh.edu/survey_center_polls/;
+  public, credited on Sources, footer and each question's link. Figures read from the STATEWIDE crosstab
+  row (two answers per side summed). The shell can't download them (allowlist); John attaches the PDFs.
+- **Design effect:** releases say margins are "not adjusted for design effect" and give it ("2.1%",
+  read as a ratio); `design_effect` in the item file widens the range by its square root.
+- **Code:** `ingest/statepolls.py` (`link unh`, `load unh`), item file `config/unh_items.yaml`. A poll
+  with `at_large: true` (Vermont) may have House rules; its statewide row is copied to district 0.
+- **Questions loaded (approved Nov 15, 2026):** June 2025 NH/ME/VT: want Congress to pass OBBBA (same;
+  Senate passage July 1, 2025; VT House July 3, 218-214), 10-year ban on state AI rules (same; Senate
+  99-1 amendment to strike, Nay side). Nov 2025 NH/MA: shutdown deal (same; Senate Nov 10, 60-40), ACA
+  subsidies (related: Senate Dec 11, 2025, 51-48 needing 60), boat strikes (related, Nay: Oct 8, 48-51),
+  military removal of Maduro (related, Nay: Nov 6, 49-51). Jan 2026 NH/VT: ACA subsidies (Senate as
+  above; VT House Jan 8, 2026, 230-196, same).
+- **Reviewed, not used:** other provisions of OBBBA (tips/overtime, Medicaid work requirements, EV
+  credits, 2017 tax cuts: no separate floor vote), backpay for federal workers.
 
 ## 6a. District profiles: Census Bureau (for district opinion estimates)
 
@@ -528,8 +549,11 @@ nothing, results matched v1.1.
   policy-support items only, only beside a closely related floor vote, always `related`, no dataset
   download, credit line + citation + legend. Don't download until they reply.
 - **Being looked into** (reviewed Nov 15, 2026; the public list is on sources.html#not-used):
-  - Statewide university polls (Marist, Quinnipiac, Siena, ...): toplines and crosstabs; case by case,
-    only where a question clearly matches a floor vote.
+  - Statewide university polls (Marist, Quinnipiac, Siena, Marquette, ...): case by case, only where a
+    question clearly matches a floor vote. Reviewed Nov 15, 2026: Quinnipiac PA (Sept 2025, Feb and Jul
+    2026: nothing usable), Siena NY Jun 2025 and Marquette WI Jun 2025 (effects, not support). Possible:
+    Marquette WI Oct 2025, extend ACA subsidies 58-41 (topline wording to check). Glengariff (Michigan,
+    commercial, for WDIV/Detroit News) Canada tariffs 29-64: not a university; media polls not yet a category.
 - **Not used:** national-only surveys (ANES, GSS, Pew, Gallup, KFF: too few respondents per area);
   America's Political Pulse and the VOTER Survey (attitudes, not bills); polls sponsored by campaigns,
   parties or advocacy groups (independence); paid subscription trackers (can't be published or checked).

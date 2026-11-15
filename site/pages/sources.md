@@ -186,6 +186,31 @@ results.
 
 <div data-surveys="Texas Politics Project"><p class="note">Loading the list…</p></div>
 
+### University of New Hampshire Survey Center {#unh-survey-center}
+
+**Who runs it:** the Survey Center at the University of New Hampshire, which runs the Granite State Poll
+(New Hampshire), the Pine Tree State Poll (Maine), the Green Mountain State Poll (Vermont) and the Bay
+State Poll (Massachusetts). [cola.unh.edu/unh-survey-center](https://cola.unh.edu/unh-survey-center)
+
+**What it is:** online polls of each state's adults, drawn from panels recruited at random by phone,
+text and mail, and weighted to Census figures and the state's 2024 results. Samples run from about 700
+to 2,200 people.
+
+**Who was asked:** adults (18 and over), whether or not they're registered to vote.
+
+**What we use:** the published statewide results for the few questions that a vote in Congress answers,
+with each poll's margin of error, widened by the design effect each poll reports. "Neutral" and "don't
+know" answers are left out. Results are statewide, so they're compared with each state's two senators,
+and with Vermont's one House member (an at-large seat covering the whole state); never with members for
+a single district. Each question links to its poll's published results.
+
+**Data:** the polls and their full results are published openly in the
+[University of New Hampshire Scholars' Repository](https://scholars.unh.edu/survey_center_polls/).
+
+**Loaded on this site:**
+
+<div data-surveys="UNH Survey Center"><p class="note">Loading the list…</p></div>
+
 ## State ballot measures {#state-ballot-measures}
 
 **What they are:** questions a state's voters decided themselves on the ballot, such as a
@@ -252,10 +277,14 @@ can check it. This list is updated as things change; last reviewed November 15, 
 
 ### Being looked into
 
-- **Statewide university polls** (for example Marist, Quinnipiac and Siena): these publish detailed
-  results and occasionally ask about a specific bill. Each covers one state at a time and asks such
-  questions only now and then, so they'd be added one question at a time, where one clearly matches a
-  vote, as with the [Texas Politics Project](sources.html#texas-politics-project) questions above.
+- **Other statewide university polls** (for example Marist, Quinnipiac, Siena and Marquette Law
+  School): these publish detailed results and occasionally ask about a specific bill. Each covers one
+  state at a time and asks such questions only now and then, so they're added one question at a time,
+  where one clearly matches a vote, as with the [Texas Politics Project](sources.html#texas-politics-project)
+  and [UNH Survey Center](sources.html#unh-survey-center) questions above. Reviewed so far: Quinnipiac's
+  Pennsylvania polls (no questions on federal bills), Siena's New York poll and Marquette's Wisconsin
+  polls (mostly about a bill's effects rather than support for it; one Marquette question on health
+  insurance subsidies is a possible match, still being checked).
 
 ### Not used
 
