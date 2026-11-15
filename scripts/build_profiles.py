@@ -22,6 +22,7 @@ own preview image.
 
 import argparse
 import concurrent.futures
+import hashlib
 import html
 import json
 import re
@@ -151,6 +152,43 @@ def people(n: int | None) -> str:
     return f"{round(n, -3):,}"
 
 
+def title_name(m: dict, sname: str, serving: bool) -> str:
+    """How a member is named in their page title, as people search for them:
+    'Sen. Ted Cruz (Texas)', 'Rep. Pat Fox (TX-7)', 'Pat Fox, former Texas representative'."""
+    delegate = m["state"] in ("DC", "PR", "GU", "VI", "AS", "MP") and m["chamber"] == "house"
+    if not serving:
+        office = "senator" if m["chamber"] == "senate" else ("delegate" if delegate else "representative")
+        return f"{m['name']}, former {sname} {office}"
+    if m["chamber"] == "senate":
+        return f"Sen. {m['name']} ({sname})"
+    if delegate:
+        return f"{'Res. Comm.' if m['state'] == 'PR' else 'Del.'} {m['name']} ({sname})"
+    d = m.get("district")
+    return f"Rep. {m['name']} ({m['state']}-{d})" if d not in (None, -1, 0) else f"Rep. {m['name']} ({sname})"
+
+
+def person_ld(m: dict, role: str, sname: str, serving: bool) -> dict:
+    """schema.org description of the member, for search engines. No party: that's shown separately."""
+    body = "United States Senate" if m["chamber"] == "senate" else "United States House of Representatives"
+    ld = {"@context": "https://schema.org", "@type": "Person", "name": m["name"],
+          "identifier": m["bioguide_id"],
+          "sameAs": [f"https://bioguide.congress.gov/search/bio/{m['bioguide_id']}"],
+          "description": role}
+    if serving:
+        ld["jobTitle"] = role
+        ld["memberOf"] = {"@type": "GovernmentOrganization", "name": body}
+        ld["workLocation"] = {"@type": "AdministrativeArea", "name": sname}
+    return ld
+
+
+def crumbs_ld(trail: list[tuple[str, str]]) -> dict:
+    """schema.org breadcrumbs: Home > States > Texas > Ted Cruz."""
+    items = [("Home", "")] + trail
+    return {"@context": "https://schema.org", "@type": "BreadcrumbList",
+            "itemListElement": [{"@type": "ListItem", "position": i, "name": name, "item": f"{{site}}/{path}"}
+                                for i, (name, path) in enumerate(items, start=1)]}
+
+
 def seat_words(m: dict) -> str:
     """'Senator for Texas' / 'Representative for Texas's 7th district' (no party: shown separately)."""
     name = STATE_NAMES.get(m["state"], m["state"])
@@ -208,8 +246,10 @@ def member_page(m: dict, opinion: dict | None, votes: list[dict], slugs: dict, t
     desc += (f", and how their votes compared with what people they represent told independent surveys. "
              f"They {scores[0]}." if scores else
              ", attendance, and how their votes compared with what people they represent told independent surveys.")
-    meta = {"title": f"{m['name']}: voting record vs. what voters said", "description": desc,
-            "image_alt": f"{m['name']}, {role}" + (f": {scores[0]}" if scores else "")}
+    meta = {"title": f"{title_name(m, sname, serving)}: voting record vs. what voters said", "description": desc,
+            "image_alt": f"{m['name']}, {role}" + (f": {scores[0]}" if scores else ""),
+            "jsonld": [person_ld(m, role, sname, serving), crumbs_ld([("States", "states/"),
+                       (sname, f"states/{state_slug(state)}/"), (m["name"], f"members/{slugs[sid]}/")])]}
 
     live = member_hash(m)
     p = [f'<div class="page-head profile-head">',
@@ -341,7 +381,8 @@ def state_page(st: dict, slugs: dict, today: date) -> tuple[dict, str]:
     meta = {"title": f"{name}: members of Congress vs. what residents said",
             "description": (f"{name}'s senators and representatives, how each one's votes compared with what the "
                             f"people they represent told independent surveys, and what {name} residents said."),
-            "image_alt": f"{name}'s members of Congress compared with what residents told surveys"}
+            "image_alt": f"{name}'s members of Congress compared with what residents told surveys",
+            "jsonld": [crumbs_ld([("States", "states/"), (name, f"states/{state_slug(st['state'])}/")])]}
     p = ['<div class="page-head profile-head">',
          '<p class="crumbs"><a href="states/">All states</a></p>',
          f"<h1>{e(name)}</h1>",
@@ -417,9 +458,49 @@ def states_index(states: list[dict]) -> tuple[dict, str]:
                   f'independent surveys.</p></div><ul class="state-grid">{items}</ul>')
 
 
-def sitemap(site_url: str, paths: list[str], today: date) -> str:
-    urls = "".join(f"  <url><loc>{e(site_url.rstrip('/') + '/' + p)}</loc><lastmod>{today.isoformat()}</lastmod></url>\n"
-                   for p in paths)
+def ld_script(items: list[dict] | None, site_url: str) -> str:
+    if not items:
+        return ""
+    text = json.dumps(items if len(items) > 1 else items[0], ensure_ascii=False, separators=(",", ":"))
+    text = text.replace("{site}", site_url.rstrip("/")).replace("</", "<\\/")
+    return f'\n<script type="application/ld+json">{text}</script>'
+
+
+VOLATILE = re.compile(r"\?v=[\w.-]+|Figures as of [^<]*|data-count=\"month\">[^<]*")
+
+
+def page_dates(out: Path, paths: list[str], today: date, record: Path) -> dict[str, str]:
+    """The date each page's content last changed, for the sitemap. A page keeps its old date while
+    its content is the same (the build version and 'figures as of' line don't count), so search
+    engines can trust the dates. Remembered between builds in <record>."""
+    try:
+        seen = json.loads(record.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        seen = {}
+    dates = {}
+    for p in paths:
+        file = out / "index.html" if p == "" else out / p / "index.html" if p.endswith("/") else out / p.split("?")[0]
+        try:
+            text = file.read_text(encoding="utf-8")
+        except OSError:
+            dates[p] = today.isoformat()
+            continue
+        digest = hashlib.sha256(VOLATILE.sub("", text).encode("utf-8")).hexdigest()[:16]
+        old = seen.get(p)
+        dates[p] = old["date"] if old and old.get("hash") == digest else today.isoformat()
+        seen[p] = {"hash": digest, "date": dates[p]}
+    try:
+        record.parent.mkdir(parents=True, exist_ok=True)
+        record.write_text(json.dumps(seen, sort_keys=True), encoding="utf-8")
+    except OSError:
+        pass
+    return dates
+
+
+def sitemap(site_url: str, paths: list[str], today: date, dates: dict[str, str] | None = None) -> str:
+    dates = dates or {}
+    urls = "".join(f"  <url><loc>{e(site_url.rstrip('/') + '/' + p)}</loc>"
+                   f"<lastmod>{dates.get(p, today.isoformat())}</lastmod></url>\n" for p in paths)
     return f'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n{urls}</urlset>\n'
 
 
@@ -566,7 +647,7 @@ def site_image(path: Path) -> None:
 # ------------------------------------------------------------------------------------- build
 
 def build(out: Path, get, version: str, today: date | None = None, images: bool | None = None,
-          workers: int = 8, log=print) -> dict:
+          workers: int = 8, log=print, record: Path | None = None) -> dict:
     today = today or date.today()
     images = have_pillow() if images is None else images
     frame = (build_site.SITE / "frame.html").read_text(encoding="utf-8")
@@ -574,7 +655,7 @@ def build(out: Path, get, version: str, today: date | None = None, images: bool 
     site_url = str(settings.get("site_url", "")).rstrip("/")
 
     def write(url_path: str, meta: dict, body: str, image: str | None = None, nav: str = "") -> None:
-        meta = {**meta, "head": PAGE_CSS}
+        meta = {**meta, "head": PAGE_CSS + ld_script(meta.get("jsonld"), site_url)}
         page = build_site.wrap(frame, settings, meta, body, nav, version, slug="profile",
                                url_path=url_path, image=image, base=True)
         target = out / url_path / "index.html"
@@ -632,8 +713,9 @@ def build(out: Path, get, version: str, today: date | None = None, images: bool 
     top = ["" if n == "index.html" else n for n in top]
     history = ["history/"] + [f"history/congress.html?n={n}" for n in range(92, 0, -1)] \
         if (out / "history" / "index.html").exists() else []
-    (out / "sitemap.xml").write_text(sitemap(site_url, sorted(top) + ["members/", "states/"] + history + sorted(paths), today),
-                                     encoding="utf-8")
+    listed = sorted(top) + ["members/", "states/"] + history + sorted(paths)
+    dates = page_dates(out, listed, today, record or ROOT / "data" / "exports" / "page_lastmod.json")
+    (out / "sitemap.xml").write_text(sitemap(site_url, listed, today, dates), encoding="utf-8")
     log(f"Wrote {len(paths)} member and state pages{' with preview images' if images else ''}, and sitemap.xml")
     return {"members": len(paths) - len(states), "states": len(states), "slugs": slugs}
 

@@ -87,7 +87,7 @@ def test_addresses_are_names_and_stay_unique():
 def test_member_page_has_the_figures_as_text(tmp_path):
     built(tmp_path)
     page = (tmp_path / "members" / "ted-cruz" / "index.html").read_text()
-    assert "<title>Ted Cruz: voting record vs. what voters said · US Congress vs Voters</title>" in page
+    assert "<title>Sen. Ted Cruz (Texas): voting record vs. what voters said · US Congress vs Voters</title>" in page
     assert '<base href="/">' in page and 'href="/members/ted-cruz/#main"' in page      # skip link stays on the page
     assert '<link rel="canonical" href="https://uscongressvsvoters.org/members/ted-cruz/">' in page
     assert "voted with <strong>3 of 4</strong> surveyed votes where Texas's estimated majority was clear" in page
@@ -225,3 +225,43 @@ def test_sitemap_lists_the_historical_congresses(tmp_path):
     sm = (tmp_path / "sitemap.xml").read_text()
     assert "<loc>https://uscongressvsvoters.org/history/</loc>" in sm
     assert "<loc>https://uscongressvsvoters.org/history/congress.html?n=37</loc>" in sm and "?n=93<" not in sm
+
+
+def ld_blocks(page):
+    return [json.loads(x) for x in re.findall(r'<script type="application/ld\+json">(.*?)</script>', page, re.S)]
+
+
+def test_member_pages_tell_search_engines_who_and_where(tmp_path):
+    built(tmp_path)
+    page = (tmp_path / "members" / "ted-cruz" / "index.html").read_text()
+    assert "<title>Sen. Ted Cruz (Texas): voting record vs. what voters said · US Congress vs Voters</title>" in page
+    person, crumbs = ld_blocks(page)[0]
+    assert person["@type"] == "Person" and person["name"] == "Ted Cruz" and person["jobTitle"] == "Senator for Texas"
+    assert person["memberOf"]["name"] == "United States Senate" and "party" not in json.dumps(person).lower()
+    assert [i["name"] for i in crumbs["itemListElement"]] == ["Home", "States", "Texas", "Ted Cruz"]
+    assert crumbs["itemListElement"][-1]["item"] == "https://uscongressvsvoters.org/members/ted-cruz/"
+    rep = (tmp_path / "members" / "pat-fox-tx-f000001" / "index.html").read_text()
+    assert "<title>Rep. Pat Fox (TX-7): voting record" in rep and "Democrat" not in rep.split("<body")[0]
+    former = (tmp_path / "members" / "pat-fox-tx-f000002" / "index.html").read_text()
+    assert "<title>Pat Fox, former Texas representative: voting record" in former
+    assert "jobTitle" not in former.split("<body")[0]
+    state = (tmp_path / "states" / "texas" / "index.html").read_text()
+    assert [i["name"] for i in ld_blocks(state)[0]["itemListElement"]] == ["Home", "States", "Texas"]
+
+
+def test_sitemap_dates_change_only_when_a_page_does(tmp_path):
+    record = tmp_path / "record.json"
+    out = tmp_path / "out"
+    out.mkdir()
+    (out / "about.html").write_text("x")
+    (out / "index.html").write_text("x")
+    bp.build(out, fake_api, "v1", today=date(2026, 11, 10), images=False, log=lambda *_: None, record=record)
+    bp.build(out, fake_api, "v2", today=date(2026, 11, 20), images=False, log=lambda *_: None, record=record)
+    sm = (out / "sitemap.xml").read_text()
+    # A new build version and 'figures as of' date alone don't count as a change.
+    assert "<loc>https://uscongressvsvoters.org/members/ted-cruz/</loc><lastmod>2026-11-10</lastmod>" in sm
+    (out / "about.html").write_text("changed")
+    bp.build(out, fake_api, "v3", today=date(2026, 11, 25), images=False, log=lambda *_: None, record=record)
+    sm = (out / "sitemap.xml").read_text()
+    assert "<loc>https://uscongressvsvoters.org/about.html</loc><lastmod>2026-11-25</lastmod>" in sm
+    assert "<loc>https://uscongressvsvoters.org/members/ted-cruz/</loc><lastmod>2026-11-10</lastmod>" in sm
