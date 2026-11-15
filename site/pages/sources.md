@@ -220,15 +220,16 @@ can check it. This list is updated as things change; last reviewed November 15, 
   proposals.
   Its terms allow non-commercial use but need clarifying for a site like this one, so we asked AP-NORC
   for written permission on November 10, 2026, and won't use the data until they reply.
-
-### Being looked into
-
 - **Yale Climate Opinion Maps** (Yale Program on Climate Change Communication): estimates for every
   state and House district on climate and energy proposals, such as regulating carbon dioxide as a
   pollutant or funding renewable-energy research. The figures are statistical estimates from a
-  national survey, not direct answers from each area, and the questions are general policies, so most
-  would count as "related" rather than the same proposal. Their terms limit how the data may be reused,
-  so we'd ask permission first.
+  national survey, not direct answers from each area, and the questions are general policies, so they
+  would be shown as "related" votes, not counted in any score. Their terms don't allow the data to be
+  republished, so we asked for written permission on November 15, 2026, and won't use the data until
+  they reply.
+
+### Being looked into
+
 - **Statewide university polls** (for example Marist, Quinnipiac and Siena): these publish detailed
   results and occasionally ask about a specific bill. Each covers one state at a time and asks such
   questions only now and then, so they'd be added one question at a time, where one clearly matches a

@@ -520,11 +520,14 @@ nothing, results matched v1.1.
   systems", so it waits for written permission from AP-NORC; until then no AI tool should open the files.
   Permission requested Nov 10, 2026 (info@apnorc.org): asked whether the use is allowed, whether
   AI-assisted coding falls under that clause, and what credit line to use. Awaiting a reply.
+- **Yale Climate Opinion Maps (YPCCC).** State and 119th-Congress district estimates (MRP from a national
+  survey) on climate and energy policies. License: research, internal business or personal
+  non-commercial use; no reproducing or distributing the data "in whole or in part"; Howe et al. (2015)
+  citation and the legend "The YPCCC bears no responsibility for the analyses or interpretations of the
+  data presented here" required. Permission requested Nov 15, 2026 (climatechange@yale.edu), proposing:
+  policy-support items only, only beside a closely related floor vote, always `related`, no dataset
+  download, credit line + citation + legend. Don't download until they reply.
 - **Being looked into** (reviewed Nov 15, 2026; the public list is on sources.html#not-used):
-  - Yale Climate Opinion Maps (YPCCC): state and 119th-Congress district estimates (MRP from a national
-    survey) on climate and energy policies. License: research, academic or personal non-commercial use;
-    no redistribution or derived products; credit line and Howe et al. (2015) citation required. Ask
-    permission before any use; matches would mostly be `related`.
   - Statewide university polls (Marist, Quinnipiac, Siena, ...): toplines and crosstabs; case by case,
     only where a question clearly matches a floor vote.
 - **Not used:** national-only surveys (ANES, GSS, Pew, Gallup, KFF: too few respondents per area);

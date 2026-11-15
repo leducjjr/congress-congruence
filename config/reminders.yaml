@@ -24,6 +24,16 @@ items:
       When they answer, ask Claude to record their terms in docs/DATA_SOURCES.md before any VoteCast
       file is used. Set done: true here once you have an answer.
 
+  - id: yale-follow-up
+    title: Follow up with Yale if there's no reply about the Climate Opinion Maps
+    due: 2026-11-30
+    lead_days: [0]
+    details: |
+      The permission request went to climatechange@yale.edu on November 15, 2026. If there's no reply,
+      a short follow-up to the same address is reasonable. When they answer, ask Claude to record their
+      terms in docs/DATA_SOURCES.md and update the Sources page before any data is downloaded.
+      Set done: true here once you have an answer.
+
   - id: senate-access-email
     title: Send the Senate webmaster access request
     due: 2026-11-20
