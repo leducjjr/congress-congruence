@@ -94,7 +94,8 @@ organization, and we **show each one separately**, never combined into a single 
 where they agree.
 
 We only compare a vote with a survey question when both are about the same proposal. See
-[Methods](methods.html) for how votes and questions are matched.
+[Methods](methods.html) for how votes and questions are matched. Other surveys we've looked at, and why
+each is or isn't used yet, are listed [below](sources.html#not-used).
 
 ### Cooperative Election Study {#cooperative-election-study}
 
@@ -184,10 +185,49 @@ reached. Each year's figures are matched to the district lines in use at the tim
 
 **How often:** a new year's figures are released each September and loaded automatically.
 
-## Considered and not used {#not-used}
+## Other surveys: their status {#not-used}
 
-- **America's Political Pulse** (Polarization Research Lab): a well-run weekly survey, but it asks about
-  attitudes, not specific bills, so its answers can't be compared with votes.
+We're often asked why a particular survey isn't here. A survey can be used only if it asks people
+about a **specific proposal Congress voted on**, has **enough people in each state or district** to say
+what that area wanted, comes from an **independent** organization, and **publishes its data** so anyone
+can check it. This list is updated as things change; last reviewed November 15, 2026.
+
+### Waiting for permission
+
+- **AP VoteCast** (AP-NORC Center for Public Affairs Research): a survey of over 100,000 voters at each
+  federal election, with results for every state and questions on major issues, some about specific
+  proposals.
+  Its terms allow non-commercial use but need clarifying for a site like this one, so we asked AP-NORC
+  for written permission on November 10, 2026, and won't use the data until they reply.
+
+### Being looked into
+
+- **Yale Climate Opinion Maps** (Yale Program on Climate Change Communication): estimates for every
+  state and House district on climate and energy proposals, such as regulating carbon dioxide as a
+  pollutant or funding renewable-energy research. The figures are statistical estimates from a
+  national survey, not direct answers from each area, and the questions are general policies, so most
+  would count as "related" rather than the same proposal. Their terms limit how the data may be reused,
+  so we'd ask permission first.
+- **University of Texas / Texas Politics Project poll:** about 1,200 registered Texas voters several
+  times a year, with each respondent's answers published. It sometimes asks about federal legislation.
+  It covers Texas only, so it would add comparisons only for Texas's two senators.
+- **Statewide university polls** (for example Marist, Quinnipiac and Siena): these publish detailed
+  results and occasionally ask about a specific bill. Each covers one state at a time and asks such
+  questions only now and then, so they'd be added one question at a time, where one clearly matches a
+  vote.
+
+### Not used
+
+- **National-only surveys**, such as the American National Election Studies, the General Social Survey,
+  Pew Research Center, Gallup and KFF: excellent surveys, but they interview too few people in each
+  state or district to say what that area wanted, and many ask about attitudes, not specific bills.
+- **America's Political Pulse** (Polarization Research Lab) and the **VOTER Survey** (Democracy Fund
+  Voter Study Group): well-run surveys that track attitudes and values over time, not support for
+  specific bills, so their answers can't be compared with votes.
+- **Polls paid for by campaigns, parties or advocacy groups**, of any political leaning: left out so the
+  site stays independent, however good the poll.
+- **Paid subscription trackers** (for example Morning Consult's state data): their figures can't be
+  published or checked by readers.
 
 ## Updates and corrections {#updates}
 
