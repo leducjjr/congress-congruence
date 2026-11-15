@@ -187,7 +187,7 @@ reached. Each year's figures are matched to the district lines in use at the tim
 
 ## Other surveys: their status {#not-used}
 
-We're often asked why a particular survey isn't here. A survey can be used only if it asks people
+Why isn't a particular survey here? A survey can be used only if it asks people
 about a **specific proposal Congress voted on**, has **enough people in each state or district** to say
 what that area wanted, comes from an **independent** organization, and **publishes its data** so anyone
 can check it. This list is updated as things change; last reviewed November 15, 2026.
