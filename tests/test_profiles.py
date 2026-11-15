@@ -71,7 +71,8 @@ def fake_api(path):
 def built(tmp_path, images=False):
     (tmp_path / "about.html").write_text("x")
     (tmp_path / "index.html").write_text("x")
-    info = bp.build(tmp_path, fake_api, "abc123", today=date(2026, 11, 10), images=images, log=lambda *_: None)
+    info = bp.build(tmp_path, fake_api, "abc123", today=date(2026, 11, 10), images=images, log=lambda *_: None,
+                    record=tmp_path / "state" / "page_lastmod.json")
     return info
 
 

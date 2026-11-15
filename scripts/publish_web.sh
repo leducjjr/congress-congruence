@@ -13,6 +13,9 @@
 #
 # Pages load their scripts and styles as e.g. cc-member-panel.js?v=<code version>, so
 # browsers fetch the new copy after each update instead of reusing a cached one.
+#
+# After the public site is published, the pages whose content changed are reported to search
+# engines with IndexNow (scripts/indexnow.py; needs INDEXNOW_KEY in .env, else it's skipped).
 set -eu
 cd "$(dirname "$0")/.."
 case "${1:-dev}" in
@@ -28,6 +31,9 @@ me=$(id -un)
 build_pages() {   # build_pages <dir>: member and state pages into <dir>; fails if the API is down
   "$py" scripts/build_profiles.py --out "$1" --version "$version"
 }
+report_changes() {   # tell search engines which public pages changed (never stops a publish)
+  case " $targets " in *" /var/www/congress "*) "$py" scripts/indexnow.py send || true ;; esac
+}
 
 if [ "${1:-}" = "pages" ]; then
   rm -rf build/pages
@@ -39,6 +45,7 @@ if [ "${1:-}" = "pages" ]; then
     cp build/pages/sitemap.xml "$dir/sitemap.xml"
     echo "Refreshed the member and state pages in $dir"
   done
+  report_changes
   exit 0
 fi
 
@@ -61,6 +68,7 @@ rm -rf build/site
 "$py" scripts/build_site.py --out build/site --version "$version"
 pages=yes
 build_pages build/site || { pages=no; echo "WARNING: couldn't build the member and state pages (is the API running?). Publishing the rest; the pages already there are kept." >&2; }
+"$py" scripts/indexnow.py keyfile build/site || true
 for dir in $targets; do
   $SUDO mkdir -p "$dir"
   $SUDO cp -r build/site/. "$dir/"          # includes .well-known/
@@ -72,3 +80,4 @@ for dir in $targets; do
   fi
   echo "Published the site to $dir (version $version)"
 done
+report_changes

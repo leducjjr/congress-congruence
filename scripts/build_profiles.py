@@ -35,6 +35,7 @@ from urllib.request import Request, urlopen
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import build_site  # noqa: E402
+import indexnow  # noqa: E402
 
 ROOT = build_site.ROOT
 FONTS = ROOT / "assets" / "fonts"
@@ -469,7 +470,7 @@ def ld_script(items: list[dict] | None, site_url: str) -> str:
 VOLATILE = re.compile(r"\?v=[\w.-]+|Figures as of [^<]*|data-count=\"month\">[^<]*")
 
 
-def page_dates(out: Path, paths: list[str], today: date, record: Path) -> dict[str, str]:
+def page_dates(out: Path, paths: list[str], today: date, record: Path) -> tuple[dict[str, str], list[str]]:
     """The date each page's content last changed, for the sitemap. A page keeps its old date while
     its content is the same (the build version and 'figures as of' line don't count), so search
     engines can trust the dates. Remembered between builds in <record>."""
@@ -477,7 +478,7 @@ def page_dates(out: Path, paths: list[str], today: date, record: Path) -> dict[s
         seen = json.loads(record.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         seen = {}
-    dates = {}
+    dates, changed = {}, []
     for p in paths:
         file = out / "index.html" if p == "" else out / p / "index.html" if p.endswith("/") else out / p.split("?")[0]
         try:
@@ -488,13 +489,15 @@ def page_dates(out: Path, paths: list[str], today: date, record: Path) -> dict[s
         digest = hashlib.sha256(VOLATILE.sub("", text).encode("utf-8")).hexdigest()[:16]
         old = seen.get(p)
         dates[p] = old["date"] if old and old.get("hash") == digest else today.isoformat()
+        if not (old and old.get("hash") == digest):
+            changed.append(p)
         seen[p] = {"hash": digest, "date": dates[p]}
     try:
         record.parent.mkdir(parents=True, exist_ok=True)
         record.write_text(json.dumps(seen, sort_keys=True), encoding="utf-8")
     except OSError:
         pass
-    return dates
+    return dates, changed
 
 
 def sitemap(site_url: str, paths: list[str], today: date, dates: dict[str, str] | None = None) -> str:
@@ -714,7 +717,9 @@ def build(out: Path, get, version: str, today: date | None = None, images: bool 
     history = ["history/"] + [f"history/congress.html?n={n}" for n in range(92, 0, -1)] \
         if (out / "history" / "index.html").exists() else []
     listed = sorted(top) + ["members/", "states/"] + history + sorted(paths)
-    dates = page_dates(out, listed, today, record or ROOT / "data" / "exports" / "page_lastmod.json")
+    record = record or ROOT / "data" / "exports" / "page_lastmod.json"
+    dates, changed = page_dates(out, listed, today, record)
+    indexnow.add_pending(changed, record.parent / "indexnow_pending.json")     # reported after publishing
     (out / "sitemap.xml").write_text(sitemap(site_url, listed, today, dates), encoding="utf-8")
     log(f"Wrote {len(paths)} member and state pages{' with preview images' if images else ''}, and sitemap.xml")
     return {"members": len(paths) - len(states), "states": len(states), "slugs": slugs}
