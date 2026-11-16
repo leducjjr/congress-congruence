@@ -62,6 +62,9 @@ def main() -> int:
             get(f"/v1/votes/{v['roll_call_id']}")
     get("/v1/search", q="background check*", limit=40, member=MEMBERS[:2])
     get("/v1/numbers", congress=119, chamber="house")                 # Members by the numbers
+    get("/v1/history/congresses")                                     # the historical record
+    for chamber in ("senate", "house"):
+        get("/v1/history/congresses/1/numbers", chamber=chamber)      # the 1st Congress, 1789-91
     OUT.parent.mkdir(parents=True, exist_ok=True)
     with gzip.open(OUT, "wt") as f:
         json.dump(saved, f, default=str)
