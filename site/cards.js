@@ -98,6 +98,61 @@
       opts.link ? el("p", {}, el("a", { class: "more-link", href: detailHref(q) }, "See how every member voted →")) : null);
   }
 
+  const STATE_NAMES = { AL:"Alabama",AK:"Alaska",AZ:"Arizona",AR:"Arkansas",CA:"California",CO:"Colorado",CT:"Connecticut",
+    DE:"Delaware",FL:"Florida",GA:"Georgia",HI:"Hawaii",ID:"Idaho",IL:"Illinois",IN:"Indiana",IA:"Iowa",KS:"Kansas",
+    KY:"Kentucky",LA:"Louisiana",ME:"Maine",MD:"Maryland",MA:"Massachusetts",MI:"Michigan",MN:"Minnesota",MS:"Mississippi",
+    MO:"Missouri",MT:"Montana",NE:"Nebraska",NV:"Nevada",NH:"New Hampshire",NJ:"New Jersey",NM:"New Mexico",NY:"New York",
+    NC:"North Carolina",ND:"North Dakota",OH:"Ohio",OK:"Oklahoma",OR:"Oregon",PA:"Pennsylvania",RI:"Rhode Island",
+    SC:"South Carolina",SD:"South Dakota",TN:"Tennessee",TX:"Texas",UT:"Utah",VT:"Vermont",VA:"Virginia",WA:"Washington",
+    WV:"West Virginia",WI:"Wisconsin",WY:"Wyoming",DC:"District of Columbia" };
+
+  // One organization sometimes asks the same question, in the same week, in separate one-state polls
+  // (UNH's States of Opinion Project: New Hampshire, Vermont, Rhode Island...). Those are put on one card,
+  // each state's figure shown on its own line; nothing is pooled. Returns a list of questions and groups
+  // (arrays of 2+ questions), in the order given.
+  const pollState = q => q.source.kind !== "ballot" && q.spread?.states?.areas === 1 ? q.spread.states.state : null;
+  function groupQuestions(questions) {
+    const out = [], byKey = new Map();
+    for (const q of questions) {
+      if (!pollState(q)) { out.push(q); continue; }
+      const key = [q.source.organization, q.question, q.note || "", q.source.fielded || "", q.source.asked || "",
+                   q.votes.map(v => `${v.roll_call_id}:${v.match}:${v.support_side}`).sort().join(",")].join("|");
+      const g = byKey.get(key);
+      if (g) g.push(q); else { const n = [q]; byKey.set(key, n); out.push(n); }
+    }
+    return out.map(x => Array.isArray(x) && x.length === 1 ? x[0] : x);
+  }
+
+  const MAJORITY = s => s.support ? "clear majority in favor" : s.oppose ? "clear majority opposed" : "too close to call";
+  function questionGroupCard(qs, opts = {}) {
+    const q = qs[0];
+    qs = [...qs].sort((a, b) => (STATE_NAMES[pollState(a)] || "").localeCompare(STATE_NAMES[pollState(b)] || ""));
+    // Each vote once, with the members compared in each state added up (each state's members are
+    // compared only with their own state's poll, so nobody is counted twice).
+    const votes = q.votes.map(v => {
+      const same = qs.map(x => x.votes.find(w => w.roll_call_id === v.roll_call_id)).filter(Boolean);
+      const m = { not_surveyed: 0 };
+      for (const k of ["with_majority", "against_majority", "too_close", "did_not_vote"])
+        m[k] = same.reduce((t, w) => t + (w.members[k] || 0), 0);
+      return { ...v, members: m };
+    });
+    return el("article", { class: "result question-card", id: `q-${q.survey}-${q.item}`.replace(/\s+/g, "-") },
+      el(opts.heading || "h3", {}, q.question),
+      el("p", { class: "meta" }, `${q.source.organization}`, q.source.fielded ? ` · asked ${q.source.fielded}` : "",
+        ASKED[q.source.asked] ? ` · asked of ${ASKED[q.source.asked]}` : "", " · ",
+        el("a", { href: `sources.html#${slug(q.source.organization)}` }, "About this source")),
+      q.note ? el("p", { class: "meta" }, q.note) : null,
+      el("p", {}, `Asked in ${qs.length} separate state polls, each shown on its own:`),
+      el("ul", { class: "state-polls" }, qs.map(x => {
+        const s = x.spread.states, d = x.spread.districts;
+        return el("li", {}, el("strong", {}, STATE_NAMES[s.state] || s.state), `: ${pct(s.lowest_pct)} support, ${MAJORITY(s)}`,
+          d && d.areas > 1 ? ` (its ${d.areas} districts: ${pct(d.lowest_pct)} to ${pct(d.highest_pct)})` : "", " · ",
+          x.source.guide_url ? [el("a", { href: x.source.guide_url }, "Survey questions"), " · "] : "",
+          el("a", { href: detailHref(x) }, "How members voted →"));
+      })),
+      votes.map(voteSummary));
+  }
+
   const partiesHidden = () => document.documentElement.hasAttribute("data-party-blind");
   const ordinal = n => n + ((n % 100 >= 11 && n % 100 <= 13) ? "th" : ({ 1: "st", 2: "nd", 3: "rd" }[n % 10] || "th"));
   // #TX/C001098_Ted_Cruz: the ID opens the member; the name is there for people reading the link.
@@ -160,6 +215,6 @@
   }
 
   window.CC = { API: "/api", el, date, pct, plural, chamberName, POS, slug, myMembers, forgetMembers,
-                yourMembersLine, recentNote, spreadLine, voteSummary, questionCard, detailHref,
+                yourMembersLine, recentNote, spreadLine, voteSummary, questionCard, groupQuestions, questionGroupCard, detailHref,
                 partiesHidden, ordinal, memberHref, partySplit, whoVoted, voteCard, KIND };
 })();

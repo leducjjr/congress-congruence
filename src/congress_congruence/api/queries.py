@@ -380,7 +380,8 @@ select survey, variable, district is null as statewide, count(*) as areas,
        min(support) as lowest, max(support) as highest,
        count(*) filter (where majority = 'support') as support_areas,
        count(*) filter (where majority = 'oppose') as oppose_areas,
-       count(*) filter (where majority = 'too_close') as too_close_areas
+       count(*) filter (where majority = 'too_close') as too_close_areas,
+       case when count(distinct state) = 1 then min(state) end as only_state
   from core.opinion_estimate
  where (survey || '|' || variable) = any(%(keys)s)
  group by survey, variable, district is null

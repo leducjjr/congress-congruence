@@ -240,7 +240,9 @@ def question_cards(qrows: list[dict], members: list[str]) -> list[dict]:
             spreads.setdefault((sp["survey"], sp["variable"]), {})["states" if sp["statewide"] else "districts"] = {
                 "areas": sp["areas"], "lowest_pct": round(100 * sp["lowest"], 1),
                 "highest_pct": round(100 * sp["highest"], 1), "support": sp["support_areas"],
-                "oppose": sp["oppose_areas"], "too_close": sp["too_close_areas"]}
+                "oppose": sp["oppose_areas"], "too_close": sp["too_close_areas"],
+                # A one-state poll: which state (so the page can put one wave's state polls on one card).
+                **({"state": sp["only_state"]} if sp["statewide"] and sp["only_state"] else {})}
     ids = [t["roll_call_id"] for ts in tallies.values() for t in ts]
     if ids and members:
         for r in fetch(q.MEMBER_POSITIONS, {"ids": ids, "members": members}):

@@ -373,6 +373,7 @@ def test_text_search_finds_questions_and_votes(conn, monkeypatch):
     assert v["support_side"] == "nay" and v["members"]["with_majority"] == 1 and v["members"]["against_majority"] == 1
     assert v["your_members"] == [{"bioguide_id": "A000001", "name": "T A000001", "position": "nay"}]
     assert qn["spread"]["states"]["areas"] == 1 and qn["spread"]["districts"]["areas"] == 2
+    assert "state" in qn["spread"]["states"] and "state" not in qn["spread"]["districts"]
     # The vote itself, tagged as surveyed (by two questions: one same, one related), with a party split.
     (vote,) = res["votes"]
     assert vote["roll_call_id"] == "h-119-1-255" and res["votes_total"] == 1

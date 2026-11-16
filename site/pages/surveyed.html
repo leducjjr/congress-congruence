@@ -53,6 +53,8 @@ head: |
     .table-scroll { overflow-x: auto; }
     .verdict.with { color: var(--mark); font-weight: 600; }
     .verdict.against { color: var(--against); font-weight: 600; }
+    .state-polls { margin: 4px 0 10px; padding-left: 1.2rem; }
+    .state-polls li { margin: 2px 0; }
     .count-note { color: var(--ink-soft); font-size: 0.86rem; }
   </style>
 main_class: surveyed-page
@@ -84,10 +86,12 @@ addEventListener("DOMContentLoaded", () => {
     const slug = window.CC.slug;
     // Source filter: "All sources" or one source's questions only. The choice is kept in the address
     // (#<source>), so a link like surveyed.html#unh-survey-center opens with that source shown.
-    const sections = [...byOrg].map(([org, qs]) => el("section", { class: "group org-group", id: slug(org) },
-      el("h2", {}, org, el("small", {}, `${plural(qs.length, "question", "questions")} · `,
+    const cards = new Map([...byOrg].map(([org, qs]) => [org, window.CC.groupQuestions(qs)]));
+    const card = x => Array.isArray(x) ? window.CC.questionGroupCard(x) : window.CC.questionCard(x, { link: true });
+    const sections = [...cards].map(([org, cs]) => el("section", { class: "group org-group", id: slug(org) },
+      el("h2", {}, org, el("small", {}, `${plural(cs.length, "question", "questions")} · `,
         el("a", { href: `sources.html#${slug(org)}` }, "about this source"))),
-      qs.map(q => window.CC.questionCard(q, { link: true }))));
+      cs.map(card)));
     const filterButtons = [];
     const show = id => {
       const known = sections.some(sec => sec.id === id) ? id : "";
@@ -113,8 +117,8 @@ addEventListener("DOMContentLoaded", () => {
         el("a", { href: "methods.html" }, "How the comparison works"), "."),
       byOrg.size > 1 ? el("nav", { "aria-label": "Show questions from" }, el("ul", { class: "jump" },
         el("li", { class: "label" }, "Show:"),
-        filterButton("", "All sources", questions.length),
-        [...byOrg].map(([org, qs]) => filterButton(slug(org), org, qs.length)))) : null,
+        filterButton("", "All sources", [...cards.values()].reduce((t, cs) => t + cs.length, 0)),
+        [...cards].map(([org, cs]) => filterButton(slug(org), org, cs.length)))) : null,
       ...(questions.length ? sections : [el("p", { class: "empty" }, "No survey questions have been compared with votes yet.")]));
     show(decodeURIComponent(location.hash.slice(1)));
     addEventListener("hashchange", () => show(decodeURIComponent(location.hash.slice(1))));
