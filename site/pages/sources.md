@@ -58,6 +58,19 @@ chamber is.
 announce a position. These aren't counted in the official tally, so we treat them as not voting, as the
 Senate does.
 
+### The historical record, 1789–1972 {#historical-record}
+
+**Source:** [Voteview](https://voteview.com), which has every recorded House and Senate vote from the
+1st Congress in 1789, compiled from the official records of Congress.
+
+**What we use:** for each vote, the question, the result, the date and how each member voted, plus
+Voteview's list of who was a member when. These votes are shown in their own section,
+[the historical record](history/), with each vote linked to its Voteview page. There were no surveys
+of what people wanted back then, so these votes aren't compared with anything; they're there so you
+can see a member's whole record.
+
+**How often:** loaded once, in November 2026. Voteview's records this old rarely change.
+
 ### Members of Congress {#members}
 
 **Source:** [congress-legislators](https://github.com/unitedstates/congress-legislators), a public
@@ -240,11 +253,14 @@ no matching vote in Congress (for example on abortion or the minimum wage) are l
 **Source:** the Census Bureau's American Community Survey, 1-year estimates for every state and House
 district, from [api.census.gov](https://www.census.gov/data/developers.html):
 
-- **Residents:** total population (table [B01003](https://data.census.gov/table/ACSDT1Y2024.B01003)).
+- **Residents:** total population (table [B01003](https://data.census.gov/table/ACSDT1Y2025.B01003)).
 - **U.S. citizens:** residents minus those who are not U.S. citizens (table
-  [B05001](https://data.census.gov/table/ACSDT1Y2024.B05001), citizenship status).
+  [B05001](https://data.census.gov/table/ACSDT1Y2025.B05001), citizenship status).
 - **Citizens 18 and over:** the citizen voting-age population (table
-  [B29001](https://data.census.gov/table/ACSDT1Y2024.B29001)).
+  [B29001](https://data.census.gov/table/ACSDT1Y2025.B29001)).
+
+**Years:** the 2025 figures for the 119th Congress's districts (2025–26) and the 2023 figures for the
+118th's (2023–24).
 
 **How we use it:** to show how many people each member represents, how many of them are U.S. citizens
 and citizens 18 and over, and how many a survey reached. Each year's figures are matched to the district
@@ -258,7 +274,7 @@ citizenship figures are in separate tables and aren't shown.
 Why isn't a particular survey here? A survey can be used only if it asks people
 about a **specific proposal Congress voted on**, has **enough people in each state or district** to say
 what that area wanted, comes from an **independent** organization, and **publishes its data** so anyone
-can check it. This list is updated as things change; last reviewed November 15, 2026.
+can check it. This list is updated as things change; last reviewed November 16, 2026.
 
 ### Waiting for permission
 
@@ -285,6 +301,10 @@ can check it. This list is updated as things change; last reviewed November 15, 
   Pennsylvania polls (no questions on federal bills), Siena's New York poll and Marquette's Wisconsin
   polls (mostly about a bill's effects rather than support for it; one Marquette question on health
   insurance subsidies is a possible match, still being checked).
+- **Newspaper and TV station polls** (for example the Glengariff Group's Michigan polls for WDIV and
+  The Detroit News): independent and published, and some ask about specific proposals, such as the
+  tariffs on Canadian goods. They're run by private polling firms rather than universities, so whether
+  to include them as a group hasn't been decided yet.
 
 ### Not used
 
