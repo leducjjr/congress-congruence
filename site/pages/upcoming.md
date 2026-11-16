@@ -7,7 +7,7 @@ description: What's being added to US Congress vs Voters next - new survey sourc
 <p class="lede">What we're working on next. Dates depend on when each source publishes its data, so
 they're estimates. Have an idea? <a href="contact.html#feedback">Tell us</a>.</p>
 
-*Last updated November 15, 2026.*
+*Last updated November 16, 2026.*
 
 ## In progress {#in-progress}
 
@@ -56,7 +56,19 @@ Newest first. Follow these and every correction in a feed reader: [updates feed 
 - **More state polls on Iran, Venezuela and election rules.** Thirty-five more questions from the
   University of New Hampshire's 2026 polls, now including Connecticut and Rhode Island, and one more from
   the Texas Politics Project. Every question about the Iran conflict is shown beside the Senate's June 23,
-  2026 war powers vote, the one that passed. See [Sources](sources.html#unh-survey-center).
+  2026 war powers vote, the one that passed, and its note says how many times the Senate voted on Iran
+  war powers that year. See [Sources](sources.html#unh-survey-center).
+- **One card for a question asked in several states.** When a pollster asks the same question in
+  separate state polls the same week, [Surveyed votes](surveyed.html) now shows it once, with each state's
+  result on its own line. Each state is still its own poll, and nothing is combined.
+- **Filters you can click.** Rows of buttons now narrow long lists: by source on
+  [Surveyed votes](surveyed.html) and on member pages; by members, survey questions or votes in
+  [search](search.html); by senators, representatives, former members or surveys on state pages; and on
+  [Compare](compare.html), by where two members split or agreed on surveyed votes.
+- **Faster search.** Searches and All votes now return in a fraction of the time, and vote titles
+  that were typed in capitals read normally in search results too.
+- **The historical record on the Features page**, with a screenshot of the 1st Congress, and a link from
+  the top of [Members by the numbers](numbers.html) to its "How to read these numbers" notes.
 
 **November 15, 2026**
 

@@ -14,6 +14,12 @@ or small, is in the [source code]({{source_url}}/commits/main).
 
 ## Since launch {#since-launch}
 
+**November 15, 2026**
+
+- **Members listed in a Congress they never served in.** [Members by the numbers](numbers.html) listed
+  Matt Gaetz in the 119th Congress, which began after he left, with no votes cast. Members are now listed
+  only for a Congress in which they held a seat or cast a vote.
+
 **November 12, 2026**
 
 - **When members who joined partway through a Congress started.** The member list this site uses gave the
