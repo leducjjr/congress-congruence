@@ -87,8 +87,13 @@ polls:
             expect: "50-48"
             support_side: nay
             note: >-
-              The Senate passed this war powers resolution on Iran 50-48 on June 23, 2026, after several
-              earlier attempts failed. Voting No was the side that supports continuing the military action.
+              The Senate adopted this war powers resolution on Iran, directing the
+              President to remove U.S. forces from hostilities against Iran, 50-48 on June
+              23, 2026. Between March and September 2026 the Senate held 15 recorded votes
+              on Iran war powers measures. This is the only one that adopted a resolution;
+              a May 19 motion to bring one to the floor also succeeded, and a later
+              resolution failed 49-50 on September 24. Voting No was the side that
+              supports continuing the military action.
 
   - survey: Texas Politics Project, Apr 2026
     congress: 119
@@ -150,5 +155,10 @@ polls:
             <<: *iran_wpr
             support_side: yea
             note: >-
-              The Senate passed this war powers resolution on Iran 50-48 on June 23, 2026, after several
-              earlier attempts failed. Voting Yes was the side that supports ending the conflict.
+              The Senate adopted this war powers resolution on Iran, directing the
+              President to remove U.S. forces from hostilities against Iran, 50-48 on June
+              23, 2026. Between March and September 2026 the Senate held 15 recorded votes
+              on Iran war powers measures. This is the only one that adopted a resolution;
+              a May 19 motion to bring one to the floor also succeeded, and a later
+              resolution failed 49-50 on September 24. Voting Yes was the side that
+              supports ending the conflict.
