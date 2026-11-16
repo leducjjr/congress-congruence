@@ -25,6 +25,14 @@ head: |
     .big { font-size: 1.05rem; }
     .src-head { font-size: 1rem; margin: 18px 0 6px; }
     .pos { white-space: nowrap; }
+    .show-only { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 0 0 12px; padding: 0; list-style: none; }
+    .show-only .label { color: var(--ink-soft); font-size: 0.9rem; margin-right: 2px; }
+    .show-only button { font: inherit; font-size: 0.92rem; color: var(--ink); background: var(--surface); cursor: pointer;
+      border: 1px solid var(--rule); border-radius: 999px; padding: 5px 12px; }
+    .show-only button:hover, .show-only button:focus-visible { border-color: var(--mark); color: var(--mark); }
+    .show-only button small { color: var(--ink-soft); margin-left: 4px; }
+    .show-only button[aria-pressed="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+    .show-only button[aria-pressed="true"] small { color: inherit; opacity: 0.8; }
   </style>
 main_class: compare-page
 ---
@@ -246,18 +254,45 @@ addEventListener("DOMContentLoaded", () => {
       const r = rows.get(key) || { i, org: orgOf.get(i.survey) || i.survey };
       r[side] = i; rows.set(key, r);
     }
+    // How the two compare on each row: split, agreed, or only one of them voted Yea or Nay.
+    const cast = i => i && (i.position === "yea" || i.position === "nay") ? i.position : null;
+    const rel = r => !cast(r.a) || !cast(r.b) ? "one" : cast(r.a) === cast(r.b) ? "same" : "split";
+    const blocks = [];
     const byOrg = new Map();
     for (const r of rows.values()) byOrg.set(r.org, [...(byOrg.get(r.org) || []), r]);
     for (const [org, rs] of byOrg) {
       rs.sort((x, y) => y.i.vote.date.localeCompare(x.i.vote.date));
-      sec.append(el("h3", { class: "src-head" }, org),
+      const block = [el("h3", { class: "src-head" }, org),
         el("div", { class: "table-scroll" }, el("table", { class: "data-table" },
           el("thead", {}, el("tr", {}, el("th", { scope: "col" }, "Question"), el("th", { scope: "col" }, a.name), el("th", { scope: "col" }, b.name))),
-          el("tbody", {}, rs.map(r => el("tr", {},
+          el("tbody", {}, rs.map(r => el("tr", { "data-rel": rel(r) },
             el("td", {}, el("a", { href: window.CC.detailHref({ survey: r.i.survey, item: r.i.item }) }, r.i.question),
               el("br"), el("span", { class: "meta" }, r.i.survey)),
-            cell(r.a), cell(r.b)))))));
+            cell(r.a), cell(r.b))))))];
+      blocks.push(block);
     }
+    const all = [...rows.values()];
+    const n = k => all.filter(r => rel(r) === k).length;
+    const options = [["", "All", all.length], ["split", "Where they split", n("split")],
+      ["same", "Where they agreed", n("same")], ["one", "Only one of them voted", n("one")]].filter(([k, , c]) => !k || c);
+    const buttons = [];
+    const show = key => {
+      for (const block of blocks) {
+        let any = false;
+        for (const tr of block[1].querySelectorAll("tbody tr")) { const on = !key || tr.dataset.rel === key; tr.hidden = !on; any ||= on; }
+        for (const node of block) node.hidden = !any;
+      }
+      for (const b of buttons) b.setAttribute("aria-pressed", String(b.dataset.show === key));
+    };
+    if (options.length > 2) sec.append(el("ul", { class: "show-only", "aria-label": "Show some of these rows" },
+      el("li", { class: "label" }, "Show:"),
+      options.map(([key, label, c]) => {
+        const b = el("button", { type: "button", "data-show": key, "aria-pressed": String(!key) }, label, el("small", {}, c.toLocaleString()));
+        b.addEventListener("click", () => show(key));
+        buttons.push(b);
+        return el("li", {}, b);
+      })));
+    for (const block of blocks) sec.append(...block);
     return sec;
   }
 
