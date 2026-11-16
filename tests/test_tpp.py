@@ -20,14 +20,16 @@ def test_estimate_uses_those_who_took_a_side():
 def test_items_file_is_well_formed():
     cfg = tpp.load_config()
     assert [p["survey"] for p in cfg["polls"]] == ["Texas Politics Project, Aug 2025", "Texas Politics Project, Jun 2026",
-                                                   "Texas Politics Project, Aug 2026"]
+                                                   "Texas Politics Project, Apr 2026", "Texas Politics Project, Aug 2026"]
     for poll in cfg["polls"]:
         assert poll["source"]["organization"] == "Texas Politics Project"
         assert poll["source"]["dataset_url"].startswith("https://texaspolitics.utexas.edu/files/")
         for item in poll["items"].values():
             assert set(item["votes"]) == {"senate"} and item["url"] == poll["source"]["dataset_url"]
     iran = cfg["polls"][1]["items"]["TPP2606_Q36"]["votes"]["senate"]
-    end = cfg["polls"][2]["items"]["TPP2608_Q33"]["votes"]["senate"]
+    end = cfg["polls"][3]["items"]["TPP2608_Q33"]["votes"]["senate"]
+    april = cfg["polls"][2]["items"]["TPP2604_Q31"]["votes"]["senate"]
+    assert april == iran                                       # every Iran question: the June 23, 2026 vote
     assert iran["support_side"] == "nay" and end["support_side"] == "yea"
     assert iran["expect"] == end["expect"] == "50-48" and str(end["date"]) == "2026-06-23"
 

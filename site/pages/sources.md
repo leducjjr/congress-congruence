@@ -202,17 +202,19 @@ results.
 ### University of New Hampshire Survey Center {#unh-survey-center}
 
 **Who runs it:** the Survey Center at the University of New Hampshire, which runs the Granite State Poll
-(New Hampshire), the Pine Tree State Poll (Maine), the Green Mountain State Poll (Vermont) and the Bay
-State Poll (Massachusetts). [cola.unh.edu/unh-survey-center](https://cola.unh.edu/unh-survey-center)
+(New Hampshire), the Pine Tree State Poll (Maine), the Green Mountain State Poll (Vermont), the Bay
+State Poll (Massachusetts), the Ocean State Poll (Rhode Island) and the Nutmeg State Poll
+(Connecticut), and sometimes asks all six states the same questions at once (its States of Opinion
+Project). [cola.unh.edu/unh-survey-center](https://cola.unh.edu/unh-survey-center)
 
 **What it is:** online polls of each state's adults, drawn from panels recruited at random by phone,
-text and mail, and weighted to Census figures and the state's 2024 results. Samples run from about 700
-to 2,200 people.
+text and mail, and weighted to Census figures and the state's 2024 results. Samples run from about 500
+to 2,700 people.
 
 **Who was asked:** adults (18 and over), whether or not they're registered to vote.
 
 **What we use:** the published statewide results for the few questions that a vote in Congress answers,
-with each poll's margin of error, widened by the design effect each poll reports. "Neutral" and "don't
+with each poll's margin of error, widened by the design effect where the poll reports one. "Neutral" and "don't
 know" answers are left out. Results are statewide, so they're compared with each state's two senators,
 and with Vermont's one House member (an at-large seat covering the whole state); never with members for
 a single district. Each question links to its poll's published results.

@@ -51,6 +51,13 @@ republished, and only its questions about proposals Congress actually voted on a
 
 Newest first. Follow these and every correction in a feed reader: [updates feed (RSS)](feed.xml).
 
+**November 16, 2026**
+
+- **More state polls on Iran, Venezuela and election rules.** Thirty-five more questions from the
+  University of New Hampshire's 2026 polls, now including Connecticut and Rhode Island, and one more from
+  the Texas Politics Project. Every question about the Iran conflict is shown beside the Senate's June 23,
+  2026 war powers vote, the one that passed. See [Sources](sources.html#unh-survey-center).
+
 **November 15, 2026**
 
 - **UNH Survey Center polls.** Sixteen questions from the University of New Hampshire's polls of New

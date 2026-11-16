@@ -10,13 +10,20 @@ from congress_congruence.ingest import statepolls
 def test_unh_items_file_is_well_formed():
     cfg = statepolls.load_config("unh")
     states = {p["state"] for p in cfg["polls"]}
-    assert states == {"NH", "ME", "VT", "MA"}
+    assert states == {"NH", "ME", "VT", "MA", "CT", "RI"}
     for poll in cfg["polls"]:
         assert poll["source"]["organization"] == "UNH Survey Center" and poll["source"]["asked"] == "adults"
-        assert poll["design_effect"] > 1 and poll["source"]["dataset_url"].startswith("https://scholars.unh.edu/")
-        assert ("house" in str(poll["items"])) == bool(poll.get("at_large")) == (poll["state"] == "VT")
+        # The March 2026 six-state poll gives no design effect; every other release does.
+        assert poll.get("design_effect", 0) > 1 or poll["survey"].startswith("States of Opinion Poll, Mar 2026")
+        assert poll["source"]["dataset_url"].startswith("https://scholars.unh.edu/")
+        has_house = "house" in str(poll["items"])
+        assert has_house == bool(poll.get("at_large")) and (not has_house or poll["state"] == "VT")
         for item in poll["items"].values():
-            assert item["favor"] + item["oppose"] <= 100 and item["url"] == poll["source"]["dataset_url"]
+            assert item["favor"] + item["oppose"] <= 100 and item["url"].startswith("https://scholars.unh.edu/")
+    # Every Iran question is compared with the Senate's June 23, 2026 war powers vote (decided Nov 16, 2026).
+    iran = [i["votes"]["senate"] for p in cfg["polls"] for v, i in p["items"].items()
+            if v.startswith(("UNH2603", "UNH2606", "UNH2609"))]
+    assert len(iran) == 23 and {str(r["date"]) for r in iran} == {"2026-06-23"}
 
 
 def test_design_effect_widens_the_range():

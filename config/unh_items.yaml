@@ -24,7 +24,11 @@
 #   ACA subsidies: Senate vote on a 3-year extension, Dec 11, 2025, 51-48 (60 needed, so procedural:
 #     related); House passage of a 3-year extension, Jan 8, 2026, 230-196
 #   Boat strikes: Senate war powers resolution to bar hostilities against drug cartels, Oct 8, 2025, 48-51
-#   Venezuela: Senate war powers resolution to bar hostilities against Venezuela, Nov 6, 2025, 49-51
+#   Venezuela: Senate war powers resolution to bar hostilities against Venezuela, Nov 6, 2025, 49-51;
+#     after Maduro's capture, the Senate's 52-47 vote to take up a new one, Jan 8, 2026
+#   Iran: every Iran question uses the Senate's June 23, 2026 war powers vote (50-48), the one that passed
+#     (decided Nov 16, 2026), as the Texas Politics Project questions do
+#   SAVE America Act: Senate vote to add it to the immigration funding bill, June 4, 2026, 48-50 (needed 60)
 
 organization: UNH Survey Center
 
@@ -78,6 +82,38 @@ votes:
     note: >-
       A war powers resolution to bar U.S. hostilities within or against Venezuela without approval from
       Congress. It failed 49-51. Voting No was the side that leaves military action open.
+
+  iran_senate: &iran_senate
+    date: 2026-06-23
+    expect: "50-48"
+    support_side: nay
+    note: >-
+      The Senate passed this war powers resolution on Iran 50-48 on June 23, 2026, after several earlier
+      attempts failed. Voting No was the side that supports continuing the military action.
+  iran_senate_yea: &iran_senate_yea
+    date: 2026-06-23
+    expect: "50-48"
+    support_side: yea
+    note: >-
+      The Senate passed this war powers resolution on Iran 50-48 on June 23, 2026, after several earlier
+      attempts failed. It directs an end to U.S. hostilities against Iran unless Congress authorizes them.
+      Voting Yes was the side that supports requiring Congress's approval.
+  venezuela_jan_senate: &venezuela_jan_senate
+    date: 2026-01-08
+    expect: "52-47"
+    note: >-
+      After the capture of Venezuela's President Maduro, the Senate voted 52-47 on January 8, 2026 to take up
+      a war powers resolution barring further U.S. hostilities against Venezuela without approval from
+      Congress. (A week later it set the resolution aside on a 50-50 vote, the Vice President breaking the
+      tie.)
+  save_senate: &save_senate
+    date: 2026-06-04
+    expect: "48-50"
+    support_side: yea
+    note: >-
+      On June 4, 2026 the Senate voted 48-50 on adding the SAVE America Act, which requires documentary proof
+      of citizenship to register to vote and photo ID to vote in federal elections, to the immigration
+      funding bill. It needed 60 votes. Voting Yes was the side that supports these requirements.
 
 polls:
   # ---------------------------------------------------------------- June 2025: One Big Beautiful Bill
@@ -349,6 +385,32 @@ polls:
         oppose: 38     # somewhat 11 + strongly 27
         url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1924&context=survey_center_polls
         votes: {senate: *aca_senate}
+      UNH2601_MADURO:
+        question: Support the U.S. capture of Venezuelan President Nicolás Maduro
+        wording: >-
+          Do you support or oppose the decision by the United States to capture Venezuelan President Nicholas
+          Maduro or do you not have an opinion on this?
+        favor: 41      # strongly + somewhat support
+        oppose: 50     # somewhat + strongly oppose
+        url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1922&context=survey_center_polls
+        match: related
+        note: >-
+          Related, not the same: the poll asked about the capture of Maduro; the Senate voted on taking up a war
+          powers resolution barring further hostilities against Venezuela without approval from Congress.
+        votes: {senate: {<<: *venezuela_jan_senate, support_side: nay}}
+      UNH2601_NOTIFY:
+        question: Require the President to notify Congress before any further action against Venezuela
+        wording: >-
+          Do you support or oppose requiring President Trump to notify Congress before taking any further action
+          against Venezuela or do you not have an opinion on this?
+        favor: 65      # strongly + somewhat support
+        oppose: 25     # somewhat + strongly oppose
+        url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1922&context=survey_center_polls
+        match: related
+        note: >-
+          Related, not the same: the poll asked about notifying Congress; the war powers resolution would have
+          required Congress's approval for further hostilities.
+        votes: {senate: {<<: *venezuela_jan_senate, support_side: yea}}
 
   - survey: Green Mountain State Poll, Jan 2026
     state: VT
@@ -377,3 +439,810 @@ polls:
         oppose: 19     # somewhat 5 + strongly 14
         url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1925&context=survey_center_polls
         votes: {senate: *aca_senate, house: *aca_house}
+      UNH2601_MADURO:
+        question: Support the U.S. capture of Venezuelan President Nicolás Maduro
+        wording: >-
+          Do you support or oppose the decision by the United States to capture Venezuelan President Nicholas
+          Maduro or do you not have an opinion on this?
+        favor: 24      # strongly + somewhat support
+        oppose: 67     # somewhat + strongly oppose
+        url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1923&context=survey_center_polls
+        match: related
+        note: >-
+          Related, not the same: the poll asked about the capture of Maduro; the Senate voted on taking up a war
+          powers resolution barring further hostilities against Venezuela without approval from Congress.
+        votes: {senate: {<<: *venezuela_jan_senate, support_side: nay}}
+      UNH2601_NOTIFY:
+        question: Require the President to notify Congress before any further action against Venezuela
+        wording: >-
+          Do you support or oppose requiring President Trump to notify Congress before taking any further action
+          against Venezuela or do you not have an opinion on this?
+        favor: 73      # strongly + somewhat support
+        oppose: 18     # somewhat + strongly oppose
+        url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1923&context=survey_center_polls
+        match: related
+        note: >-
+          Related, not the same: the poll asked about notifying Congress; the war powers resolution would have
+          required Congress's approval for further hostilities.
+        votes: {senate: {<<: *venezuela_jan_senate, support_side: yea}}
+
+  # ---------------------------------------------------------------- 2026: Iran, Venezuela, election rules
+
+  - survey: States of Opinion Poll, Mar 2026 (NH)
+    state: NH
+    congress: 119
+    respondents: 2683
+    moe: 1.9
+    source:
+      title: States of Opinion Project, March 2026, New Hampshire (University of New Hampshire Survey Center)
+      organization: UNH Survey Center
+      asked: adults
+      description: >-
+        a University of New Hampshire poll of about 2,680 New Hampshire adults from a probability-based
+        web panel, weighted to Census figures and 2024 results; statewide results only
+      fielded: March 2 to 4, 2026
+      dataset_url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1938&context=survey_center_polls
+      about_url: *about
+    items:
+      UNH2603_ATTACK:
+        question: Support the U.S. attack on Iran (March 2026)
+        wording: Do you support or oppose the United States' recent attack on Iran or do you not have an opinion on this?
+        favor: 38      # strongly + somewhat support
+        oppose: 58     # somewhat + strongly oppose
+        url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1938&context=survey_center_polls
+        match: related
+        note: >-
+          Related, not the same: the poll asked about the attack on Iran; the Senate voted on a war powers
+          resolution to end U.S. hostilities against Iran unless Congress authorizes them.
+        votes: {senate: *iran_senate}
+      UNH2603_ASKCONGRESS:
+        question: The President should have asked Congress for approval before attacking Iran
+        wording: >-
+          Generally speaking, do you think President Trump should or should not have asked for Congressional
+          approval before conducting this attack or do you not have an opinion on this?
+        favor: 63      # definitely + probably should
+        oppose: 33     # probably + definitely should not
+        url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1938&context=survey_center_polls
+        match: related
+        note: >-
+          Related, not the same: the poll asked whether the President should have sought Congress's approval for
+          the attack; the Senate voted on a war powers resolution requiring that approval for continued hostilities.
+        votes: {senate: *iran_senate_yea}
+
+  - survey: States of Opinion Poll, Mar 2026 (VT)
+    state: VT
+    congress: 119
+    respondents: 846
+    moe: 3.4
+    source:
+      title: States of Opinion Project, March 2026, Vermont (University of New Hampshire Survey Center)
+      organization: UNH Survey Center
+      asked: adults
+      description: >-
+        a University of New Hampshire poll of about 850 Vermont adults from a probability-based
+        web panel, weighted to Census figures and 2024 results; statewide results only
+      fielded: March 2 to 4, 2026
+      dataset_url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1938&context=survey_center_polls
+      about_url: *about
+    items:
+      UNH2603_ATTACK:
+        question: Support the U.S. attack on Iran (March 2026)
+        wording: Do you support or oppose the United States' recent attack on Iran or do you not have an opinion on this?
+        favor: 29      # strongly + somewhat support
+        oppose: 64     # somewhat + strongly oppose
+        url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1938&context=survey_center_polls
+        match: related
+        note: >-
+          Related, not the same: the poll asked about the attack on Iran; the Senate voted on a war powers
+          resolution to end U.S. hostilities against Iran unless Congress authorizes them.
+        votes: {senate: *iran_senate}
+      UNH2603_ASKCONGRESS:
+        question: The President should have asked Congress for approval before attacking Iran
+        wording: >-
+          Generally speaking, do you think President Trump should or should not have asked for Congressional
+          approval before conducting this attack or do you not have an opinion on this?
+        favor: 72      # definitely + probably should
+        oppose: 22     # probably + definitely should not
+        url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1938&context=survey_center_polls
+        match: related
+        note: >-
+          Related, not the same: the poll asked whether the President should have sought Congress's approval for
+          the attack; the Senate voted on a war powers resolution requiring that approval for continued hostilities.
+        votes: {senate: *iran_senate_yea}
+
+  - survey: States of Opinion Poll, Mar 2026 (ME)
+    state: ME
+    congress: 119
+    respondents: 961
+    moe: 3.2
+    source:
+      title: States of Opinion Project, March 2026, Maine (University of New Hampshire Survey Center)
+      organization: UNH Survey Center
+      asked: adults
+      description: >-
+        a University of New Hampshire poll of about 960 Maine adults from a probability-based
+        web panel, weighted to Census figures and 2024 results; statewide results only
+      fielded: March 2 to 4, 2026
+      dataset_url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1938&context=survey_center_polls
+      about_url: *about
+    items:
+      UNH2603_ATTACK:
+        question: Support the U.S. attack on Iran (March 2026)
+        wording: Do you support or oppose the United States' recent attack on Iran or do you not have an opinion on this?
+        favor: 39      # strongly + somewhat support
+        oppose: 58     # somewhat + strongly oppose
+        url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1938&context=survey_center_polls
+        match: related
+        note: >-
+          Related, not the same: the poll asked about the attack on Iran; the Senate voted on a war powers
+          resolution to end U.S. hostilities against Iran unless Congress authorizes them.
+        votes: {senate: *iran_senate}
+      UNH2603_ASKCONGRESS:
+        question: The President should have asked Congress for approval before attacking Iran
+        wording: >-
+          Generally speaking, do you think President Trump should or should not have asked for Congressional
+          approval before conducting this attack or do you not have an opinion on this?
+        favor: 66      # definitely + probably should
+        oppose: 32     # probably + definitely should not
+        url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1938&context=survey_center_polls
+        match: related
+        note: >-
+          Related, not the same: the poll asked whether the President should have sought Congress's approval for
+          the attack; the Senate voted on a war powers resolution requiring that approval for continued hostilities.
+        votes: {senate: *iran_senate_yea}
+
+  - survey: States of Opinion Poll, Mar 2026 (MA)
+    state: MA
+    congress: 119
+    respondents: 654
+    moe: 3.8
+    source:
+      title: States of Opinion Project, March 2026, Massachusetts (University of New Hampshire Survey Center)
+      organization: UNH Survey Center
+      asked: adults
+      description: >-
+        a University of New Hampshire poll of about 650 Massachusetts adults from a probability-based
+        web panel, weighted to Census figures and 2024 results; statewide results only
+      fielded: March 2 to 4, 2026
+      dataset_url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1938&context=survey_center_polls
+      about_url: *about
+    items:
+      UNH2603_ATTACK:
+        question: Support the U.S. attack on Iran (March 2026)
+        wording: Do you support or oppose the United States' recent attack on Iran or do you not have an opinion on this?
+        favor: 34      # strongly + somewhat support
+        oppose: 55     # somewhat + strongly oppose
+        url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1938&context=survey_center_polls
+        match: related
+        note: >-
+          Related, not the same: the poll asked about the attack on Iran; the Senate voted on a war powers
+          resolution to end U.S. hostilities against Iran unless Congress authorizes them.
+        votes: {senate: *iran_senate}
+      UNH2603_ASKCONGRESS:
+        question: The President should have asked Congress for approval before attacking Iran
+        wording: >-
+          Generally speaking, do you think President Trump should or should not have asked for Congressional
+          approval before conducting this attack or do you not have an opinion on this?
+        favor: 77      # definitely + probably should
+        oppose: 22     # probably + definitely should not
+        url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1938&context=survey_center_polls
+        match: related
+        note: >-
+          Related, not the same: the poll asked whether the President should have sought Congress's approval for
+          the attack; the Senate voted on a war powers resolution requiring that approval for continued hostilities.
+        votes: {senate: *iran_senate_yea}
+
+  - survey: States of Opinion Poll, Mar 2026 (RI)
+    state: RI
+    congress: 119
+    respondents: 625
+    moe: 3.9
+    source:
+      title: States of Opinion Project, March 2026, Rhode Island (University of New Hampshire Survey Center)
+      organization: UNH Survey Center
+      asked: adults
+      description: >-
+        a University of New Hampshire poll of about 620 Rhode Island adults from a probability-based
+        web panel, weighted to Census figures and 2024 results; statewide results only
+      fielded: March 2 to 4, 2026
+      dataset_url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1938&context=survey_center_polls
+      about_url: *about
+    items:
+      UNH2603_ATTACK:
+        question: Support the U.S. attack on Iran (March 2026)
+        wording: Do you support or oppose the United States' recent attack on Iran or do you not have an opinion on this?
+        favor: 34      # strongly + somewhat support
+        oppose: 54     # somewhat + strongly oppose
+        url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1938&context=survey_center_polls
+        match: related
+        note: >-
+          Related, not the same: the poll asked about the attack on Iran; the Senate voted on a war powers
+          resolution to end U.S. hostilities against Iran unless Congress authorizes them.
+        votes: {senate: *iran_senate}
+      UNH2603_ASKCONGRESS:
+        question: The President should have asked Congress for approval before attacking Iran
+        wording: >-
+          Generally speaking, do you think President Trump should or should not have asked for Congressional
+          approval before conducting this attack or do you not have an opinion on this?
+        favor: 66      # definitely + probably should
+        oppose: 28     # probably + definitely should not
+        url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1938&context=survey_center_polls
+        match: related
+        note: >-
+          Related, not the same: the poll asked whether the President should have sought Congress's approval for
+          the attack; the Senate voted on a war powers resolution requiring that approval for continued hostilities.
+        votes: {senate: *iran_senate_yea}
+
+  - survey: States of Opinion Poll, Mar 2026 (CT)
+    state: CT
+    congress: 119
+    respondents: 497
+    moe: 4.4
+    source:
+      title: States of Opinion Project, March 2026, Connecticut (University of New Hampshire Survey Center)
+      organization: UNH Survey Center
+      asked: adults
+      description: >-
+        a University of New Hampshire poll of about 500 Connecticut adults from a probability-based
+        web panel, weighted to Census figures and 2024 results; statewide results only
+      fielded: March 2 to 4, 2026
+      dataset_url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1938&context=survey_center_polls
+      about_url: *about
+    items:
+      UNH2603_ATTACK:
+        question: Support the U.S. attack on Iran (March 2026)
+        wording: Do you support or oppose the United States' recent attack on Iran or do you not have an opinion on this?
+        favor: 42      # strongly + somewhat support
+        oppose: 55     # somewhat + strongly oppose
+        url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1938&context=survey_center_polls
+        match: related
+        note: >-
+          Related, not the same: the poll asked about the attack on Iran; the Senate voted on a war powers
+          resolution to end U.S. hostilities against Iran unless Congress authorizes them.
+        votes: {senate: *iran_senate}
+      UNH2603_ASKCONGRESS:
+        question: The President should have asked Congress for approval before attacking Iran
+        wording: >-
+          Generally speaking, do you think President Trump should or should not have asked for Congressional
+          approval before conducting this attack or do you not have an opinion on this?
+        favor: 63      # definitely + probably should
+        oppose: 34     # probably + definitely should not
+        url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1938&context=survey_center_polls
+        match: related
+        note: >-
+          Related, not the same: the poll asked whether the President should have sought Congress's approval for
+          the attack; the Senate voted on a war powers resolution requiring that approval for continued hostilities.
+        votes: {senate: *iran_senate_yea}
+
+  - survey: Granite State Poll, Apr 2026
+    state: NH
+    congress: 119
+    respondents: 1308
+    moe: 2.7
+    design_effect: 2.6
+    source:
+      title: Granite State Poll, April 2026 (University of New Hampshire Survey Center)
+      organization: UNH Survey Center
+      asked: adults
+      description: >-
+        a University of New Hampshire poll of about 1,310 New Hampshire adults from a probability-based
+        web panel, weighted to Census figures and 2024 results; statewide results only
+      fielded: April 16 to 21, 2026
+      dataset_url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1947&context=survey_center_polls
+      about_url: *about
+    items:
+      UNH2604_CITIZENSHIP:
+        question: Require physical evidence of U.S. citizenship to register to vote in federal elections
+        wording: >-
+          The U.S. Congress is considering a bill with several possible provisions related to federal elections.
+          Generally speaking, do you support or oppose the following changes to federal elections or do you not have
+          an opinion on these? Requiring individuals to provide physical evidence of U.S. citizenship in order to
+          register to vote in federal elections
+        favor: 58      # strongly + somewhat support
+        oppose: 36     # somewhat + strongly oppose
+        url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1947&context=survey_center_polls
+        match: related
+        note: >-
+          Related, not the same: the poll asked about one provision; the Senate voted on adding the whole SAVE
+          America Act, which includes it, to another bill.
+        votes: {senate: *save_senate}
+      UNH2604_PHOTOID:
+        question: Require valid, government-issued photo ID to vote in federal elections
+        wording: >-
+          The U.S. Congress is considering a bill with several possible provisions related to federal elections.
+          Generally speaking, do you support or oppose the following changes to federal elections or do you not have
+          an opinion on these? Requiring individuals to provide physical evidence of U.S. citizenship in order to
+          register to vote in federal elections
+        favor: 67      # strongly + somewhat support
+        oppose: 26     # somewhat + strongly oppose
+        url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1947&context=survey_center_polls
+        match: related
+        note: >-
+          Related, not the same: the poll asked about one provision; the Senate voted on adding the whole SAVE
+          America Act, which includes it, to another bill.
+        votes: {senate: *save_senate}
+
+  - survey: Bay State Poll, Apr 2026
+    state: MA
+    congress: 119
+    respondents: 716
+    moe: 3.6
+    design_effect: 2.5
+    source:
+      title: Bay State Poll, April 2026 (University of New Hampshire Survey Center)
+      organization: UNH Survey Center
+      asked: adults
+      description: >-
+        a University of New Hampshire poll of about 720 Massachusetts adults from a probability-based
+        web panel, weighted to Census figures and 2024 results; statewide results only
+      fielded: April 16 to 20, 2026
+      dataset_url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1948&context=survey_center_polls
+      about_url: *about
+    items:
+      UNH2604_CITIZENSHIP:
+        question: Require physical evidence of U.S. citizenship to register to vote in federal elections
+        wording: >-
+          The U.S. Congress is considering a bill with several possible provisions related to federal elections.
+          Generally speaking, do you support or oppose the following changes to federal elections or do you not have
+          an opinion on these? Requiring individuals to provide physical evidence of U.S. citizenship in order to
+          register to vote in federal elections
+        favor: 53      # strongly + somewhat support
+        oppose: 38     # somewhat + strongly oppose
+        url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1948&context=survey_center_polls
+        match: related
+        note: >-
+          Related, not the same: the poll asked about one provision; the Senate voted on adding the whole SAVE
+          America Act, which includes it, to another bill.
+        votes: {senate: *save_senate}
+      UNH2604_PHOTOID:
+        question: Require valid, government-issued photo ID to vote in federal elections
+        wording: >-
+          The U.S. Congress is considering a bill with several possible provisions related to federal elections.
+          Generally speaking, do you support or oppose the following changes to federal elections or do you not have
+          an opinion on these? Requiring individuals to provide physical evidence of U.S. citizenship in order to
+          register to vote in federal elections
+        favor: 53      # strongly + somewhat support
+        oppose: 40     # somewhat + strongly oppose
+        url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1948&context=survey_center_polls
+        match: related
+        note: >-
+          Related, not the same: the poll asked about one provision; the Senate voted on adding the whole SAVE
+          America Act, which includes it, to another bill.
+        votes: {senate: *save_senate}
+
+  - survey: Ocean State Poll, Apr 2026
+    state: RI
+    congress: 119
+    respondents: 715
+    moe: 3.7
+    design_effect: 2.2
+    source:
+      title: Ocean State Poll, April 2026 (University of New Hampshire Survey Center)
+      organization: UNH Survey Center
+      asked: adults
+      description: >-
+        a University of New Hampshire poll of about 720 Rhode Island adults from a probability-based
+        web panel, weighted to Census figures and 2024 results; statewide results only
+      fielded: April 16 to 20, 2026
+      dataset_url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1949&context=survey_center_polls
+      about_url: *about
+    items:
+      UNH2604_CITIZENSHIP:
+        question: Require physical evidence of U.S. citizenship to register to vote in federal elections
+        wording: >-
+          The U.S. Congress is considering a bill with several possible provisions related to federal elections.
+          Generally speaking, do you support or oppose the following changes to federal elections or do you not have
+          an opinion on these? Requiring individuals to provide physical evidence of U.S. citizenship in order to
+          register to vote in federal elections
+        favor: 55      # strongly + somewhat support
+        oppose: 37     # somewhat + strongly oppose
+        url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1949&context=survey_center_polls
+        match: related
+        note: >-
+          Related, not the same: the poll asked about one provision; the Senate voted on adding the whole SAVE
+          America Act, which includes it, to another bill.
+        votes: {senate: *save_senate}
+      UNH2604_PHOTOID:
+        question: Require valid, government-issued photo ID to vote in federal elections
+        wording: >-
+          The U.S. Congress is considering a bill with several possible provisions related to federal elections.
+          Generally speaking, do you support or oppose the following changes to federal elections or do you not have
+          an opinion on these? Requiring individuals to provide physical evidence of U.S. citizenship in order to
+          register to vote in federal elections
+        favor: 66      # strongly + somewhat support
+        oppose: 22     # somewhat + strongly oppose
+        url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1949&context=survey_center_polls
+        match: related
+        note: >-
+          Related, not the same: the poll asked about one provision; the Senate voted on adding the whole SAVE
+          America Act, which includes it, to another bill.
+        votes: {senate: *save_senate}
+
+  - survey: Nutmeg State Poll, Apr 2026
+    state: CT
+    congress: 119
+    respondents: 595
+    moe: 4.0
+    design_effect: 2.0
+    source:
+      title: Nutmeg State Poll, April 2026 (University of New Hampshire Survey Center)
+      organization: UNH Survey Center
+      asked: adults
+      description: >-
+        a University of New Hampshire poll of about 600 Connecticut adults from a probability-based
+        web panel, weighted to Census figures and 2024 results; statewide results only
+      fielded: April 16 to 20, 2026
+      dataset_url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1950&context=survey_center_polls
+      about_url: *about
+    items:
+      UNH2604_CITIZENSHIP:
+        question: Require physical evidence of U.S. citizenship to register to vote in federal elections
+        wording: >-
+          The U.S. Congress is considering a bill with several possible provisions related to federal elections.
+          Generally speaking, do you support or oppose the following changes to federal elections or do you not have
+          an opinion on these? Requiring individuals to provide physical evidence of U.S. citizenship in order to
+          register to vote in federal elections
+        favor: 59      # strongly + somewhat support
+        oppose: 37     # somewhat + strongly oppose
+        url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1950&context=survey_center_polls
+        match: related
+        note: >-
+          Related, not the same: the poll asked about one provision; the Senate voted on adding the whole SAVE
+          America Act, which includes it, to another bill.
+        votes: {senate: *save_senate}
+      UNH2604_PHOTOID:
+        question: Require valid, government-issued photo ID to vote in federal elections
+        wording: >-
+          The U.S. Congress is considering a bill with several possible provisions related to federal elections.
+          Generally speaking, do you support or oppose the following changes to federal elections or do you not have
+          an opinion on these? Requiring individuals to provide physical evidence of U.S. citizenship in order to
+          register to vote in federal elections
+        favor: 76      # strongly + somewhat support
+        oppose: 20     # somewhat + strongly oppose
+        url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1950&context=survey_center_polls
+        match: related
+        note: >-
+          Related, not the same: the poll asked about one provision; the Senate voted on adding the whole SAVE
+          America Act, which includes it, to another bill.
+        votes: {senate: *save_senate}
+
+  - survey: Granite State Poll, Jun 2026
+    state: NH
+    congress: 119
+    respondents: 2393
+    moe: 2.0
+    design_effect: 3.6
+    source:
+      title: Granite State Poll, June 2026 (University of New Hampshire Survey Center)
+      organization: UNH Survey Center
+      asked: adults
+      description: >-
+        a University of New Hampshire poll of about 2,390 New Hampshire adults from a probability-based
+        web panel, weighted to Census figures and 2024 results; statewide results only
+      fielded: June 18 to 23, 2026
+      dataset_url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1967&context=survey_center_polls
+      about_url: *about
+    items:
+      UNH2606_RIGHT:
+        question: Going to war with Iran was the right decision
+        wording: >-
+          Do you think the U.S. decision to go to war with Iran was the right decision or the wrong decision, or do
+          you not have an opinion on this?
+        favor: 35      # right decision
+        oppose: 62     # wrong decision
+        url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1967&context=survey_center_polls
+        match: related
+        note: >-
+          Related, not the same: the poll asked whether going to war with Iran was the right decision; the Senate
+          voted on a war powers resolution to end U.S. hostilities against Iran unless Congress authorizes them.
+        votes: {senate: *iran_senate}
+
+  - survey: Green Mountain State Poll, Jun 2026
+    state: VT
+    congress: 119
+    respondents: 953
+    moe: 3.1
+    design_effect: 2.1
+    source:
+      title: Green Mountain State Poll, June 2026 (University of New Hampshire Survey Center)
+      organization: UNH Survey Center
+      asked: adults
+      description: >-
+        a University of New Hampshire poll of about 950 Vermont adults from a probability-based
+        web panel, weighted to Census figures and 2024 results; statewide results only
+      fielded: June 18 to 23, 2026
+      dataset_url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1964&context=survey_center_polls
+      about_url: *about
+    items:
+      UNH2606_RIGHT:
+        question: Going to war with Iran was the right decision
+        wording: >-
+          Do you think the U.S. decision to go to war with Iran was the right decision or the wrong decision, or do
+          you not have an opinion on this?
+        favor: 20      # right decision
+        oppose: 76     # wrong decision
+        url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1964&context=survey_center_polls
+        match: related
+        note: >-
+          Related, not the same: the poll asked whether going to war with Iran was the right decision; the Senate
+          voted on a war powers resolution to end U.S. hostilities against Iran unless Congress authorizes them.
+        votes: {senate: *iran_senate}
+
+  - survey: Bay State Poll, Jun 2026
+    state: MA
+    congress: 119
+    respondents: 707
+    moe: 3.7
+    design_effect: 2.3
+    source:
+      title: Bay State Poll, June 2026 (University of New Hampshire Survey Center)
+      organization: UNH Survey Center
+      asked: adults
+      description: >-
+        a University of New Hampshire poll of about 710 Massachusetts adults from a probability-based
+        web panel, weighted to Census figures and 2024 results; statewide results only
+      fielded: June 18 to 23, 2026
+      dataset_url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1968&context=survey_center_polls
+      about_url: *about
+    items:
+      UNH2606_RIGHT:
+        question: Going to war with Iran was the right decision
+        wording: >-
+          Do you think the U.S. decision to go to war with Iran was the right decision or the wrong decision, or do
+          you not have an opinion on this?
+        favor: 25      # right decision
+        oppose: 70     # wrong decision
+        url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1968&context=survey_center_polls
+        match: related
+        note: >-
+          Related, not the same: the poll asked whether going to war with Iran was the right decision; the Senate
+          voted on a war powers resolution to end U.S. hostilities against Iran unless Congress authorizes them.
+        votes: {senate: *iran_senate}
+
+  - survey: Nutmeg State Poll, Jun 2026
+    state: CT
+    congress: 119
+    respondents: 943
+    moe: 3.2
+    design_effect: 1.6
+    source:
+      title: Nutmeg State Poll, June 2026 (University of New Hampshire Survey Center)
+      organization: UNH Survey Center
+      asked: adults
+      description: >-
+        a University of New Hampshire poll of about 940 Connecticut adults from a probability-based
+        web panel, weighted to Census figures and 2024 results; statewide results only
+      fielded: June 18 to 23, 2026
+      dataset_url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1966&context=survey_center_polls
+      about_url: *about
+    items:
+      UNH2606_RIGHT:
+        question: Going to war with Iran was the right decision
+        wording: >-
+          Do you think the U.S. decision to go to war with Iran was the right decision or the wrong decision, or do
+          you not have an opinion on this?
+        favor: 26      # right decision
+        oppose: 66     # wrong decision
+        url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1966&context=survey_center_polls
+        match: related
+        note: >-
+          Related, not the same: the poll asked whether going to war with Iran was the right decision; the Senate
+          voted on a war powers resolution to end U.S. hostilities against Iran unless Congress authorizes them.
+        votes: {senate: *iran_senate}
+
+  - survey: Ocean State Poll, Jun 2026
+    state: RI
+    congress: 119
+    respondents: 695
+    moe: 3.7
+    design_effect: 2.3
+    source:
+      title: Ocean State Poll, June 2026 (University of New Hampshire Survey Center)
+      organization: UNH Survey Center
+      asked: adults
+      description: >-
+        a University of New Hampshire poll of about 700 Rhode Island adults from a probability-based
+        web panel, weighted to Census figures and 2024 results; statewide results only
+      fielded: June 18 to 23, 2026
+      dataset_url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1965&context=survey_center_polls
+      about_url: *about
+    items:
+      UNH2606_RIGHT:
+        question: Going to war with Iran was the right decision
+        wording: >-
+          Do you think the U.S. decision to go to war with Iran was the right decision or the wrong decision, or do
+          you not have an opinion on this?
+        favor: 29      # right decision
+        oppose: 64     # wrong decision
+        url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1965&context=survey_center_polls
+        match: related
+        note: >-
+          Related, not the same: the poll asked whether going to war with Iran was the right decision; the Senate
+          voted on a war powers resolution to end U.S. hostilities against Iran unless Congress authorizes them.
+        votes: {senate: *iran_senate}
+
+  - survey: Granite State Poll, Sep 2026
+    state: NH
+    congress: 119
+    respondents: 1535
+    moe: 2.5
+    design_effect: 2.6
+    source:
+      title: Granite State Poll, September 2026 (University of New Hampshire Survey Center)
+      organization: UNH Survey Center
+      asked: adults
+      description: >-
+        a University of New Hampshire poll of about 1,540 New Hampshire adults from a probability-based
+        web panel, weighted to Census figures and 2024 results; statewide results only
+      fielded: September 17 to 21, 2026
+      dataset_url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1998&context=survey_center_polls
+      about_url: *about
+    items:
+      UNH2609_WORTH:
+        question: The conflict with Iran has been worthwhile for the United States to fight
+        wording: >-
+          Do you believe the following conflicts have been worthwhile or not worthwhile for the United States to
+          fight or do you not have an opinion on these? The conflict with Iran so far
+        favor: 28      # definitely + probably worthwhile
+        oppose: 69     # probably not + definitely not worthwhile
+        url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1998&context=survey_center_polls
+        match: related
+        note: >-
+          Related, not the same: the poll asked whether the conflict has been worthwhile; the Senate voted on a war
+          powers resolution to end U.S. hostilities against Iran unless Congress authorizes them.
+        votes: {senate: *iran_senate}
+
+  - survey: Green Mountain State Poll, Sep 2026
+    state: VT
+    congress: 119
+    respondents: 881
+    moe: 3.3
+    design_effect: 2.6
+    source:
+      title: Green Mountain State Poll, September 2026 (University of New Hampshire Survey Center)
+      organization: UNH Survey Center
+      asked: adults
+      description: >-
+        a University of New Hampshire poll of about 880 Vermont adults from a probability-based
+        web panel, weighted to Census figures and 2024 results; statewide results only
+      fielded: September 17 to 21, 2026
+      dataset_url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1999&context=survey_center_polls
+      about_url: *about
+    items:
+      UNH2609_WORTH:
+        question: The conflict with Iran has been worthwhile for the United States to fight
+        wording: >-
+          Do you believe the following conflicts have been worthwhile or not worthwhile for the United States to
+          fight or do you not have an opinion on these? The conflict with Iran so far
+        favor: 24      # definitely + probably worthwhile
+        oppose: 75     # probably not + definitely not worthwhile
+        url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=1999&context=survey_center_polls
+        match: related
+        note: >-
+          Related, not the same: the poll asked whether the conflict has been worthwhile; the Senate voted on a war
+          powers resolution to end U.S. hostilities against Iran unless Congress authorizes them.
+        votes: {senate: *iran_senate}
+
+  - survey: Pine Tree State Poll, Sep 2026
+    state: ME
+    congress: 119
+    respondents: 1352
+    moe: 2.7
+    design_effect: 2.2
+    source:
+      title: Pine Tree State Poll, September 2026 (University of New Hampshire Survey Center)
+      organization: UNH Survey Center
+      asked: adults
+      description: >-
+        a University of New Hampshire poll of about 1,350 Maine adults from a probability-based
+        web panel, weighted to Census figures and 2024 results; statewide results only
+      fielded: September 17 to 21, 2026
+      dataset_url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=2000&context=survey_center_polls
+      about_url: *about
+    items:
+      UNH2609_WORTH:
+        question: The conflict with Iran has been worthwhile for the United States to fight
+        wording: >-
+          Do you believe the following conflicts have been worthwhile or not worthwhile for the United States to
+          fight or do you not have an opinion on these? The conflict with Iran so far
+        favor: 32      # definitely + probably worthwhile
+        oppose: 64     # probably not + definitely not worthwhile
+        url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=2000&context=survey_center_polls
+        match: related
+        note: >-
+          Related, not the same: the poll asked whether the conflict has been worthwhile; the Senate voted on a war
+          powers resolution to end U.S. hostilities against Iran unless Congress authorizes them.
+        votes: {senate: *iran_senate}
+
+  - survey: Bay State Poll, Sep 2026
+    state: MA
+    congress: 119
+    respondents: 590
+    moe: 4.0
+    design_effect: 3.1
+    source:
+      title: Bay State Poll, September 2026 (University of New Hampshire Survey Center)
+      organization: UNH Survey Center
+      asked: adults
+      description: >-
+        a University of New Hampshire poll of about 590 Massachusetts adults from a probability-based
+        web panel, weighted to Census figures and 2024 results; statewide results only
+      fielded: September 17 to 21, 2026
+      dataset_url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=2001&context=survey_center_polls
+      about_url: *about
+    items:
+      UNH2609_WORTH:
+        question: The conflict with Iran has been worthwhile for the United States to fight
+        wording: >-
+          Do you believe the following conflicts have been worthwhile or not worthwhile for the United States to
+          fight or do you not have an opinion on these? The conflict with Iran so far
+        favor: 18      # definitely + probably worthwhile
+        oppose: 81     # probably not + definitely not worthwhile
+        url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=2001&context=survey_center_polls
+        match: related
+        note: >-
+          Related, not the same: the poll asked whether the conflict has been worthwhile; the Senate voted on a war
+          powers resolution to end U.S. hostilities against Iran unless Congress authorizes them.
+        votes: {senate: *iran_senate}
+
+  - survey: Ocean State Poll, Sep 2026
+    state: RI
+    congress: 119
+    respondents: 603
+    moe: 4.0
+    design_effect: 2.7
+    source:
+      title: Ocean State Poll, September 2026 (University of New Hampshire Survey Center)
+      organization: UNH Survey Center
+      asked: adults
+      description: >-
+        a University of New Hampshire poll of about 600 Rhode Island adults from a probability-based
+        web panel, weighted to Census figures and 2024 results; statewide results only
+      fielded: September 17 to 21, 2026
+      dataset_url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=2002&context=survey_center_polls
+      about_url: *about
+    items:
+      UNH2609_WORTH:
+        question: The conflict with Iran has been worthwhile for the United States to fight
+        wording: >-
+          Do you believe the following conflicts have been worthwhile or not worthwhile for the United States to
+          fight or do you not have an opinion on these? The conflict with Iran so far
+        favor: 30      # definitely + probably worthwhile
+        oppose: 66     # probably not + definitely not worthwhile
+        url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=2002&context=survey_center_polls
+        match: related
+        note: >-
+          Related, not the same: the poll asked whether the conflict has been worthwhile; the Senate voted on a war
+          powers resolution to end U.S. hostilities against Iran unless Congress authorizes them.
+        votes: {senate: *iran_senate}
+
+  - survey: Nutmeg State Poll, Sep 2026
+    state: CT
+    congress: 119
+    respondents: 596
+    moe: 4.0
+    design_effect: 2.2
+    source:
+      title: Nutmeg State Poll, September 2026 (University of New Hampshire Survey Center)
+      organization: UNH Survey Center
+      asked: adults
+      description: >-
+        a University of New Hampshire poll of about 600 Connecticut adults from a probability-based
+        web panel, weighted to Census figures and 2024 results; statewide results only
+      fielded: September 17 to 21, 2026
+      dataset_url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=2003&context=survey_center_polls
+      about_url: *about
+    items:
+      UNH2609_WORTH:
+        question: The conflict with Iran has been worthwhile for the United States to fight
+        wording: >-
+          Do you believe the following conflicts have been worthwhile or not worthwhile for the United States to
+          fight or do you not have an opinion on these? The conflict with Iran so far
+        favor: 26      # definitely + probably worthwhile
+        oppose: 72     # probably not + definitely not worthwhile
+        url: https://scholars.unh.edu/cgi/viewcontent.cgi?article=2003&context=survey_center_polls
+        match: related
+        note: >-
+          Related, not the same: the poll asked whether the conflict has been worthwhile; the Senate voted on a war
+          powers resolution to end U.S. hostilities against Iran unless Congress authorizes them.
+        votes: {senate: *iran_senate}

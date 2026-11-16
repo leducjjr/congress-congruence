@@ -462,6 +462,15 @@ Special handling:
   subsidies (related: Senate Dec 11, 2025, 51-48 needing 60), boat strikes (related, Nay: Oct 8, 48-51),
   military removal of Maduro (related, Nay: Nov 6, 49-51). Jan 2026 NH/VT: ACA subsidies (Senate as
   above; VT House Jan 8, 2026, 230-196, same).
+- **Added Nov 16, 2026 (2026 polls; CT and RI added):** Jan NH/VT: capture of Maduro (related, Nay) and
+  notifying Congress before further action (related, Yea), both vs the Senate's 52-47 vote of Jan 8, 2026
+  to take up a Venezuela war powers resolution. Mar six-state States of Opinion poll (no design effect
+  given): support the attack on Iran (Nay), should have asked Congress (Yea). Apr NH/MA/RI/CT: proof of
+  citizenship to register, photo ID to vote (Yea), vs the Senate's June 4, 2026 48-50 vote to add the SAVE
+  America Act to the immigration funding bill. Jun NH/VT/MA/CT/RI: going to war was the right decision
+  (Nay). Sep NH/VT/ME/MA/CT/RI: conflict worthwhile (Nay). All related. Every Iran question uses the
+  June 23, 2026 vote (50-48, the one that passed), as do the TPP's (John, Nov 16, 2026). Article numbers
+  are the poll's repository number + 999.
 - **Reviewed, not used:** other provisions of OBBBA (tips/overtime, Medicaid work requirements, EV
   credits, 2017 tax cuts: no separate floor vote), backpay for federal workers.
 

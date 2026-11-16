@@ -14,9 +14,10 @@
 #
 # Polls reviewed Nov 15, 2026 and left out: tariff questions (they ask about expected effects, not
 # support for a proposal), the SAVE America Act (asked only how much people had heard), immigration
-# enforcement, troops in cities and Greenland (no matching floor vote). Venezuela: the Senate did vote
-# on war powers resolutions (Oct 8 and Nov 6, 2025); the question is to be rechecked against them. Not yet reviewed:
-# Feb 2025, Oct 2025, Apr 2026 and Oct 2026 polls.
+# enforcement, troops in cities and Greenland (no matching floor vote).
+# Reviewed Nov 16, 2026: Apr 2025, Jun 2025, Oct 2025, Dec 2025, Feb 2026 (job approval, effects, news
+# attention only; Feb 2026 Q34 rates the handling of Venezuela, not a proposal, so it's left out) and
+# Apr 2026 (Q31, military action against Iran, added). No Feb 2025 or Oct 2026 topline found yet.
 
 organization: Texas Politics Project
 state: TX
@@ -88,6 +89,34 @@ polls:
             note: >-
               The Senate passed this war powers resolution on Iran 50-48 on June 23, 2026, after several
               earlier attempts failed. Voting No was the side that supports continuing the military action.
+
+  - survey: Texas Politics Project, Apr 2026
+    congress: 119
+    moe: 3.35
+    respondents: 1200
+    source:
+      title: University of Texas / Texas Politics Project Poll, April 2026
+      organization: Texas Politics Project
+      asked: registered_voters
+      description: >-
+        a University of Texas at Austin poll of about 1,200 registered Texas voters, conducted online by
+        YouGov and weighted to the state's voters; statewide results only
+      fielded: April 10 to 20, 2026
+      dataset_url: https://texaspolitics.utexas.edu/files/202604_POLL_CROSSTABS-985aeaac.pdf
+      about_url: https://texaspolitics.utexas.edu/polling-data-archive
+    items:
+      TPP2604_Q31:
+        question: Approve of the U.S. taking military action against Iran
+        wording: Do you approve or disapprove of the U.S. taking military action against Iran?
+        favor: 37      # approve strongly 24 + approve somewhat 13
+        oppose: 49     # disapprove somewhat 13 + disapprove strongly 36 (neither 8, don't know 5)
+        url: https://texaspolitics.utexas.edu/files/202604_POLL_CROSSTABS-985aeaac.pdf
+        match: related
+        note: >-
+          Related, not the same: the poll asked whether people approve of U.S. military action against
+          Iran; the Senate voted on a war powers resolution to end it.
+        votes:
+          senate: *iran_wpr
 
   - survey: Texas Politics Project, Aug 2026
     congress: 119
