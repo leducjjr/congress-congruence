@@ -553,7 +553,8 @@ nothing, results matched v1.1.
     question clearly matches a floor vote. Reviewed Nov 15, 2026: Quinnipiac PA (Sept 2025, Feb and Jul
     2026: nothing usable), Siena NY Jun 2025 and Marquette WI Jun 2025 (effects, not support). Possible:
     Marquette WI Oct 2025, extend ACA subsidies 58-41 (topline wording to check). Glengariff (Michigan,
-    commercial, for WDIV/Detroit News) Canada tariffs 29-64: not a university; media polls not yet a category.
+    commercial, for WDIV/Detroit News) Canada tariffs 29-64: not used. Decided Nov 16, 2026:
+    newspaper and TV station polls are left out as a group (John: too subjective).
 - **Not used:** national-only surveys (ANES, GSS, Pew, Gallup, KFF: too few respondents per area);
   America's Political Pulse and the VOTER Survey (attitudes, not bills); polls sponsored by campaigns,
   parties or advocacy groups (independence); paid subscription trackers (can't be published or checked).

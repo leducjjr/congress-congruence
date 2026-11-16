@@ -301,10 +301,6 @@ can check it. This list is updated as things change; last reviewed November 16, 
   Pennsylvania polls (no questions on federal bills), Siena's New York poll and Marquette's Wisconsin
   polls (mostly about a bill's effects rather than support for it; one Marquette question on health
   insurance subsidies is a possible match, still being checked).
-- **Newspaper and TV station polls** (for example the Glengariff Group's Michigan polls for WDIV and
-  The Detroit News): independent and published, and some ask about specific proposals, such as the
-  tariffs on Canadian goods. They're run by private polling firms rather than universities, so whether
-  to include them as a group hasn't been decided yet.
 
 ### Not used
 
@@ -316,6 +312,10 @@ can check it. This list is updated as things change; last reviewed November 16, 
   specific bills, so their answers can't be compared with votes.
 - **Polls paid for by campaigns, parties or advocacy groups**, of any political leaning: left out so the
   site stays independent, however good the poll.
+- **Polls run for newspapers and TV stations** (for example the Glengariff Group's Michigan polls for
+  WDIV and The Detroit News): left out. Their questions are written for news coverage, often in the
+  middle of a story, and their methods and full results are published less consistently, so we use
+  polls from universities and research organizations instead.
 - **Paid subscription trackers** (for example Morning Consult's state data): their figures can't be
   published or checked by readers.
 
