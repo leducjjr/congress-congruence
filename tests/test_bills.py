@@ -127,6 +127,7 @@ def test_big_bills_subject_lists_dont_drag_questions_in_and_title_matches_come_f
                     "values (119, 'hr', 3838, 'National Defense Authorization Act', 'Armed Forces and National Security')")
         cur.executemany("insert into core.bill_subject values (119, 'hr', 3838, %s)",
                         [("Immigration status and procedures",), ("Military procurement",)])
+        cur.execute("select core.refresh_vote_search()")      # as bills.sync does after loading bills
     conn.commit()
     from fastapi.testclient import TestClient
     from congress_congruence.api import app as api
@@ -136,3 +137,18 @@ def test_big_bills_subject_lists_dont_drag_questions_in_and_title_matches_come_f
     assert found["questions"] == []                              # Ukraine question not pulled in by a tag
     assert [(v["roll_call_id"], v["matched_by"]) for v in found["votes"]] == \
         [("h-119-2-11", "title"), ("h-119-1-255", "subject")]   # title match first, though it's older-or-newer
+
+
+def test_search_words_follow_vote_changes_without_a_refresh(conn):  # noqa: F811
+    """A vote's search words are kept by a trigger: a new or changed vote is findable at once."""
+    with conn.cursor() as cur:
+        cur.execute("select roll_call_id from core.roll_call limit 1")
+        (rid,) = cur.fetchone()
+        cur.execute("update core.roll_call set description = 'Pangolin Protection Act' where roll_call_id = %s", (rid,))
+        cur.execute("select roll_call_id from core.vote_search where doc @@ to_tsquery('english', 'pangolin')")
+        assert cur.fetchall() == [(rid,)]
+        cur.execute("delete from core.member_vote where roll_call_id = %s", (rid,))
+        cur.execute("delete from core.roll_call where roll_call_id = %s", (rid,))
+        cur.execute("select count(*) from core.vote_search where roll_call_id = %s", (rid,))
+        assert cur.fetchone() == (0,)
+    conn.rollback()

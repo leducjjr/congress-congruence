@@ -240,17 +240,7 @@ select s.survey, s.title, s.fielded, s.respondents, s.dataset_url, s.guide_url, 
 # ---------------------------------------------------------------- text search (votes, survey questions)
 # %(tsq)s is a to_tsquery string built by app.build_tsquery from letters and digits only.
 
-# Words a vote can be found by: its title and question, the bill number, and (once loaded from
-# Congress.gov) the bill's official title, policy area and subject tags.
-VOTE_DOC = """to_tsvector('english', coalesce(r.description, '') || ' ' || coalesce(r.question, '') || ' ' ||
-           coalesce(r.bill_type || ' ' || r.bill_number || ' ' || r.bill_type || r.bill_number, '') || ' ' ||
-           coalesce(b.title, '') || ' ' || coalesce(b.policy_area, '') || ' ' || coalesce(bs.subjects, ''))"""
-
-# The same without subject tags: votes matching here are listed before those found only by a tag.
-VOTE_TITLE_DOC = """to_tsvector('english', coalesce(r.description, '') || ' ' || coalesce(r.question, '') || ' ' ||
-           coalesce(r.bill_type || ' ' || r.bill_number || ' ' || r.bill_type || r.bill_number, '') || ' ' ||
-           coalesce(b.title, '') || ' ' || coalesce(b.policy_area, ''))"""
-
+# Bill details shown with each vote: the bill's official title and policy area, and its subject tags.
 VOTE_BILL_JOIN = """
   left join core.bill b on b.congress = coalesce(r.bill_congress, r.congress)
                        and b.bill_type = r.bill_type and b.bill_number = r.bill_number
@@ -259,7 +249,19 @@ VOTE_BILL_JOIN = """
                       where s.congress = b.congress and s.bill_type = b.bill_type
                         and s.bill_number = b.bill_number) bs on true"""
 
-VOTE_SEARCH = f"""
+# A vote's search words (title, question, bill number, and the bill's title, policy area and subject
+# tags) are stored and indexed in core.vote_search (sql/015_vote_search.sql). The matching, counting,
+# sorting and paging are done first; the bill details are then looked up only for the page shown.
+VOTE_SEARCH = """
+with page as (
+    select r.roll_call_id, vs.title_doc @@ to_tsquery('english', %(tsq)s) as title_match,
+           count(*) over () as total
+      from core.vote_search vs join core.roll_call r using (roll_call_id)
+     where vs.doc @@ to_tsquery('english', %(tsq)s)
+       and (%(chamber)s::text is null or r.chamber = %(chamber)s)
+       and (not %(surveyed)s or exists (select 1 from core.survey_item_vote siv where siv.roll_call_id = r.roll_call_id))
+     order by {order}
+     limit %(limit)s offset %(offset)s)
 select r.roll_call_id, r.chamber, r.congress, r.session, r.roll_number, r.vote_date, r.question,
        r.description, r.result, r.yea_total, r.nay_total, r.present_total, r.not_voting_total,
        r.bill_congress, r.bill_type, r.bill_number, r.amendment_number,
@@ -270,15 +272,11 @@ select r.roll_call_id, r.chamber, r.congress, r.session, r.roll_number, r.vote_d
             ts_headline('english', r.description, to_tsquery('english', %(tsq)s),
                         'MaxFragments=2, MinWords=8, MaxWords=24, StartSel=[[, StopSel=]], FragmentDelimiter=" … "')
        end as snippet,
-       {VOTE_TITLE_DOC} @@ to_tsquery('english', %(tsq)s) as title_match,
-       count(*) over () as total
-  from core.roll_call r{VOTE_BILL_JOIN}
- where {VOTE_DOC} @@ to_tsquery('english', %(tsq)s)
-   and (%(chamber)s::text is null or r.chamber = %(chamber)s)
-   and (not %(surveyed)s or exists (select 1 from core.survey_item_vote siv where siv.roll_call_id = r.roll_call_id))
- order by {{order}}
- limit %(limit)s offset %(offset)s
+       page.title_match, page.total
+  from page join core.roll_call r using (roll_call_id){VOTE_BILL_JOIN}
+ order by {order}
 """
+VOTE_SEARCH = VOTE_SEARCH.replace("{VOTE_BILL_JOIN}", VOTE_BILL_JOIN)
 
 # Sort orders a visitor can pick (whitelisted: the chosen text is put into the query).
 VOTE_SEARCH_ORDER = {
@@ -487,22 +485,29 @@ VOTE_OUTCOME = """(case
     else 'other' end)"""
 
 VOTE_LIST = f"""
+with page as (
+    select r.roll_call_id, true as title_match, count(*) over () as total
+      from core.roll_call r
+      left join core.bill b on b.congress = coalesce(r.bill_congress, r.congress)
+                           and b.bill_type = r.bill_type and b.bill_number = r.bill_number
+     where (%(chamber)s::text is null or r.chamber = %(chamber)s)
+       and (%(congress)s::int is null or r.congress = %(congress)s)
+       and (%(kind)s::text is null or {VOTE_KIND} = %(kind)s)
+       and (%(outcome)s::text is null or {VOTE_OUTCOME} = %(outcome)s)
+       and (%(topic)s::text is null or b.policy_area = %(topic)s)
+       and (not %(surveyed)s or exists (select 1 from core.survey_item_vote siv where siv.roll_call_id = r.roll_call_id))
+       and (%(tsq)s::text is null or exists (select 1 from core.vote_search vs
+                                              where vs.roll_call_id = r.roll_call_id
+                                                and vs.doc @@ to_tsquery('english', %(tsq)s)))
+     order by {{order}}
+     limit %(limit)s offset %(offset)s)
 select r.roll_call_id, r.chamber, r.congress, r.session, r.roll_number, r.vote_date, r.question,
        r.description, r.result, r.yea_total, r.nay_total, r.present_total, r.not_voting_total,
        r.bill_congress, r.bill_type, r.bill_number, r.amendment_number,
-       b.title as bill_title, b.policy_area, bs.subjects, null as snippet, true as title_match,
-       {VOTE_KIND} as kind, {VOTE_OUTCOME} as outcome,
-       count(*) over () as total
-  from core.roll_call r{VOTE_BILL_JOIN}
- where (%(chamber)s::text is null or r.chamber = %(chamber)s)
-   and (%(congress)s::int is null or r.congress = %(congress)s)
-   and (%(kind)s::text is null or {VOTE_KIND} = %(kind)s)
-   and (%(outcome)s::text is null or {VOTE_OUTCOME} = %(outcome)s)
-   and (%(topic)s::text is null or b.policy_area = %(topic)s)
-   and (not %(surveyed)s or exists (select 1 from core.survey_item_vote siv where siv.roll_call_id = r.roll_call_id))
-   and (%(tsq)s::text is null or {VOTE_DOC} @@ to_tsquery('english', %(tsq)s))
+       b.title as bill_title, b.policy_area, bs.subjects, null as snippet, page.title_match,
+       {VOTE_KIND} as kind, {VOTE_OUTCOME} as outcome, page.total
+  from page join core.roll_call r using (roll_call_id){VOTE_BILL_JOIN}
  order by {{order}}
- limit %(limit)s offset %(offset)s
 """
 
 # What the filters can offer: the Congresses loaded in each chamber, and the bills' main topics.

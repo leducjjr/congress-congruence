@@ -177,6 +177,14 @@ def sync(conn, http=None, check_all: bool = False, limit: int | None = None) -> 
         if done % 25 == 0:
             log.info("%s of %s bills checked", done, len(todo))
         time.sleep(PAUSE_SECONDS)
+    if done:
+        # Bill titles and subject tags are search words for their votes (sql/015_vote_search.sql);
+        # the votes themselves are kept current by a trigger.
+        with conn.cursor() as cur:
+            cur.execute("select core.refresh_vote_search()")
+            changed = cur.fetchone()[0]
+        conn.commit()
+        log.info("search words updated for %s votes", changed)
     return {"loaded": done, "bills_checked": done, "not_found": missing, "failed": failed,
             "at": datetime.now(timezone.utc).isoformat(timespec="seconds")}
 
