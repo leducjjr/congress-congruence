@@ -25,3 +25,9 @@ def test_text_not_in_capitals_is_left_alone():
     for text in ("On Motion to Table the Amendment", "H.R. 1: For the People Act of 2021", None, "", "ON PASSAGE"):
         assert tidy(text) == text or (text == "ON PASSAGE" and tidy(text) == "On passage")
     assert not is_shouting("Passed") and is_shouting("ON THE AMENDMENT")
+
+
+def test_search_snippets_keep_their_match_marks():
+    """Search shows the matching part of a long title, with [[ ]] around the matching words."""
+    assert tidy("SUSPEND THE RULES AND PASS HR 5318, [[EGG]] RESEARCH") == "Suspend the rules and pass H.R. 5318, [[egg]] research"
+    assert tidy(None) is None

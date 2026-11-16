@@ -301,7 +301,9 @@ def vote_items(vrows: list[dict], members: list[str]) -> list[dict]:
                 mine.setdefault(r["roll_call_id"], []).append(
                     {"bioguide_id": r["bioguide_id"], "name": r["name"], "position": r["position"]})
 
-    return [{**vote_summary(r), "snippet": r["snippet"],
+    # The matching part of a long title; older titles typed in capitals are put in sentence case, as
+    # the full title is (titles.tidy), keeping the [[ ]] marks around the matching words.
+    return [{**vote_summary(r), "snippet": tidy(r["snippet"]),
              "bill_title": r["bill_title"], "policy_area": r["policy_area"],
              "subjects": r["subjects"].split(" | ") if r["subjects"] else [],
              "matched_by": "title" if r["title_match"] else "subject",
