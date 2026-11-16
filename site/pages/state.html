@@ -16,6 +16,15 @@ head: |
     .survey-fold > summary { font-weight: 600; font-size: 0.95rem; color: var(--ink); }
     .op-row td:nth-child(2) { white-space: nowrap; }
     .jump-state { display: flex; gap: 8px; align-items: center; font-size: 0.9rem; margin: 0 0 16px; }
+    /* Show: Everything / Senators / Representatives / Former members / Surveys */
+    .show-only { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 0 0 16px; padding: 0; list-style: none; }
+    .show-only .label { color: var(--ink-soft); font-size: 0.9rem; margin-right: 2px; }
+    .show-only button { font: inherit; font-size: 0.92rem; color: var(--ink); background: var(--surface); cursor: pointer;
+      border: 1px solid var(--rule); border-radius: 999px; padding: 5px 12px; }
+    .show-only button:hover, .show-only button:focus-visible { border-color: var(--mark); color: var(--mark); }
+    .show-only button small { color: var(--ink-soft); margin-left: 4px; }
+    .show-only button[aria-pressed="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+    .show-only button[aria-pressed="true"] small { color: inherit; opacity: 0.8; }
     .jump-state select { font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; padding: 5px 8px; }
   </style>
 main_class: state-page
@@ -73,7 +82,7 @@ addEventListener("DOMContentLoaded", () => {
         el("th", { scope: "col" }, "Member"), el("th", { scope: "col" }, "Seat"), el("th", { scope: "col", class: "party" }, "Party"),
         former ? el("th", { scope: "col" }, "Left office") : null,
         el("th", { scope: "col" }, "Surveyed votes that went the way a clear majority where they live wanted"))),
-      el("tbody", {}, ms.map(m => el("tr", { class: "member-row" },
+      el("tbody", {}, ms.map(m => el("tr", { class: "member-row", "data-chamber": m.chamber },
         el("td", {}, el("a", { href: memberHref(m) }, m.name)),
         el("td", {}, m.chamber === "senate" ? "Senate" : m.seat),
         el("td", { class: "party" }, m.caucus && m.caucus !== m.party ? `${m.party} (caucuses with ${m.caucus}s)` : m.party),
@@ -115,10 +124,56 @@ addEventListener("DOMContentLoaded", () => {
     return sec;
   }
 
+  // Show one part of the page at a time (kept in the address as &show=): everything, the senators, the
+  // representatives, former members, or what people told surveys.
+  let show = new URLSearchParams(location.search).get("show") || "";
+  function showOnly(d, current, former, surveys) {
+    const senators = d.members.filter(m => m.chamber === "senate").length, reps = d.members.length - senators;
+    const options = [["", "Everything", null], ["senators", "Senators", senators], ["representatives", "Representatives", reps],
+                     ["former", "Former members", d.former.length], ["surveys", "What people told surveys", d.opinion.length]]
+      .filter(([key, , n]) => !key || n);
+    if (!options.some(o => o[0] === show)) show = "";
+    const buttons = [];
+    const apply = () => {
+      const chamber = { senators: "senate", representatives: "house" }[show];
+      current.hidden = Boolean(show) && !chamber;
+      for (const tr of current.querySelectorAll("tr[data-chamber]")) tr.hidden = Boolean(chamber) && tr.dataset.chamber !== chamber;
+      if (former) {
+        former.hidden = Boolean(show) && show !== "former";
+        if (show === "former") former.querySelector("details").open = true;
+      }
+      surveys.hidden = Boolean(show) && show !== "surveys";
+      for (const b of buttons) b.setAttribute("aria-pressed", String(b.dataset.show === show));
+      const u = new URL(location.href);
+      if (show) u.searchParams.set("show", show); else u.searchParams.delete("show");
+      history.replaceState(null, "", u);
+    };
+    const nav = el("nav", { "aria-label": "Show part of this page" }, el("ul", { class: "show-only" },
+      el("li", { class: "label" }, "Show:"),
+      options.map(([key, label, n]) => {
+        const b = el("button", { type: "button", "data-show": key, "aria-pressed": "false" }, label,
+          n === null ? null : el("small", {}, `(${n.toLocaleString()})`));
+        b.addEventListener("click", () => { show = key; apply(); });
+        buttons.push(b);
+        return el("li", {}, b);
+      })));
+    queueMicrotask(apply);
+    return nav;
+  }
+
   function draw() {
     const d = data;
     document.title = `${d.name} · US Congress vs Voters`;
     const senators = d.members.filter(m => m.chamber === "senate"), reps = d.members.filter(m => m.chamber === "house");
+    const current = el("section", { class: "group" }, el("h2", {}, "Members serving today"),
+      el("p", { class: "sub" }, "For each source separately: of the votes on bills a survey asked about where most people the member ",
+        "represented clearly took a side, how many the member's vote matched. Representatives are compared with their district, ",
+        "senators with the state. Listed by seat, not ranked. Open a member for each vote."),
+      d.members.length ? membersTable(d.members, false) : el("p", { class: "empty" }, "No members found."));
+    const former = d.former.length ? el("section", { class: "group" }, el("h2", {}, "Former members"),
+      el("details", { class: "more" }, el("summary", {}, `${plural(d.former.length, "former member", "former members")} with votes on this site, most recently in office first`),
+        membersTable(d.former, true))) : null;
+    const surveys = opinionSection(d);
     view.replaceChildren(
       picker(),
       el("div", { class: "page-head" }, el("h1", {}, d.name),
@@ -133,15 +188,8 @@ addEventListener("DOMContentLoaded", () => {
             : d.adult_citizens ? `About ${people(d.adult_citizens)} are citizens 18 and over. ` : d.citizens ? ". " : "",
           `${plural(senators.length, "senator", "senators")} and ${plural(reps.length, "representative", "representatives")} serving today. `,
           el("a", { href: `votes.html` }, "All votes"), " · ", el("a", { href: "compare.html" }, "Compare two members"))),
-      el("section", { class: "group" }, el("h2", {}, "Members serving today"),
-        el("p", { class: "sub" }, "For each source separately: of the votes on bills a survey asked about where most people the member ",
-          "represented clearly took a side, how many the member's vote matched. Representatives are compared with their district, ",
-          "senators with the state. Listed by seat, not ranked. Open a member for each vote."),
-        d.members.length ? membersTable(d.members, false) : el("p", { class: "empty" }, "No members found.")),
-      d.former.length ? el("section", { class: "group" }, el("h2", {}, "Former members"),
-        el("details", { class: "more" }, el("summary", {}, `${plural(d.former.length, "former member", "former members")} with votes on this site, most recently in office first`),
-          membersTable(d.former, true))) : null,
-      opinionSection(d));
+      showOnly(d, current, former, surveys),
+      current, former, surveys);
   }
 
   fetch(`${API}/v1/states/${code}`).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })

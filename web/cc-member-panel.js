@@ -106,6 +106,14 @@
       border: 1px solid var(--rule); border-radius: 999px; padding: 2px 12px;
     }
     .jumps button:hover { border-color: var(--mark); }
+    /* Show one survey source's comparisons at a time (shown when there are several sources). */
+    .op-filter { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 14px 0 6px; padding: 0;
+                 list-style: none; font-size: 0.85rem; color: var(--ink-soft); }
+    .op-filter button { font: inherit; color: var(--ink); background: var(--surface-sunk); cursor: pointer;
+                        border: 1px solid var(--rule); border-radius: 999px; padding: 2px 12px; }
+    .op-filter button:hover { border-color: var(--mark); }
+    .op-filter button[aria-pressed="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+    .op-filter button small { opacity: 0.75; margin-left: 3px; }
     h3[tabindex]:focus, .op-sources:focus { outline: none; }
     .op-sources:focus-visible { outline: 2px solid var(--mark); outline-offset: 4px; border-radius: 3px; }
     .op-sources { scroll-margin-top: 12px; }
@@ -655,6 +663,13 @@
     }
 
     // Scroll a row into view and highlight it briefly.
+    // Highlight one comparison; if the source filter is hiding it, show every source first.
+    flashOp(rollCallId) {
+      const find = () => this.root.querySelector(`li[data-op="${CSS.escape(rollCallId)}"]`);
+      if (!find() && this.opShow) this.opShow("");
+      this.flash(find());
+    }
+
     flash(row) {
       if (!row) return;
       // A comparison from an earlier Congress sits in a folded group: open it first.
@@ -679,7 +694,7 @@
         mark(v.position),
         what,
         h("span", { class: "detail" },
-          h("span", { class: "their" }, `Voted ${POSITION_TEXT[v.position] === "Did not vote" ? "— did not vote" : POSITION_TEXT[v.position] || v.position_detail}`),
+          h("span", { class: "their" }, v.position === "not_voting" ? "Did not vote" : `Voted ${POSITION_TEXT[v.position] || v.position_detail}`),
           v.position_detail && !["Yea", "Nay", "Present", "Not Voting"].includes(v.position_detail) ? ` (${v.position_detail})` : "",
           `. ${v.question ? v.question + ", " : ""}${(v.result || "").toLowerCase()}${tally}. `,
           h("a", { href: v.official_url, target: "_blank", rel: "noopener" }, fmtDate(v.date))),
@@ -699,7 +714,7 @@
       const tag = h("button", { type: "button", class: "op-tag" }, item.kind === "ballot"
         ? `Ballot measure: ${where} voters ${Math.round(item.constituents.support_pct)}% yes${tail}`
         : `Surveyed: ${where} ${Math.round(item.constituents.support_pct)}% support${tail}`);
-      tag.addEventListener("click", () => this.flash(this.root.querySelector(`li[data-op="${CSS.escape(v.roll_call_id)}"]`)));
+      tag.addEventListener("click", () => this.flashOp(v.roll_call_id));
       return tag;
     }
 
@@ -740,6 +755,7 @@
 
       const surveys = new Map((o.surveys || []).map(sv => [sv.name, sv]));
       const several = surveys.size > 1;
+      const orgOfItem = i => (surveys.get(i.survey) || {}).organization || i.survey;
       const rows = [...o.items].reverse().map(i => {
         const c = i.constituents;
         const [lo, hi] = c.range_pct;
@@ -772,7 +788,8 @@
                                            : `Opens the questionnaire with ${here}'s results` },
               "See the exact question"),
             i.wording_hint ? ` (in the survey guide, search for ${i.wording_hint})` : ` (questionnaire with ${here}'s results, PDF)`);
-        return h("li", { "data-op": i.vote.roll_call_id, "data-congress": i.vote.congress || 0, "data-agreement": related ? "related" : i.agreement },
+        return h("li", { "data-op": i.vote.roll_call_id, "data-congress": i.vote.congress || 0, "data-agreement": related ? "related" : i.agreement,
+                         "data-org": orgOfItem(i) },
           h("p", { class: "op-q" }, i.question,
             related ? h("span", { class: "op-related", title: "The vote was on a related bill, not exactly this proposal" },
               "Related vote") : null),
@@ -798,7 +815,7 @@
         byOrg.set(org, [...(byOrg.get(org) || []), year].filter(Boolean));
       }
       const orgLinks = [...byOrg].map(([org, years]) =>
-        [h("a", { href: page("sources.html", slug(org)) }, org), years.length ? ` (${years.sort().join(", ")})` : ""]);
+        [h("a", { href: page("sources.html", slug(org)) }, org), years.length ? ` (${[...new Set(years)].sort().join(", ")})` : ""]);
       const sourceLines = orgLinks.length ? [h("p", { class: "op-source" },
         h("strong", {}, orgLinks.length > 1 ? "Sources: " : "Source: "),
         orgLinks.flatMap((x, j) => j ? ["; ", ...x] : x), ". ",
@@ -848,8 +865,35 @@
           h("span", {}, h("i", { class: "sw unclear" }), "Too close to call")),
         h("div", { class: "op-scale", "aria-hidden": "true" },
           h("span", {}, "All oppose"), h("span", {}, "Even split"), h("span", {}, "All support")),
-        this.groupByCongress(rows),
+        this.sourceFilter(rows),
         sourceLines.length ? h("div", { id: "sources", class: "op-sources", tabindex: "-1" }, sourceLines) : null);
+    }
+
+    // With more than one survey source: chips to show one source's comparisons at a time (each
+    // Congress's tally then counts only that source), and the comparisons grouped by Congress.
+    sourceFilter(rows) {
+      const counts = new Map();
+      for (const li of rows) counts.set(li.dataset.org, (counts.get(li.dataset.org) || 0) + 1);
+      let groups = this.groupByCongress(rows);
+      this.opShow = null;
+      if (counts.size < 2) return groups;
+      const buttons = [];
+      this.opShow = org => {
+        const g = this.groupByCongress(org ? rows.filter(li => li.dataset.org === org) : rows);
+        groups.replaceWith(g);
+        groups = g;
+        for (const b of buttons) b.setAttribute("aria-pressed", String(b.dataset.org === org));
+      };
+      const chip = (org, label, n) => {
+        const b = h("button", { type: "button", "data-org": org, "aria-pressed": String(!org) }, label, h("small", {}, `(${n})`));
+        b.addEventListener("click", () => this.opShow(org));
+        buttons.push(b);
+        return h("li", {}, b);
+      };
+      return [h("ul", { class: "op-filter", "aria-label": "Show comparisons from" },
+          h("li", {}, "Show:"), chip("", "All sources", rows.length),
+          [...counts].map(([org, n]) => chip(org, org, n))),
+        groups];
     }
 
     // Votes where the member's own party and the clear majority where they live (state or district)
@@ -877,7 +921,7 @@
       const sidedPlace = xs.filter(i => i.sided_with === i.constituents.majority);
       const lines = [...xs].reverse().map(i => {
         const jump = h("button", { type: "button", class: "linkish" }, i.question);
-        jump.addEventListener("click", () => this.flash(this.root.querySelector(`li[data-op="${CSS.escape(i.vote.roll_call_id)}"]`)));
+        jump.addEventListener("click", () => this.flashOp(i.vote.roll_call_id));
         return h("li", {}, jump, ` (${fmtDate(i.vote.date)}): `,
           h("strong", {}, i.sided_with === i.constituents.majority ? `sided with ${areaOf(i)}` : `sided with ${p.caucus_of ? "their caucus" : "their party"}`));
       });
