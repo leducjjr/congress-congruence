@@ -23,6 +23,10 @@ head: |
       .num-table td::before { content: attr(data-label); color: var(--ink-soft); text-align: left; }
       .num-table td.member { display: block; text-align: left; font-weight: 600; }
       .num-table td.member::before { content: none; }
+      /* The small second line ("3 votes") sits under its figure, not spread across the row. */
+      .num-table td { flex-wrap: wrap; row-gap: 0; }
+      .num-table td.n .sub { flex-basis: 100%; text-align: right; }
+      .num-table td[data-label="#"] { display: none; }
     }
   </style>
 ---

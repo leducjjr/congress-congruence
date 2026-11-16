@@ -16,8 +16,6 @@ head: |
     .feature { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 28px; align-items: center; margin: 0 0 48px; }
     .feature:nth-of-type(even) { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); }
     .feature:nth-of-type(even) .text { order: 2; }
-    .feature.solo, .feature.solo:nth-of-type(even) { grid-template-columns: minmax(0, 1fr); max-width: 760px; }
-    .feature.solo .text { order: 0; }
     @media (max-width: 760px) { .feature, .feature:nth-of-type(even) { grid-template-columns: 1fr; gap: 14px; }
       .feature:nth-of-type(even) .text { order: 0; } }
     .feature .kicker { font-size: 0.78rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--mark); margin: 0 0 6px; }
@@ -221,7 +219,7 @@ main_class: features-page
   </figure>
 </article>
 
-<article class="feature solo">
+<article class="feature">
   <div class="text">
     <p class="kicker">The historical record</p>
     <h2>Every vote back to the 1st Congress in 1789</h2>
@@ -235,6 +233,11 @@ main_class: features-page
     </ul>
     <a class="try" href="history/">Open the historical record →</a>
   </div>
+  <figure class="shot">
+    <a href="features/history.png" title="Open full size"><picture><source media="(max-width: 760px)" srcset="features/history-mobile.png" width="390" height="844">
+      <img src="features/history.png" alt="The 1st Congress (1789 to 1791) in the historical record: each senator's votes, votes missed, Yea, Nay and how often they voted with their party" loading="lazy" width="1280" height="900"></picture></a>
+    <figcaption>The Senate of the 1st Congress, 1789–1791.</figcaption>
+  </figure>
 </article>
 
 <section class="explore" aria-labelledby="explore-h">
