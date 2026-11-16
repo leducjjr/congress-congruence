@@ -17,6 +17,15 @@ head: |
       border-radius: 6px; padding: 4px 6px; }
     .search-page .sub-head { font-size: 0.95rem; color: var(--ink-soft); margin: 18px 0 4px; }
     .search-page .sub-head small { font-weight: 400; }
+    /* Show: All results / Members / Survey questions / Votes */
+    .show-only { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 0 0 16px; padding: 0; list-style: none; }
+    .show-only .label { color: var(--ink-soft); font-size: 0.9rem; margin-right: 2px; }
+    .show-only button { font: inherit; font-size: 0.92rem; color: var(--ink); background: var(--surface); cursor: pointer;
+      border: 1px solid var(--rule); border-radius: 999px; padding: 5px 12px; }
+    .show-only button:hover, .show-only button:focus-visible { border-color: var(--mark); color: var(--mark); }
+    .show-only button small { color: var(--ink-soft); margin-left: 4px; }
+    .show-only button[aria-pressed="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+    .show-only button[aria-pressed="true"] small { color: inherit; opacity: 0.8; }
   </style>
 main_class: search-page
 ---
@@ -203,6 +212,32 @@ addEventListener("DOMContentLoaded", () => {
     return p;
   }
 
+  // Show only one kind of result (kept in the address as &show=). Only offered when there's more than one kind.
+  let show = new URLSearchParams(location.search).get("show") || "";
+  function showOnly(groups) {
+    if (groups.length < 2) return null;
+    if (!groups.some(g => g[0] === show)) show = "";
+    const buttons = [];
+    const apply = () => {
+      for (const [key, , , section] of groups) section.hidden = Boolean(show) && key !== show;
+      for (const b of buttons) b.setAttribute("aria-pressed", String(b.dataset.show === show));
+      const u = new URL(location.href);
+      if (show) u.searchParams.set("show", show); else u.searchParams.delete("show");
+      history.replaceState(null, "", u);
+    };
+    const chip = (key, label, n) => {
+      const b = el("button", { type: "button", "data-show": key, "aria-pressed": "false" }, label, el("small", {}, `(${n.toLocaleString()})`));
+      b.addEventListener("click", () => { show = key; apply(); });
+      buttons.push(b);
+      return el("li", {}, b);
+    };
+    const total = groups.reduce((t, g) => t + g[2], 0);
+    const nav = el("nav", { "aria-label": "Show results" }, el("ul", { class: "show-only" },
+      el("li", { class: "label" }, "Show:"), chip("", "All results", total), groups.map(([key, label, n]) => chip(key, label, n))));
+    queueMicrotask(apply);
+    return nav;
+  }
+
   async function run() {
     showMine();
     const out = $("out");
@@ -216,9 +251,11 @@ addEventListener("DOMContentLoaded", () => {
       const res = await fetch(`${API}/v1/search?${searchParams()}`);
       if (!res.ok) throw new Error(res.status);
       const r = await res.json();
-      const parts = [membersGroup(r.members), questionsGroup(r.questions, r.questions_total),
-                     votesGroup(r.votes, r.votes_total)].filter(Boolean);
-      out.replaceChildren(...(parts.length ? parts : [el("p", { class: "empty" },
+      const groups = [["members", "Members", r.members?.length || 0, membersGroup(r.members)],
+                      ["questions", "Survey questions", r.questions_total || 0, questionsGroup(r.questions, r.questions_total)],
+                      ["votes", "Votes", r.votes_total || 0, votesGroup(r.votes, r.votes_total)]].filter(g => g[3]);
+      const parts = groups.map(g => g[3]);
+      out.replaceChildren(...(parts.length ? [showOnly(groups), ...parts] : [el("p", { class: "empty" },
         `Nothing matches “${query}”. Try fewer words, a word ending with *, or a member's last name.`)]));
       document.title = `${query} · Search · US Congress vs Voters`;
     } catch (e) {
