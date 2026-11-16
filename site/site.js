@@ -32,7 +32,14 @@
 
   getJSON("/v1/health").then(({ data }) => {
     const text = coverageText(data);
-    for (const el of document.querySelectorAll("#site-coverage, [data-coverage]")) el.textContent = text;
+    if (!text) return;
+    for (const el of document.querySelectorAll("#site-coverage, [data-coverage]")) {
+      // Earlier votes (1789 to 1972) are in their own section.
+      const link = document.createElement("a");
+      link.href = "/history/";
+      link.textContent = "the historical record";
+      el.replaceChildren(`${text} Earlier votes, from the 1st Congress in 1789, are in `, link, ".");
+    }
   }).catch(() => {});
 
   // Header search: suggestions as you type; Enter or a click opens the member's page.

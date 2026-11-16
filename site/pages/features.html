@@ -16,6 +16,8 @@ head: |
     .feature { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 28px; align-items: center; margin: 0 0 48px; }
     .feature:nth-of-type(even) { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); }
     .feature:nth-of-type(even) .text { order: 2; }
+    .feature.solo, .feature.solo:nth-of-type(even) { grid-template-columns: minmax(0, 1fr); max-width: 760px; }
+    .feature.solo .text { order: 0; }
     @media (max-width: 760px) { .feature, .feature:nth-of-type(even) { grid-template-columns: 1fr; gap: 14px; }
       .feature:nth-of-type(even) .text { order: 0; } }
     .feature .kicker { font-size: 0.78rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--mark); margin: 0 0 6px; }
@@ -140,7 +142,7 @@ main_class: features-page
     <p class="kicker">Members by the numbers</p>
     <h2>Every member of a Congress in one sortable table</h2>
     <p>Time in Congress, time in their seat, votes cast, votes missed, and how often they voted Yea, Nay,
-      or with their party. Pick a Congress back to <span data-count="since">1989</span> and either chamber, then sort by any column.</p>
+      or with their party. Pick a Congress back to <span data-count="since">1973</span> and either chamber, then sort by any column.</p>
     <ul>
       <li>Members who left and came back get the time they served, not the years in between</li>
       <li>Past Congresses are measured as of that time, so "longest serving" means then</li>
@@ -187,7 +189,7 @@ main_class: features-page
     <p>For each survey question matched to a vote: support in every state or district, the range it likely
       falls in, and each member's vote beside it.</p>
     <ul>
-      <li>Surveys from 2008 to 2025, plus state ballot measures</li>
+      <li>Surveys from 2008 to 2026, plus state ballot measures</li>
       <li>Only votes on the same proposal are counted; related votes are labeled</li>
     </ul>
     <a class="try" href="surveyed.html">Browse surveyed votes →</a>
@@ -206,7 +208,7 @@ main_class: features-page
     <p>Filter by chamber, Congress, type of vote, result, topic, or only the votes a survey asked about.
       Open any vote to see how each member voted.</p>
     <ul>
-      <li>House and Senate votes from <span data-count="since">1989</span>, each one checked against the published totals</li>
+      <li>House and Senate votes from <span data-count="since">1973</span>, each one checked against the published totals</li>
       <li>A <a href="history/">historical record</a> of every vote from 1789 to 1972, kept separately</li>
       <li>Links to the official record and the bill on Congress.gov</li>
     </ul>
@@ -219,9 +221,25 @@ main_class: features-page
   </figure>
 </article>
 
+<article class="feature solo">
+  <div class="text">
+    <p class="kicker">The historical record</p>
+    <h2>Every vote back to the 1st Congress in 1789</h2>
+    <p>About 61,000 House and Senate votes from 1789 to 1972, from the 1st Congress to the 92nd, in a section of
+      their own with the same look: a page for each Congress and each member, with how they voted and how often
+      they voted with their party.</p>
+    <ul>
+      <li>From <a href="https://voteview.com">Voteview</a>, which compiled them from the official records of Congress; each vote links to its page there</li>
+      <li>Parties and seats as they were at the time</li>
+      <li>No surveys back then, so these votes aren't compared with anything</li>
+    </ul>
+    <a class="try" href="history/">Open the historical record →</a>
+  </div>
+</article>
+
 <section class="explore" aria-labelledby="explore-h">
   <p class="kicker">Explore every vote</p>
-  <h2 id="explore-h"><span data-count="votes">35,671</span> House and Senate votes since <span data-count="since">1989</span>, sorted the way you think about them</h2>
+  <h2 id="explore-h"><span data-count="votes">35,671</span> House and Senate votes since <span data-count="since">1973</span>, sorted the way you think about them</h2>
   <p class="explore-lede">Combine any of these filters on the <a href="votes.html">All votes</a> page. Every choice below
     opens that page already filtered. Counts are from <span data-count="month">November 2026</span> and grow as Congress votes.</p>
 
@@ -271,7 +289,7 @@ main_class: features-page
   </div>
 
   <div class="filter-group">
-    <h3>Congress <small><span data-count="congresses">nineteen</span> two-year Congresses</small></h3>
+    <h3>Congress <small><span data-count="congresses">twenty-seven</span> two-year Congresses</small></h3>
     <ul class="chips" data-congresses>
         <li><a href="votes.html?congress=119">119th <span>2025–26</span></a></li>
         <li><a href="votes.html?congress=118">118th <span>2023–24</span></a></li>
