@@ -200,6 +200,7 @@
     .op-q { margin: 0 0 6px; font-weight: 600; }
     .people { margin: -14px 0 18px; color: var(--ink-soft); font-size: 0.9rem; }
     .people-src { font-size: 0.8rem; }
+    a.people-src { color: var(--ink-soft); text-decoration-color: var(--mark); text-underline-offset: 2px; }
     .history { margin: -14px 0 18px; color: var(--ink-soft); font-size: 0.9rem; }
     .tools { margin: -10px 0 18px; font-size: 0.9rem; }
     .tools a { color: inherit; text-decoration-color: var(--mark); text-underline-offset: 2px; }

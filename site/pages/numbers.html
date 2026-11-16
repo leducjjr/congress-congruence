@@ -17,6 +17,9 @@ head: |
     .num-table td.nw { white-space: nowrap; }
     .num-table td.rank { color: var(--ink-soft); font-variant-numeric: tabular-nums; }
     .num-table .sub { display: block; font-size: 0.8rem; color: var(--ink-soft); }
+    /* Let the small second lines and long headings wrap, so the whole table fits a laptop screen. */
+    .num-table td.n .sub { white-space: normal; }
+    .num-table th.n { white-space: normal; }
     .table-scroll { overflow-x: auto; }
     .count-line { font-size: 0.9rem; color: var(--ink-soft); margin: 0 0 8px; }
     /* On phones, each member becomes a small card with its labels. */
