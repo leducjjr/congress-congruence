@@ -193,3 +193,13 @@
     }).catch(() => { for (const box of lists) box.textContent = "The survey list couldn't be loaded just now."; });
   }
 })();
+
+// The installed app (added to a home screen): a Back button, since there's no browser bar, and the
+// offline helper (sw.js), which keeps copies of viewed pages on this device only.
+(() => {
+  const app = matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+  const back = document.querySelector(".app-back");
+  if (app && back && history.length > 1) back.hidden = false;
+  if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost"))
+    addEventListener("load", () => navigator.serviceWorker.register("/sw.js").catch(() => {}));
+})();

@@ -36,6 +36,11 @@ The **forget** button on the Search and All votes pages clears the list, as does
 If you turn on **Hide party labels**, or choose how many recent votes a member's page shows, your
 browser remembers that choice the same way, on your device only. Nothing about it is sent to us.
 
+To open quickly and work without a signal, your browser also keeps copies of pages and figures you've
+already viewed on this site (the most recent few hundred), and if you add the site to your home screen
+it opens as an app. Those copies stay on your device, are replaced with fresh ones whenever you're
+online, and are cleared with your browser's site data. Nothing about them is sent to us.
+
 ## What any web server records {#server-logs}
 
 Like almost every website, our web server keeps a standard log of requests (the address of the device

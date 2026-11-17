@@ -1,11 +1,23 @@
 {
+  "id": "/",
   "name": "US Congress vs Voters",
   "short_name": "Congress vs Voters",
+  "description": "How members of Congress voted, compared with what people where they live told independent surveys.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "lang": "en",
+  "dir": "ltr",
+  "categories": ["education", "news", "reference"],
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ],
+  "shortcuts": [
+    { "name": "Find your members", "url": "/index.html" },
+    { "name": "Surveyed votes", "url": "/surveyed.html" },
+    { "name": "Compare two members", "url": "/compare.html" }
   ],
   "theme_color": "#2f6f66",
-  "background_color": "#e9eef1",
-  "display": "browser"
+  "background_color": "#e9eef1"
 }

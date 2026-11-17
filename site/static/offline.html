@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Offline · US Congress vs Voters</title>
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <style>
+    :root { --page: #e9eef1; --surface: #fff; --ink: #1d2733; --ink-soft: #55616e; --mark: #2f6f66; }
+    @media (prefers-color-scheme: dark) { :root { --page: #10161c; --surface: #182028; --ink: #e6ebef; --ink-soft: #a3afba; --mark: #7cc2b5; } }
+    body { margin: 0; background: var(--page); color: var(--ink); font: 1rem/1.5 system-ui, sans-serif; }
+    main { max-width: 34rem; margin: 12vh auto; padding: 24px 16px; background: var(--surface); border-radius: 12px; }
+    h1 { font-size: 1.3rem; margin: 0 0 8px; } p { color: var(--ink-soft); }
+    a, button { color: var(--mark); font: inherit; }
+    button { background: none; border: 1px solid currentColor; border-radius: 999px; padding: 6px 14px; cursor: pointer; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>You're offline</h1>
+  <p>This page hasn't been opened on this device before, so there's no copy of it to show. Pages you've
+    already viewed still open without a connection.</p>
+  <p><button type="button" onclick="location.reload()">Try again</button> · <a href="/">Home</a></p>
+</main>
+</body>
+</html>
