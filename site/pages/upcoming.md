@@ -57,7 +57,7 @@ Newest first. Follow these and every correction in a feed reader: [updates feed 
   screen with its own icon, and pages you've already viewed open without a signal. Free, with no app
   store, no account and no tracking. A **Get the app** button at the top of every page shows how (or,
   in Chrome and Edge, installs it directly), and it disappears once you're using the app. See
-  [Install the app](install.html).
+  [Install the app](install.html), which has screenshots of each step.
 - **No outside companies.** The typeface now comes from this site's own server instead of Google Fonts,
   so viewing a page no longer contacts any other company. See [Privacy](privacy.html#third-parties).
 

@@ -1,6 +1,13 @@
 ---
 title: Install the app
 description: Put US Congress vs Voters on your phone's home screen or your computer like an app - free, no app store, no account, no tracking - and read pages you've viewed without a signal.
+head: |
+  <style>
+    .shots { display: flex; flex-wrap: wrap; gap: 16px; margin: 12px 0 24px; align-items: flex-start; }
+    .shots figure { margin: 0; flex: 0 1 270px; }
+    .shots img { display: block; width: 100%; height: auto; border: 1px solid var(--rule); border-radius: 12px; }
+    .shots figcaption { font-size: 0.85rem; color: var(--ink-soft); margin-top: 6px; }
+  </style>
 ---
 # Install the app
 
@@ -29,6 +36,11 @@ no tracking.</p>
    **Add to Home Screen**.
 4. Tap **Add**.
 
+<div class="shots">
+<figure><img src="install/iphone-add.png" alt="iPhone's Add to Home Screen screen: the site's icon, the name Congress vs Voters, Open as Web App switched on, and an Add button" width="540" height="443" loading="lazy">
+<figcaption>Step 4: leave <strong>Open as Web App</strong> on, and tap <strong>Add</strong>.</figcaption></figure>
+</div>
+
 Don't see **Add to Home Screen**? Scroll to the very bottom of the list, tap **Edit Actions…**, and tap the
 green **+** next to **Add to Home Screen**. It then stays in your share list.
 
@@ -37,9 +49,18 @@ green **+** next to **Add to Home Screen**. It then stays in your share list.
 1. Open [uscongressvsvoters.org](https://uscongressvsvoters.org) in **Chrome**.
 2. Tap the **⋮** menu at the top right.
 3. Tap **Install and create shortcut** (in older versions of Chrome, **Add to Home screen** or
-   **Install app**), then **Install**.
+   **Install app**). If asked, choose **Install** rather than Create shortcut, then tap **Install**.
 
 Or tap **Get the app** at the top of any page, which opens the same install prompt.
+
+<div class="shots">
+<figure><img src="install/android-menu.png" alt="Chrome's menu on Android, with Install and create shortcut near the bottom" width="540" height="689" loading="lazy">
+<figcaption>Steps 2 and 3: in Chrome's ⋮ menu, tap <strong>Install and create shortcut</strong>.</figcaption></figure>
+<figure><img src="install/android-choose.png" alt="A choice between Install and Create shortcut (Shortcuts open in Chrome)" width="540" height="325" loading="lazy">
+<figcaption>Choose <strong>Install</strong>, not Create shortcut, so it opens as an app.</figcaption></figure>
+<figure><img src="install/android-install.png" alt="The Install app box for US Congress vs Voters, with Cancel and Install buttons" width="540" height="325" loading="lazy">
+<figcaption>Then tap <strong>Install</strong>.</figcaption></figure>
+</div>
 
 In **Samsung Internet**, tap the menu (☰), then **Add page to**, then **Home screen**. In **Firefox**, tap
 the menu (⋮), then **Add to Home screen**.
