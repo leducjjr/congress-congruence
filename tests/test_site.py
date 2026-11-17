@@ -57,6 +57,8 @@ def test_reference_anchors_the_panel_links_to_exist(tmp_path):
 def test_party_blind_switch_on_every_page(tmp_path):
     build_site.build(tmp_path, "x")
     for page in tmp_path.glob("*.html"):
+        if page.name == "offline.html":   # the installed app's no-connection notice: no members on it
+            continue
         text = page.read_text()
         assert 'id="party-blind"' in text and 'data-party-blind' in text, page.name
 
