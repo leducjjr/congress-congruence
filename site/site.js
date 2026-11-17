@@ -200,6 +200,19 @@
   const app = matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
   const back = document.querySelector(".app-back");
   if (app && back && history.length > 1) back.hidden = false;
+  if (app) document.documentElement.classList.add("installed-app");   // hides "Get the app" (older iPhones)
+  // Where the browser offers its own install prompt (Chrome and Edge on Android and computers), the
+  // header's "Get the app" button opens it directly; elsewhere the button goes to the instructions page.
+  let offer = null;
+  addEventListener("beforeinstallprompt", e => { e.preventDefault(); offer = e; });
+  addEventListener("appinstalled", () => { offer = null; document.documentElement.classList.add("installed-app"); });
+  document.querySelector(".app-btn")?.addEventListener("click", async e => {
+    if (!offer) return;
+    e.preventDefault();
+    const shown = offer; offer = null;
+    shown.prompt();
+    try { await shown.userChoice; } catch { /* closed */ }
+  });
   if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost"))
     addEventListener("load", () => navigator.serviceWorker.register("/sw.js").catch(() => {}));
 })();

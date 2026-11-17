@@ -19,7 +19,7 @@ def test_builds_every_page_in_the_frame(tmp_path):
     for name in built:
         page = (tmp_path / name).read_text()
         # The current page is marked once: its menu link, or one of the header's two buttons.
-        current = name in dict(build_site.NAV) or name in ("features.html", "numbers.html")
+        current = name in dict(build_site.NAV) or name in ("features.html", "numbers.html", "install.html")
         assert page.count('aria-current="page"') == (1 if current else 0), name
         assert 'href="site.css?v=abc123"' in page and 'src="site.js?v=abc123"' in page
         assert "{{" not in page, f"{name}: unfilled placeholder"

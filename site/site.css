@@ -36,6 +36,9 @@ a:hover { color: var(--mark); }
 .header-btns { display: inline-flex; flex-wrap: wrap; gap: 6px; }
 .features-btn:hover, .features-btn:focus-visible { background: var(--mark); color: var(--surface); }
 .features-btn[aria-current="page"] { background: var(--mark); color: var(--surface); }
+/* Not needed once the site is running as the installed app. */
+@media (display-mode: standalone) { .app-btn { display: none; } }
+html.installed-app .app-btn { display: none; }
 .site-header nav ul { display: flex; flex-wrap: wrap; gap: 2px 4px; list-style: none; margin: 0; padding: 0; }
 .site-header nav a { display: block; padding: 6px 10px; border-radius: 6px; text-decoration: none; color: var(--ink-soft); font-size: 0.95rem; }
 .site-header nav a:hover { color: var(--ink); background: var(--page); }
