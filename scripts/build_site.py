@@ -160,11 +160,14 @@ def build(out: Path, version: str) -> list[str]:
     return built
 
 
-# ---- the updates feed (feed.xml): "Recently added" (upcoming.md) and the corrections log, read
+# ---- the updates feed (feed.xml): "Recently added" (whats-new.md) and the corrections log, read
 # from the pages themselves, so it needs no upkeep of its own. Each entry is a bullet under a date
 # line in bold ("**November 10, 2026**").
 
-FEED_SOURCES = [("upcoming.md", "recent", "New"), ("corrections.md", None, "Correction")]
+FEED_SOURCES = [("whats-new.md", "recent", "New"), ("corrections.md", None, "Correction")]
+# Item IDs keep the page the list used to live on (upcoming.html), so feed readers don't see every
+# earlier item again as new.
+FEED_ID_PAGE = {"whats-new.md": "upcoming.html"}
 DATE_LINE = re.compile(r"^\*\*([A-Z][a-z]+ \d{1,2}, \d{4})\*\*\s*$")
 
 
@@ -199,7 +202,7 @@ def feed_entries(settings: dict) -> list[dict]:
                 title = re.split(r"(?<=[a-z])[.:](?:\s|$)", plain)[0].rstrip(".,")
             entries.append({"date": day, "kind": kind, "title": f"{kind}: {title}", "html": html_text,
                             "link": f"{site_url}/{page.replace('.md', '.html')}{anchor}",
-                            "guid": f"{site_url}/{page.replace('.md', '.html')}#{day:%Y-%m-%d}-{re.sub(r'[^a-z0-9]+', '-', title.lower()).strip('-')}"})
+                            "guid": f"{site_url}/{FEED_ID_PAGE.get(page, page.replace('.md', '.html'))}#{day:%Y-%m-%d}-{re.sub(r'[^a-z0-9]+', '-', title.lower()).strip('-')}"})
     entries.sort(key=lambda e: e["date"], reverse=True)       # stable: page order kept within a day
     return entries
 
@@ -225,7 +228,7 @@ def feed_xml(settings: dict) -> str:
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
 <channel>
   <title>US Congress vs Voters: updates</title>
-  <link>{site_url}/upcoming.html</link>
+  <link>{site_url}/whats-new.html</link>
   <atom:link href="{site_url}/feed.xml" rel="self" type="application/rss+xml"/>
   <description>New sources, features and every correction to US Congress vs Voters.</description>
   <language>en-us</language>

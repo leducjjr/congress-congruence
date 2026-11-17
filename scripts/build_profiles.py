@@ -729,7 +729,7 @@ def build(out: Path, get, version: str, today: date | None = None, images: bool 
     write("states/", *states_index(states), nav="state.html")
     (out / "members" / "slugs.json").write_text(json.dumps(slugs, sort_keys=True), encoding="utf-8")
 
-    top = sorted(p.name for p in out.glob("*.html") if p.name not in ("search.html",))
+    top = sorted(p.name for p in out.glob("*.html") if p.name not in ("search.html", "offline.html"))
     top = ["" if n == "index.html" else n for n in top]
     history = ["history/"] + [f"history/congress.html?n={n}" for n in range(92, 0, -1)] \
         if (out / "history" / "index.html").exists() else []
