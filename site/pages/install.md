@@ -37,6 +37,8 @@ no tracking.</p>
 4. Tap **Add**.
 
 <div class="shots">
+<figure><img src="install/iphone-share.png" alt="iPhone's share list, scrolled down past Find in Page, Request Desktop Site and Print, showing Add to Home Screen" width="540" height="401" loading="lazy">
+<figcaption>Step 3: scroll down the share list to <strong>Add to Home Screen</strong>.</figcaption></figure>
 <figure><img src="install/iphone-add.png" alt="iPhone's Add to Home Screen screen: the site's icon, the name Congress vs Voters, Open as Web App switched on, and an Add button" width="540" height="443" loading="lazy">
 <figcaption>Step 4: leave <strong>Open as Web App</strong> on, and tap <strong>Add</strong>.</figcaption></figure>
 </div>
