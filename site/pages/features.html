@@ -31,6 +31,8 @@ head: |
     .shot a { display: block; }
     .shot picture, .shot img { display: block; width: 100%; height: auto; border-radius: 12px; border: 1px solid var(--rule);
       box-shadow: 0 10px 30px rgb(0 0 0 / 0.10); background: var(--surface); }
+    .shot.phone-shot img { width: min(300px, 100%); margin: 0 auto; }
+    .shot.phone-shot figcaption { text-align: center; }
     .shot figcaption { font-size: 0.82rem; color: var(--ink-soft); margin-top: 8px; }
     .explore { background: var(--surface); border: 1px solid var(--rule); border-radius: 14px; padding: clamp(18px, 3vw, 32px);
       margin: 0 0 48px; }
@@ -237,6 +239,25 @@ main_class: features-page
     <a href="features/history.png" title="Open full size"><picture><source media="(max-width: 760px)" srcset="features/history-mobile.png" width="390" height="844">
       <img src="features/history.png" alt="The 1st Congress (1789 to 1791) in the historical record: each senator's votes, votes missed, Yea, Nay and how often they voted with their party" loading="lazy" width="1280" height="900"></picture></a>
     <figcaption>The Senate of the 1st Congress, 1789–1791.</figcaption>
+  </figure>
+</article>
+
+<article class="feature">
+  <div class="text">
+    <p class="kicker">On your phone</p>
+    <h2>Install it like an app, and read it without a signal</h2>
+    <p>Add the site to your phone's home screen or your computer and it opens full screen with its own icon.
+      Pages you've already viewed still open on a plane or anywhere without reception.</p>
+    <ul>
+      <li>Free, with no app store and no account</li>
+      <li>Always current: it's the same site, so updates arrive on their own</li>
+      <li>No tracking, and copies of pages stay on your device</li>
+    </ul>
+    <a class="try" href="install.html">How to install it →</a>
+  </div>
+  <figure class="shot phone-shot">
+    <a href="features/app.png" title="Open full size"><img src="features/app.png" alt="The site opened as an installed app on a phone, full screen with a Back button in the header" loading="lazy" width="390" height="844"></a>
+    <figcaption>Installed on a phone: full screen, with its own Back button.</figcaption>
   </figure>
 </article>
 

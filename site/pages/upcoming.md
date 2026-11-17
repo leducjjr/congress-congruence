@@ -7,7 +7,7 @@ description: What's being added to US Congress vs Voters next - new survey sourc
 <p class="lede">What we're working on next. Dates depend on when each source publishes its data, so
 they're estimates. Have an idea? <a href="contact.html#feedback">Tell us</a>.</p>
 
-*Last updated November 16, 2026.*
+*Last updated November 17, 2026.*
 
 ## In progress {#in-progress}
 
@@ -50,6 +50,14 @@ republished, and only its questions about proposals Congress actually voted on a
 ## Recently added {#recent}
 
 Newest first. Follow these and every correction in a feed reader: [updates feed (RSS)](feed.xml).
+
+**November 17, 2026**
+
+- **Install it as an app.** Add the site to your phone's home screen or your computer and it opens full
+  screen with its own icon, and pages you've already viewed open without a signal. Free, with no app
+  store, no account and no tracking. See [Install the app](install.html).
+- **No outside companies.** The typeface now comes from this site's own server instead of Google Fonts,
+  so viewing a page no longer contacts any other company. See [Privacy](privacy.html#third-parties).
 
 **November 16, 2026**
 

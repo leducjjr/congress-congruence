@@ -49,7 +49,7 @@ automatically after about two weeks and aren't used for anything else.
 
 ## Things your browser fetches from elsewhere {#third-parties}
 
-- **Typeface:** pages load the Public Sans typeface from Google Fonts, so your browser contacts Google
-  to download it.
+- **Nothing, until you follow a link.** The typeface (Public Sans), scripts and images all come from
+  this site's own server, so viewing a page doesn't contact Google or any other company.
 - **Links** to official records, Congress.gov and survey organizations take you to those sites, which
   have their own privacy policies.

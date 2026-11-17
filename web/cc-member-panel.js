@@ -22,16 +22,17 @@
  *     falling back to the system UI font if it can't load.
  */
 (() => {
-  const FONT_HREF = "https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700&display=swap";
-  if (!document.querySelector(`link[href="${FONT_HREF}"]`)) {
+  // Where the reference pages live, unless the page says otherwise (site-base attribute).
+  const SCRIPT_BASE = (() => { try { return new URL(".", document.currentScript.src).href; } catch { return ""; } })();
+
+  // The typeface, from the same site as this script (no other company is contacted).
+  const FONT_HREF = SCRIPT_BASE ? new URL("fonts/fonts.css", SCRIPT_BASE).href : "";
+  if (FONT_HREF && ![...document.querySelectorAll('link[rel="stylesheet"]')].some(l => l.href === FONT_HREF)) {
     const link = document.createElement("link");
     link.rel = "stylesheet";
     link.href = FONT_HREF;
     document.head.appendChild(link);
   }
-
-  // Where the reference pages live, unless the page says otherwise (site-base attribute).
-  const SCRIPT_BASE = (() => { try { return new URL(".", document.currentScript.src).href; } catch { return ""; } })();
 
   // How many recent votes the strip shows: the reader picks one of these (remembered in their
   // browser only); it wraps onto more rows as needed. The list below shows the same votes.
