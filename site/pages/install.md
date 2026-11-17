@@ -36,8 +36,10 @@ green **+** next to **Add to Home Screen**. It then stays in your share list.
 
 1. Open [uscongressvsvoters.org](https://uscongressvsvoters.org) in **Chrome**.
 2. Tap the **⋮** menu at the top right.
-3. Tap **Add to Home screen**, then **Install**. (Chrome sometimes offers **Install app** at the bottom of
-   the screen on its own; that does the same thing.)
+3. Tap **Install and create shortcut** (in older versions of Chrome, **Add to Home screen** or
+   **Install app**), then **Install**.
+
+Or tap **Get the app** at the top of any page, which opens the same install prompt.
 
 In **Samsung Internet**, tap the menu (☰), then **Add page to**, then **Home screen**. In **Firefox**, tap
 the menu (⋮), then **Add to Home screen**.
