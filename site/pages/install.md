@@ -5,7 +5,8 @@ head: |
   <style>
     .shots { display: flex; flex-wrap: wrap; gap: 16px; margin: 12px 0 24px; align-items: flex-start; }
     .shots figure { margin: 0; flex: 0 1 270px; }
-    .shots img { display: block; width: 100%; height: auto; border: 1px solid var(--rule); border-radius: 12px; }
+    .shots figure.wide { flex-basis: 100%; }
+    .shots img { display: block; width: auto; max-width: 100%; height: auto; border: 1px solid var(--rule); border-radius: 12px; }
     .shots figcaption { font-size: 0.85rem; color: var(--ink-soft); margin-top: 6px; }
   </style>
 ---
@@ -70,11 +71,25 @@ the menu (⋮), then **Add to Home screen**.
 ## Computer {#computer}
 
 - **Chrome:** click the install icon at the right end of the address bar (a small screen with a down
-  arrow), then **Install**. Or open the **⋮** menu, then **Cast, save and share**, then
-  **Install page as app**.
+  arrow), or the **Get the app** button at the top of any page. Click **Next**, then **Install**. (Or open
+  the **⋮** menu, then **Cast, save and share**, then **Install page as app**.) On Windows it's added to
+  the Start menu, and to the desktop if you leave **Add desktop shortcut** ticked.
 - **Microsoft Edge:** open the **…** menu, then **Apps**, then **Install this site as an app**.
 - **Safari on a Mac** (macOS Sonoma or later): open the **File** menu, then **Add to Dock**.
 - **Firefox** on a computer doesn't install sites as apps. A bookmark works just as well.
+
+<div class="shots">
+<figure><img src="install/chrome-icon.png" alt="The install icon at the right end of Chrome's address bar, next to the bookmark star" width="227" height="167" loading="lazy">
+<figcaption>Chrome on a computer: click the install icon in the address bar.</figcaption></figure>
+<figure><img src="install/chrome-install.png" alt="Chrome's Install app box for US Congress vs Voters, with Learn more, Next and Cancel buttons" width="563" height="431" loading="lazy">
+<figcaption>Click <strong>Next</strong>.</figcaption></figure>
+<figure><img src="install/chrome-confirm.png" alt="Chrome's second Install app box: adding to Start Menu, Chrome Apps, US Congress vs Voters, with Add desktop shortcut ticked and an Install button" width="565" height="322" loading="lazy">
+<figcaption>Then <strong>Install</strong>.</figcaption></figure>
+<figure><img src="install/chrome-done.png" alt="Chrome's Successfully installed box, with Open tab in app and Close buttons" width="577" height="266" loading="lazy">
+<figcaption>Done. <strong>Open tab in app</strong> opens it now.</figcaption></figure>
+<figure class="wide"><img src="install/chrome-window.png" alt="The desktop shortcut icon and the site open in its own window, with an Uninstall button in the window's title bar" width="1337" height="335" loading="lazy">
+<figcaption>It opens in its own window, with a desktop shortcut. To remove it, use <strong>Uninstall</strong> in the window's title bar.</figcaption></figure>
+</div>
 
 Menu names change from time to time. If yours look different, look for "Install" or "Add to Home Screen"
 in the browser's menu.
@@ -89,5 +104,6 @@ whenever you're online. See [Privacy](privacy.html#browser).
 ## Removing it {#remove}
 
 Remove it like any app: press and hold the icon and choose **Remove App** or **Uninstall**, or on a
-computer, right-click it (or use the app's menu) and choose **Uninstall**. Clearing this site's data in
+computer, click **Uninstall** in the app window's title bar (or right-click its icon and choose
+**Uninstall**). Clearing this site's data in
 your browser removes the saved copies too.
