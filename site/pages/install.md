@@ -21,12 +21,16 @@ no tracking.</p>
 
 ## iPhone and iPad {#iphone}
 
-1. Open [uscongressvsvoters.org](https://uscongressvsvoters.org) in **Safari**. Chrome and Edge work too on
-   recent versions of iOS.
+1. Open [uscongressvsvoters.org](https://uscongressvsvoters.org) in **Safari**, **Chrome** or **Edge**
+   (Chrome and Edge need iOS 16.4 or later).
 2. Tap the **Share** button (the square with an arrow pointing up). In Safari it's at the bottom of the
-   screen on iPhone and at the top on iPad.
-3. Scroll down and tap **Add to Home Screen**.
+   screen on iPhone and at the top on iPad; in Chrome it's at the right end of the address bar.
+3. Scroll **down** the list of actions (below Add to Bookmarks, Find in Page and Print) and tap
+   **Add to Home Screen**.
 4. Tap **Add**.
+
+Don't see **Add to Home Screen**? Scroll to the very bottom of the list, tap **Edit Actions…**, and tap the
+green **+** next to **Add to Home Screen**. It then stays in your share list.
 
 ## Android {#android}
 
