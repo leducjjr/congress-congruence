@@ -25,7 +25,8 @@ Anthropic, working at the maintainer's direction. A person decides what the site
 the sources, which survey questions match which votes, the wording, and what gets corrected, and
 reviews changes before they're published. No AI is involved when you use the site: every figure is
 calculated by fixed code from published data, and the code is public so anyone can check it.
-More on the [About](about.html#how-built) page.
+More on the [About](about.html#how-built) page, and the full story on
+[How this site was built](how-built.html).
 
 ## Does "voted against the majority" mean a member did something wrong? {#wrong}
 

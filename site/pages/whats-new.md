@@ -8,11 +8,17 @@ description: Everything added to US Congress vs Voters, newest first - new surve
 <a href="upcoming.html">Upcoming changes</a>. Every change that corrected a figure is in the
 <a href="corrections.html">corrections log</a>.</p>
 
-*Last updated November 17, 2026.*
+*Last updated November 18, 2026.*
 
 Follow these and every correction in a feed reader: [updates feed (RSS)](feed.xml).
 
 ## Recently added {#recent}
+
+**November 18, 2026**
+
+- **How this site was built.** A new page tells the story of how one volunteer and an AI model built
+  the site in 12 days: who did what, the technology in plain language, what it costs, and how to do
+  something similar. See [How this site was built](how-built.html).
 
 **November 17, 2026**
 

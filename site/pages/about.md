@@ -61,6 +61,9 @@ AI can make mistakes, and so can people. That's why every vote links to its offi
 estimate to its survey, the code is public, and every fix to a figure is listed in the
 [corrections log](corrections.html). Anthropic doesn't review, endorse or fund this site.
 
+The whole story, with the technology explained in plain language and what it costs, is on
+[How this site was built](how-built.html).
+
 ## Who runs this {#who}
 
 US Congress vs Voters is built and maintained by **John LeDuc**, a software developer since 1990.
