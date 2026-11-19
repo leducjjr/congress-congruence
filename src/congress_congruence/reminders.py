@@ -5,9 +5,9 @@
     python -m congress_congruence.reminders --dry-run  # show today's email without sending it
 
 The items live in config/reminders.yaml: id, title, due (a date), what to do (details), optional
-lead_days (when to remind before the due date; default 14, 3 and 0) and optional repeat: yearly.
-An item reminds on each lead day and, once overdue, every 7 days until it's marked `done: true`.
-A yearly item instead moves on to next year's date a week after it falls due.
+lead_days (when to remind before the due date; default 14, 3 and 0) and optional repeat: yearly or
+quarterly. An item reminds on each lead day and, once overdue, every 7 days until it's marked
+`done: true`. A repeating item instead moves on to its next date a week after it falls due.
 
 The same items are also a calendar feed (calendar() below), which the API serves at a private
 address for subscribing in a calendar app: /v1/calendar/<REMINDERS_CALENDAR_TOKEN>.ics. With the
@@ -19,6 +19,7 @@ contact form's mailbox (FEEDBACK_SMTP_USER / FEEDBACK_SMTP_PASSWORD). What has b
 in logs/reminders-sent.json, so running twice in a day sends nothing new.
 """
 
+import calendar as calendar_module
 import json
 import logging
 import os
@@ -35,7 +36,8 @@ log = logging.getLogger(__name__)
 
 DEFAULT_LEAD_DAYS = (14, 3, 0)
 OVERDUE_EVERY = 7          # days between reminders once an item is overdue
-YEARLY_GRACE = 7           # a yearly item moves to next year this many days after it falls due
+REPEAT_GRACE = 7           # a repeating item moves to its next date this many days after it falls due
+REPEAT_MONTHS = {"yearly": 12, "quarterly": 3}
 
 
 def load_items(path=None) -> list[dict]:
@@ -51,34 +53,43 @@ def load_items(path=None) -> list[dict]:
         seen.add(it["id"])
         if not isinstance(it["due"], date):
             it["due"] = date.fromisoformat(str(it["due"]))
-        if it.get("repeat") not in (None, "yearly"):
-            raise ValueError(f"reminder {it['id']}: repeat must be 'yearly' or left out")
+        if it.get("repeat") not in (None, *REPEAT_MONTHS):
+            raise ValueError(f"reminder {it['id']}: repeat must be one of {sorted(REPEAT_MONTHS)} or left out")
     return items
 
 
+def repeats(item: dict) -> bool:
+    return item.get("repeat") in REPEAT_MONTHS
+
+
+def _add_months(d: date, months: int, day: int) -> date:
+    """d moved on by whole months, on the given day of the month (or the month's last day)."""
+    m = d.month - 1 + months
+    year, month = d.year + m // 12, m % 12 + 1
+    return date(year, month, min(day, calendar_module.monthrange(year, month)[1]))  # e.g. no April 31st
+
+
 def next_due(item: dict, today: date) -> date:
-    """The date an item is next due: its own date, or for a yearly item the first yearly date
-    that isn't more than YEARLY_GRACE days past."""
+    """The date an item is next due: its own date, or for a repeating item the first of its dates
+    (every year or every quarter from `due`) that isn't more than REPEAT_GRACE days past."""
     due = item["due"]
-    if item.get("repeat") == "yearly":
-        while due + timedelta(days=YEARLY_GRACE) < today:
-            try:
-                due = due.replace(year=due.year + 1)
-            except ValueError:                       # Feb 29
-                due = due.replace(year=due.year + 1, day=28)
+    if repeats(item):
+        step = REPEAT_MONTHS[item["repeat"]]
+        while due + timedelta(days=REPEAT_GRACE) < today:
+            due = _add_months(due, step, item["due"].day)
     return due
 
 
 def reminds_today(item: dict, today: date) -> tuple[bool, date]:
     """Whether an item reminds today, and the due date it's about."""
     due = next_due(item, today)
-    if item.get("done") and item.get("repeat") != "yearly":
+    if item.get("done") and not repeats(item):
         return False, due
     days_left = (due - today).days
     leads = item.get("lead_days", DEFAULT_LEAD_DAYS)
     if days_left in leads:
         return True, due
-    if days_left < 0 and item.get("repeat") != "yearly":
+    if days_left < 0 and not repeats(item):
         return (-days_left) % OVERDUE_EVERY == 0, due
     return False, due
 
@@ -103,8 +114,8 @@ def build_email(due_items: list[tuple[dict, date]], today: date, to: str, sender
     lines = [f"Reminders for {today:%A, %B %-d, %Y}.", ""]
     for item, due in sorted(due_items, key=lambda x: x[1]):
         lines += [f"* {item['title']}: {when(due, today)}", "", *[f"  {l}" for l in item["details"].strip().splitlines()], ""]
-    lines += ["To stop a reminder, set `done: true` for it in config/reminders.yaml (yearly items move on",
-              "by themselves). The list: https://github.com/leducjjr/congress-congruence/blob/main/config/reminders.yaml"]
+    lines += ["To stop a reminder, set `done: true` for it in config/reminders.yaml (repeating items move",
+              "on by themselves). The list: https://github.com/leducjjr/congress-congruence/blob/main/config/reminders.yaml"]
     msg.set_content("\n".join(lines))
     return msg
 
@@ -140,7 +151,7 @@ def _reflow(text: str) -> str:
 def calendar(items=None, today: date | None = None, now=None) -> str:
     """The reminders as an iCalendar feed: each open item is an all-day event on its due date, with
     alerts at 9 a.m. on its lead days. An overdue item moves to today, marked overdue, so it stays
-    in sight until it's marked done; a yearly item repeats every year."""
+    in sight until it's marked done; a repeating item repeats every year or quarter."""
     from datetime import datetime, timezone
     today = today or date.today()
     now = now or datetime.now(timezone.utc)
@@ -149,21 +160,22 @@ def calendar(items=None, today: date | None = None, now=None) -> str:
              "CALSCALE:GREGORIAN", "METHOD:PUBLISH", "X-WR-CALNAME:US Congress vs Voters reminders",
              "REFRESH-INTERVAL;VALUE=DURATION:PT6H", "X-PUBLISHED-TTL:PT6H"]
     for it in items:
-        yearly = it.get("repeat") == "yearly"
-        if it.get("done") and not yearly:
+        repeating = repeats(it)
+        if it.get("done") and not repeating:
             continue
         due = next_due(it, today)
         day, title, details = due, it["title"], _reflow(it["details"])
-        if due < today and not yearly:
+        if due < today and not repeating:
             day, title = today, f"Overdue: {it['title']}"
             details = f"Was due {due:%B %-d, %Y}.\n\n{details}"
-        details += ("\n\nThis repeats every year." if yearly else
+        details += ({"yearly": "\n\nThis repeats every year.", "quarterly": "\n\nThis repeats every quarter."}[it["repeat"]]
+                    if repeating else
                     "\n\nTo stop this reminder, set done: true for it in config/reminders.yaml.")
         lines += ["BEGIN:VEVENT", f"UID:{it['id']}@uscongressvsvoters.org", f"DTSTAMP:{now:%Y%m%dT%H%M%SZ}",
                   f"DTSTART;VALUE=DATE:{day:%Y%m%d}", f"DTEND;VALUE=DATE:{day + timedelta(days=1):%Y%m%d}",
                   f"SUMMARY:{_ics_text(title)}", f"DESCRIPTION:{_ics_text(details)}", "TRANSP:TRANSPARENT"]
-        if yearly:
-            lines.append("RRULE:FREQ=YEARLY")
+        if repeating:
+            lines.append("RRULE:FREQ=YEARLY" if it["repeat"] == "yearly" else "RRULE:FREQ=MONTHLY;INTERVAL=3")
         for lead in sorted(set(it.get("lead_days", DEFAULT_LEAD_DAYS)), reverse=True):
             if day != due and lead > 0:
                 continue                                  # moved to today: only the day-of alert
@@ -223,8 +235,8 @@ def listing(today: date | None = None, items=None) -> str:
     rows = []
     for it in items if items is not None else load_items():
         due = next_due(it, today)
-        state = "done" if it.get("done") and it.get("repeat") != "yearly" else when(due, today)
-        rows.append((due, f"{due}  {it['id']:<24} {state}{'  (yearly)' if it.get('repeat') else ''}\n            {it['title']}"))
+        state = "done" if it.get("done") and not repeats(it) else when(due, today)
+        rows.append((due, f"{due}  {it['id']:<24} {state}{'  (' + it['repeat'] + ')' if repeats(it) else ''}\n            {it['title']}"))
     return "\n".join(r for _, r in sorted(rows))
 
 

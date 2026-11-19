@@ -29,6 +29,22 @@ def test_yearly_items_roll_over_and_never_nag():
     assert not r.reminds_today(it, date(2027, 11, 8))[0]                    # no overdue nagging
 
 
+def test_quarterly_items_roll_over_every_three_months():
+    it = item(due=date(2027, 1, 31), repeat="quarterly", lead_days=[7, 0])
+    assert r.next_due(it, date(2027, 2, 7)) == date(2027, 1, 31)            # within the grace week
+    assert r.next_due(it, date(2027, 2, 8)) == date(2027, 4, 30)            # no April 31st: last day
+    assert r.next_due(it, date(2027, 5, 8)) == date(2027, 7, 31)            # back on the 31st
+    assert r.next_due(it, date(2027, 11, 7)) == date(2027, 10, 31)            # Oct 31 still in its grace week
+    assert r.next_due(it, date(2027, 11, 8)) == date(2028, 1, 31)
+    assert r.reminds_today(it, date(2027, 4, 23)) == (True, date(2027, 4, 30))
+    assert not r.reminds_today(it, date(2027, 5, 7))[0]                     # no overdue nagging
+    with pytest.raises(ValueError, match="repeat must be one of"):
+        import tempfile, pathlib
+        tmp = pathlib.Path(tempfile.mkdtemp()) / "r.yaml"
+        tmp.write_text("items:\n  - {id: z, title: t, due: 2027-01-01, details: d, repeat: weekly}\n")
+        r.load_items(tmp)
+
+
 def test_one_email_a_day_and_nothing_sent_twice(tmp_path, monkeypatch):
     monkeypatch.setattr(r, "sent_log_path", lambda: tmp_path / "sent.json")
     monkeypatch.setenv("FEEDBACK_SMTP_USER", "feedback@uscongressvsvoters.org")
@@ -69,14 +85,15 @@ def test_calendar_feed():
              item(id="b", done=True),
              item(id="c", due=date(2026, 11, 1)),                                   # overdue
              item(id="d", due=date(2027, 11, 1), repeat="yearly", lead_days=[30, 7, 0], done=True),
-             item(id="e", details="x" * 200)]
+             item(id="e", details="x" * 200),
+             item(id="f", due=date(2027, 1, 15), repeat="quarterly")]
     ics = r.calendar(items, today=date(2026, 11, 12), now=datetime(2026, 11, 12, 15, 0, tzinfo=timezone.utc))
     assert ics.startswith("BEGIN:VCALENDAR\r\n") and ics.endswith("END:VCALENDAR\r\n")
     assert all(len(line.encode()) <= 75 for line in ics.split("\r\n"))
     events = ics.split("BEGIN:VEVENT")[1:]
     uids = [e.split("UID:")[1].split("@")[0] for e in events]
-    assert uids == ["a", "c", "d", "e"]                                             # done one left out
-    a, c, d, e = events
+    assert uids == ["a", "c", "d", "e", "f"]                                        # done one left out
+    a, c, d, e, f = events
     assert r"SUMMARY:Check the domains\, renewals\; and \\ things" in a
     assert "DTSTART;VALUE=DATE:20261210" in a and "DTEND;VALUE=DATE:20261211" in a
     assert [l for l in a.split("\r\n") if l.startswith("TRIGGER")] == ["TRIGGER:-P13DT15H", "TRIGGER:-P2DT15H", "TRIGGER:PT9H"]
@@ -84,6 +101,7 @@ def test_calendar_feed():
     assert c.count("TRIGGER") == 1
     assert "RRULE:FREQ=YEARLY" in d and "DTSTART;VALUE=DATE:20271101" in d
     assert "\r\n " in e                                                             # long line folded
+    assert "RRULE:FREQ=MONTHLY;INTERVAL=3" in f and "repeats every quarter" in f.replace("\r\n ", "")
 
 
 def test_emails_can_be_switched_off(monkeypatch, tmp_path):

@@ -1,6 +1,6 @@
 # Dated chores. The server emails a reminder on each lead day (default 14, 3 and 0 days before the
-# due date) and, once overdue, every 7 days until `done: true` is set. `repeat: yearly` items move on
-# to next year by themselves. See src/congress_congruence/reminders.py.
+# due date) and, once overdue, every 7 days until `done: true` is set. `repeat: yearly` and
+# `repeat: quarterly` items move on to their next date by themselves. See src/congress_congruence/reminders.py.
 #
 # Check what's coming:  python -m congress_congruence.reminders --list
 
@@ -126,3 +126,19 @@ items:
     details: |
       site/static/.well-known/security.txt has "Expires:" set to this date. Ask Claude to move it a
       year ahead, then publish (scripts/publish_web.sh both).
+
+  - id: restore-test
+    title: Test restoring the database from a backup
+    due: 2026-12-01
+    repeat: quarterly
+    lead_days: [7, 0]
+    details: |
+      A backup is only proven by restoring it. On the server, restore the newest backup into a
+      scratch database, check it has the votes, then remove it (deploy/README.md, Backups):
+        sudo -u postgres createdb -O john congress_restore_test
+        pg_restore --no-owner -d congress_restore_test ~/backups/congress-$(date -u +%F).dump
+        psql congress_restore_test -c "select count(*) from core.roll_call;"
+        sudo -u postgres dropdb congress_restore_test
+      The count should be in the tens of thousands. If today's file isn't there yet (the backup runs
+      at 05:40 UTC), use yesterday's: ls ~/backups. While you're there, copy a recent backup to your
+      PC if it's been a few weeks.
