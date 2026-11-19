@@ -1,4 +1,7 @@
-# Project notes (for picking up in a new chat)
+# Project notes: current status
+
+Start with AGENTS.md. Decisions and their reasons are in docs/DECISIONS.md; handover steps in
+docs/HANDOVER.md.
 
 Purpose: a neutral, citizen-facing panel showing how members of the House and Senate vote
 compared with what their constituents say in public surveys, now and historically.

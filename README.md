@@ -1,5 +1,7 @@
 # congress-congruence
 
+> New to this project, or an AI agent? Start with [AGENTS.md](AGENTS.md).
+
 The code behind [US Congress vs Voters](https://uscongressvsvoters.org): an independent, non-partisan
 site that shows how members of the U.S. House and Senate voted, and, where independent surveys asked
 about the same proposals, how each vote compared with the estimated opinion of the people they
