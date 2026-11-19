@@ -48,3 +48,9 @@ in `DATA_SOURCES.md`; current status is in `../PROJECT_NOTES.md`.
 17. **AP VoteCast is on hold:** permission was requested (Nov 2026) because its terms bar AI tools from
     processing the data.
 18. **Members' stock trading** overlaid on votes is a possible addition, not core.
+
+## 19 November 2026
+
+19. **The setup is summarized in `docs/system_info.xlsx`**, by ID and status (see its About tab), in
+    the same format as the maintainer's other projects, so anyone picking up the project sees every
+    decided and open item in one place.

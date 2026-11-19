@@ -1,6 +1,7 @@
 # Project notes: current status
 
-Start with AGENTS.md. Decisions and their reasons are in docs/DECISIONS.md; handover steps in
+Start with AGENTS.md. The whole setup by ID and status: docs/system_info.xlsx. Decisions and their
+reasons are in docs/DECISIONS.md; handover steps in
 docs/HANDOVER.md.
 
 Purpose: a neutral, citizen-facing panel showing how members of the House and Senate vote

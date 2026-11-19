@@ -5,14 +5,18 @@ meant to be self-explanatory: everything needed to understand, run, change and d
 it. Read in this order:
 
 1. **README.md**: what the site does, the code layout, and how to run it.
-2. **docs/DECISIONS.md**: decisions already made and why. Several are the site's founding rules;
+2. **docs/system_info.xlsx**: the whole setup at a glance, one tab per area (System info, Data and
+   sources, Site and GUI, Security and privacy, Operations), with an **About** tab explaining it. Each
+   row has a permanent **ID** (e.g. `DAT-03`), a **Status** (Decided or Open), **Who decides**,
+   **Implemented in** and **Last changed**. Refer to items by ID in commits and docs.
+3. **docs/DECISIONS.md**: decisions already made and why. Several are the site's founding rules;
    don't reverse one without the maintainer's agreement.
-3. **PROJECT_NOTES.md**: current status, open items and the agreed next steps.
-4. **docs/DATA_SOURCES.md**: every data source and every special case in handling it.
-5. **docs/SITE_PLAN.md**: the site's structure and pages.
-6. **deploy/README.md**: how the server is set up, updated and backed up.
-7. **docs/HANDOVER.md**: accounts and resources that change hands with the project.
-8. **CONTRIBUTING.md** and **SECURITY.md**: how outside people suggest changes and report problems.
+4. **PROJECT_NOTES.md**: current status, open items and the agreed next steps.
+5. **docs/DATA_SOURCES.md**: every data source and every special case in handling it.
+6. **docs/SITE_PLAN.md**: the site's structure and pages.
+7. **deploy/README.md**: how the server is set up, updated and backed up.
+8. **docs/HANDOVER.md**: accounts and resources that change hands with the project.
+9. **CONTRIBUTING.md** and **SECURITY.md**: how outside people suggest changes and report problems.
 
 ## The site's rules (not negotiable)
 
@@ -39,7 +43,10 @@ it. Read in this order:
   Internal-only changes (tests, refactoring, server scripts) don't need an entry.
 - Any change to how a data source is handled updates `docs/DATA_SOURCES.md` in the same commit.
 - New decisions go in `docs/DECISIONS.md`; status changes in `PROJECT_NOTES.md`; new accounts or
-  services in `docs/HANDOVER.md`.
+  services in `docs/HANDOVER.md`. Keep `docs/system_info.xlsx` in step: edit it in place (no version
+  numbers in file names; Git history tracks changes), update the row's Status, Implemented in and
+  Last changed, never reuse or renumber an ID, and give new rows the next ID on their tab. It's
+  public: no secrets or private addresses in it.
 - Database changes go in a new numbered file in `sql/`; never edit one that has been applied.
 - Run `pytest` (database tests need `TEST_DATABASE_URL`) and commit only when all tests pass.
 - Give the person running the server complete, copy-pasteable commands (`python -m ...`, with the
