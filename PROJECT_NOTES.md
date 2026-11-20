@@ -79,3 +79,13 @@ Earlier Congresses: built (ingest/backfill.py, seat history on the panel); load 
 ## Working conventions
 - Tests: `pytest` (database tests need TEST_DATABASE_URL). Commit only when all tests pass.
 - Give John full server commands (with `python -m ...`); his venv: `source .venv/bin/activate`.
+
+## Incidents
+- **2026-11-19, about 5 hours down (12:57 to 17:40 UTC).** The VPS stopped abruptly at 12:57 UTC (no
+  shutdown in its log: the virtual machine was stopped from Bluehost's side), restarted at 13:32 UTC,
+  and then got no network address from Bluehost's DHCP server (162.214.168.12) until 17:39 UTC. The
+  link was up the whole time; nothing on the server failed. Bluehost's DNS page for the .org also
+  showed no records that morning. Recovered without changes on our side; House runs at 14:17 and 16:17
+  UTC failed and the 17:58 run caught up. Logs: `sudo journalctl -b -1 -n 60` (how the old boot ended),
+  `sudo journalctl -b 0 -u systemd-networkd` (when DHCP answered). Off-server backups to the
+  maintainer's OneDrive were set up the next day (deploy/README.md, "Backups").
