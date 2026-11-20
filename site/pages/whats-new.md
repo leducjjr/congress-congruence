@@ -19,6 +19,9 @@ Follow these and every correction in a feed reader: [updates feed (RSS)](feed.xm
 - **The code has its own home.** The site's [source code](https://github.com/uscongressvsvoters/congress-congruence)
   now lives in the project's own GitHub organization rather than a personal account, so the project can
   be handed to another volunteer without moving it again. Old links still work.
+- **Iran war powers notes updated.** The notes on the Iran survey questions now count 16 Senate votes
+  on Iran war powers from March to November 2026, including the resolution rejected 48-51 on
+  November 19. The questions are still compared with the June 23 vote, so no comparison changed.
 
 **November 18, 2026**
 
