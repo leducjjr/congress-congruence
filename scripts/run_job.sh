@@ -83,6 +83,11 @@ case "$job" in
         exec >>"$log" 2>&1
         run flock -n "$lock" scripts/publish_web.sh pages
         ;;
+    vote-watch)
+        # Emails a review list when a new vote may affect a survey match or a note (vote_watch.py).
+        exec >>"$log" 2>&1
+        run flock -n "$lock" python -m congress_congruence.vote_watch
+        ;;
     published)
         # Every change saved to GitHub over a day ago has reached the live site.
         exec >>"$log" 2>&1
@@ -94,7 +99,7 @@ case "$job" in
         run curl -fsS --max-time 20 -o /dev/null https://uscongressvsvoters.org/api/v1/health
         ;;
     *)
-        echo "usage: $0 members|house|senate|senate-voteview|backup|survey-watch|bills|reminders|pages|site|published" >&2
+        echo "usage: $0 members|house|senate|senate-voteview|backup|survey-watch|bills|reminders|pages|site|published|vote-watch" >&2
         exit 2
         ;;
 esac

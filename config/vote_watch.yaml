@@ -1,0 +1,35 @@
+# Topics the daily vote watch looks for in newly loaded votes (src/congress_congruence/vote_watch.py).
+# A new vote whose title, bill title or question contains any of the words is emailed for review,
+# with `check` saying what to look at. Votes on bills that survey questions are already compared with
+# are found automatically and need no topic here.
+#
+#   id:      short name
+#   title:   shown in the email
+#   chamber: house or senate (leave out for both)
+#   words:   any of these, case doesn't matter
+#   check:   what to review when one appears
+
+topics:
+  - id: iran-war-powers
+    title: Iran war powers
+    chamber: senate
+    words: [iran]
+    check: >-
+      The notes on the Iran survey questions (config/unh_items.yaml and config/tpp_items.yaml) count the
+      Senate's votes on Iran war powers and name the latest ones. If this is a war powers vote, update
+      the count, then load unh and tpp and publish. Votes on other measures that mention Iran don't count.
+
+  - id: venezuela-war-powers
+    title: Venezuela war powers
+    words: [venezuela]
+    check: >-
+      Survey questions on Venezuela are compared with Senate votes of October 2025 and January 2026
+      (config/unh_items.yaml). If this is a new war powers vote, decide whether it's a closer match or
+      worth a mention in their notes.
+
+  - id: war-powers
+    title: Any war powers resolution
+    words: [war powers]
+    check: >-
+      A war powers measure about a country no topic above covers. Check whether any survey asked
+      about it.

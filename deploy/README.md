@@ -199,6 +199,7 @@ fails or doesn't report on time (which also catches the server being down).
    | reminders | the reminder emails | `0 13 * * *` | 1 hour |
    | pages | weekly member and state page rebuild | `50 7 * * 0` | 2 hours |
    | survey-watch | new survey and Census releases | `25 7 1 * *` | 1 day |
+   | vote-watch | new votes that may affect a survey match or note (emails a review list) | `45 12 * * *` | 1 hour |
    | published | every change saved to GitHub over a day ago is on the live site (`scripts/check_published.sh`) | `30 14 * * *` | 1 hour |
 
 3. Add each check's ping URL to `.env` (`nano .env`), one line each. Treat the URLs like passwords:
@@ -216,6 +217,7 @@ fails or doesn't report on time (which also catches the server being down).
    HEALTHCHECK_PAGES=https://hc-ping.com/...
    HEALTHCHECK_SURVEY_WATCH=https://hc-ping.com/...
    HEALTHCHECK_PUBLISHED=https://hc-ping.com/...
+   HEALTHCHECK_VOTE_WATCH=https://hc-ping.com/...
    ```
 
 4. Install the schedule (it adds the `site` check): `crontab scripts/crontab.txt`, then test one:
@@ -225,6 +227,16 @@ fails or doesn't report on time (which also catches the server being down).
 
 Jobs report "started" and then "succeeded" or "failed" with their exit code.
 No `.env` line means no reporting for that job; nothing else changes.
+
+## Vote watch
+
+`vote-watch` runs daily at 12:45 UTC, after the morning vote loads. It emails the maintainer (the
+reminders' address) when a newly loaded vote may need a look: another vote on a bill a survey
+question is compared with, or a vote on a topic in `config/vote_watch.yaml` (Iran and Venezuela war
+powers, any war powers resolution). Each topic says what to check. It changes nothing on the site.
+The first run only records the votes already loaded. Try it without sending:
+`python -m congress_congruence.vote_watch --dry-run`. Add a topic whenever a note counts or names
+votes that may grow.
 
 ## New survey and Census releases
 
