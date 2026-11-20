@@ -9,3 +9,7 @@ logs/
 data/ppc/
 build/
 data/exports/
+# Generated on the server; never committed
+config/drafts/
+data/ces_releases.json
+/*.log
