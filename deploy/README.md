@@ -143,12 +143,24 @@ psql congress_restore_test -c "select count(*) from core.roll_call;"
 sudo -u postgres dropdb congress_restore_test
 ```
 
-These copies are on the same server. To keep one somewhere else, copy it to
-your PC from PowerShell every week or two:
+These copies are on the same server, so they don't protect against losing the server. A PC
+downloads the newest one every day into OneDrive (`deploy/windows/download_backup.bat`, keeps 7 days),
+using its own SSH key that the server lets do one thing only: send the latest backup
+(`scripts/send_latest_backup.sh`). Set-up, once:
 
-```powershell
-scp john@162.214.171.209:backups/congress-YYYY-MM-DD.dump $HOME\Documents\
-```
+1. On the PC (Command Prompt), make the download key, with no passphrase (it can't do anything else):
+   `ssh-keygen -t ed25519 -f %USERPROFILE%\.ssh\congress_backup -N "" -C backup-download`
+   and show it: `type %USERPROFILE%\.ssh\congress_backup.pub`
+2. On the server, add it with its restriction (paste the whole `ssh-ed25519 ...` line in place of KEY):
+   `echo 'command="/home/john/congress-congruence/scripts/send_latest_backup.sh",restrict KEY' >> ~/.ssh/authorized_keys`
+3. On the PC, save `deploy/windows/download_backup.bat` as `%USERPROFILE%\congress-backup\download_backup.bat`,
+   run it once by hand, and check that `OneDrive\congress-backups` has today's `.dump` (about 100 MB).
+4. Schedule it: `schtasks /create /tn "Congress backup download" /tr "%USERPROFILE%\congress-backup\download_backup.bat" /sc daily /st 07:30`,
+   then in Task Scheduler open the task's **Settings** and tick **Run task as soon as possible after a
+   scheduled start is missed** (for days the PC was off at 07:30).
+
+Each run is logged in `OneDrive\congress-backups\download.log`. The backup holds only public data and
+the approved survey matches; the server's `.env` (passwords) is not in it and doesn't belong in OneDrive.
 
 ## Alerts (healthchecks.io)
 
