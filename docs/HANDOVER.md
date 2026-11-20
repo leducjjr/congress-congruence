@@ -22,10 +22,32 @@ not written here. The current maintainer hands those over directly.
 | Name on the site | About, Press and How it was built pages credit the maintainer by name | Update the pages, with a What's new entry. |
 | `security.txt` | `site/static/.well-known/security.txt`, Expires 2027-11-01 | Renew yearly; check the contact address. |
 
+## GitHub organization settings
+
+Settings for the `uscongressvsvoters` organization (Settings in the organization, not the repo). Only
+owners should be able to create, delete, move or hide repositories, since the public repo is the
+project's transparency promise. Check them at handover and after adding anyone.
+
+| Where (organization Settings) | Setting |
+| --- | --- |
+| Authentication security | Require two-factor authentication for everyone; only secure methods (authenticator app, passkey, security key, GitHub Mobile) |
+| Member privileges → Base permissions | **No permission**: the repo is public, so this only controls who can change it |
+| Member privileges → Repository creation | Public and Private both **off**: only owners create repos |
+| Member privileges → Repository forking | Forking of private repositories **off** (the public repo can be forked by anyone, as intended) |
+| Member privileges → Pages creation | Public **off** (the site runs on the project's own server, not GitHub Pages) |
+| Member privileges → App access requests | **Members only** |
+| Member privileges → Repository visibility change | **Off**: nobody but an owner can make the public repo private |
+| Member privileges → Repository deletion and transfer | **Off**: only owners can delete or transfer repos |
+| Member privileges → Team creation rules | **Off**: only owners create teams |
+
+On the repo itself: the "Protect main" ruleset, secret scanning and push protection (free for public
+repos), private commit email, GitHub Actions off.
+
 ## Handover checklist
 
 - [x] Repo transferred to a project organization (Nov 20, 2026).
-- [ ] New maintainer is an owner of the `uscongressvsvoters` GitHub organization.
+- [ ] New maintainer is an owner of the `uscongressvsvoters` GitHub organization; the organization
+      settings above checked.
 - [ ] Daily backup download set up on the new maintainer's PC; the old one removed.
 - [ ] New maintainer can run the tests and the site locally (README.md).
 - [ ] Server: new server built, or new maintainer given their own SSH key and sudo login; previous
