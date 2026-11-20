@@ -146,18 +146,32 @@ sudo -u postgres dropdb congress_restore_test
 These copies are on the same server, so they don't protect against losing the server. A PC
 downloads the newest one every day into OneDrive (`deploy/windows/download_backup.bat`, keeps 7 days),
 using its own SSH key that the server lets do one thing only: send the latest backup
-(`scripts/send_latest_backup.sh`). Set-up, once:
+(`scripts/send_latest_backup.sh`). Set-up, once. Run the PC commands in **Command Prompt**, not
+PowerShell: PowerShell reads `%USERPROFILE%` and `""` differently (type `cmd` first if the prompt starts
+with `PS`).
 
-1. On the PC (Command Prompt), make the download key, with no passphrase (it can't do anything else):
+1. On the PC, make the download key, with no passphrase (it can't do anything else):
    `ssh-keygen -t ed25519 -f %USERPROFILE%\.ssh\congress_backup -N "" -C backup-download`
    and show it: `type %USERPROFILE%\.ssh\congress_backup.pub`
 2. On the server, add it with its restriction (paste the whole `ssh-ed25519 ...` line in place of KEY):
    `echo 'command="/home/john/congress-congruence/scripts/send_latest_backup.sh",restrict KEY' >> ~/.ssh/authorized_keys`
-3. On the PC, save `deploy/windows/download_backup.bat` as `%USERPROFILE%\congress-backup\download_backup.bat`,
-   run it once by hand, and check that `OneDrive\congress-backups` has today's `.dump` (about 100 MB).
+3. On the PC, get the script and give it Windows line endings:
+   ```
+   mkdir %USERPROFILE%\congress-backup
+   curl -L -o %USERPROFILE%\congress-backup\download_backup.bat https://raw.githubusercontent.com/uscongressvsvoters/congress-congruence/main/deploy/windows/download_backup.bat
+   powershell -NoProfile -Command "$f='%USERPROFILE%\congress-backup\download_backup.bat'; (Get-Content $f) | Set-Content -Encoding ascii $f"
+   ```
+   Run it once by hand and check that `%USERPROFILE%\OneDrive\congress-backups` has today's `.dump`
+   (about 100 MB) and that `download.log` ends with `OK`.
 4. Schedule it: `schtasks /create /tn "Congress backup download" /tr "%USERPROFILE%\congress-backup\download_backup.bat" /sc daily /st 07:30`,
-   then in Task Scheduler open the task's **Settings** and tick **Run task as soon as possible after a
-   scheduled start is missed** (for days the PC was off at 07:30).
+   then in Task Scheduler open the task's **Properties → Settings** and set:
+   - **Run task as soon as possible after a scheduled start is missed**: ticked (for days the PC was off at 07:30);
+   - **If the task fails, restart every**: ticked, **30 minutes**, up to **3** times (the PC may wake before
+     its Wi-Fi connects);
+   - **Stop the task if it runs longer than**: **1 hour** (a download takes about 20 seconds).
+
+   The server's backup runs at 05:40 UTC (late evening in US time zones), so a morning download always
+   gets the previous night's copy.
 
 Each run is logged in `OneDrive\congress-backups\download.log`. The backup holds only public data and
 the approved survey matches; the server's `.env` (passwords) is not in it and doesn't belong in OneDrive.

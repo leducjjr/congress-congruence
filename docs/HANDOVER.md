@@ -17,13 +17,16 @@ not written here. The current maintainer hands those over directly.
 | Survey data permissions | AP-NORC (AP VoteCast) permission requested Nov 2026, pending | Tell AP-NORC about the change of maintainer if granted. |
 | Monitoring | healthchecks.io checks and an ntfy.sh topic, if set up (`deploy/README.md`) | Re-create under the new maintainer's account, update `.env`. |
 | Search engines | Google Search Console property; IndexNow key in `.env` | Add the new maintainer as an owner in Search Console. The IndexNow key can stay. |
+| Off-server backups | The server keeps 14 nightly backups in `~/backups`; the maintainer's laptop downloads the newest one each morning into OneDrive (keeps 7), with its own SSH key that can only fetch backups (`deploy/README.md`, "Backups") | The new maintainer sets up the same download on their own PC. Then remove the old laptop's `backup-download` line from the server's `~/.ssh/authorized_keys` and its Task Scheduler task. |
 | Read-only deploy key | On the GitHub repo, used by the server to pull code | Replace with the new server's key. |
 | Name on the site | About, Press and How it was built pages credit the maintainer by name | Update the pages, with a What's new entry. |
 | `security.txt` | `site/static/.well-known/security.txt`, Expires 2027-11-01 | Renew yearly; check the contact address. |
 
 ## Handover checklist
 
-- [ ] Repo transferred to a project organization; new maintainer is an owner.
+- [x] Repo transferred to a project organization (Nov 20, 2026).
+- [ ] New maintainer is an owner of the `uscongressvsvoters` GitHub organization.
+- [ ] Daily backup download set up on the new maintainer's PC; the old one removed.
 - [ ] New maintainer can run the tests and the site locally (README.md).
 - [ ] Server: new server built, or new maintainer given their own SSH key and sudo login; previous
       maintainer's access removed.
