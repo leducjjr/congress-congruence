@@ -85,7 +85,7 @@ redrawn districts, special elections and moves between the House and Senate are 
 **Corrections:** a few members who arrived by special election are listed as starting on the
 Congress's opening day. Where an official record gives the real date, we use it, so time in office
 isn't overstated. Each correction and its source is listed in
-[the corrections file](https://github.com/leducjjr/congress-congruence/blob/main/config/term_corrections.yaml).
+[the corrections file](https://github.com/uscongressvsvoters/congress-congruence/blob/main/config/term_corrections.yaml).
 
 ### Bills {#bills}
 

@@ -23,7 +23,7 @@ def test_builds_every_page_in_the_frame(tmp_path):
         assert page.count('aria-current="page"') == (1 if current else 0), name
         assert 'href="site.css?v=abc123"' in page and 'src="site.js?v=abc123"' in page
         assert "{{" not in page, f"{name}: unfilled placeholder"
-        assert 'href="https://github.com/leducjjr/congress-congruence">Source code</a>' in page
+        assert 'href="https://github.com/uscongressvsvoters/congress-congruence">Source code</a>' in page
         assert '<main id="main"' in page and 'class="site-footer"' in page
     assert 'src="cc-member-panel.js?v=abc123"' in (tmp_path / "index.html").read_text()
     assert '<a class="features-btn" href="numbers.html" aria-current="page">By the numbers</a>' in (tmp_path / "numbers.html").read_text()

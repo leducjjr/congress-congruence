@@ -8,11 +8,17 @@ description: Everything added to US Congress vs Voters, newest first - new surve
 <a href="upcoming.html">Upcoming changes</a>. Every change that corrected a figure is in the
 <a href="corrections.html">corrections log</a>.</p>
 
-*Last updated November 18, 2026.*
+*Last updated November 20, 2026.*
 
 Follow these and every correction in a feed reader: [updates feed (RSS)](feed.xml).
 
 ## Recently added {#recent}
+
+**November 20, 2026**
+
+- **The code has its own home.** The site's [source code](https://github.com/uscongressvsvoters/congress-congruence)
+  now lives in the project's own GitHub organization rather than a personal account, so the project can
+  be handed to another volunteer without moving it again. Old links still work.
 
 **November 18, 2026**
 

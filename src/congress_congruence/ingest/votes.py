@@ -35,7 +35,7 @@ from .vote_parsers import ParsedRollCall, parse
 
 log = logging.getLogger(__name__)
 
-USER_AGENT = "congress-congruence/0.1 (+https://github.com/leducjjr/congress-congruence)"
+USER_AGENT = "congress-congruence/0.1 (+https://github.com/uscongressvsvoters/congress-congruence)"
 REQUEST_PAUSE_SECONDS = 1.0     # be polite to the chambers' servers
 # senate.gov's bot protection refuses a server that asks too fast (it let ~97 files through at
 # one a second, Nov 10, 2026). So Senate files go slower, and at most this many in one run; the

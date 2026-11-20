@@ -115,7 +115,7 @@ def build_email(due_items: list[tuple[dict, date]], today: date, to: str, sender
     for item, due in sorted(due_items, key=lambda x: x[1]):
         lines += [f"* {item['title']}: {when(due, today)}", "", *[f"  {l}" for l in item["details"].strip().splitlines()], ""]
     lines += ["To stop a reminder, set `done: true` for it in config/reminders.yaml (repeating items move",
-              "on by themselves). The list: https://github.com/leducjjr/congress-congruence/blob/main/config/reminders.yaml"]
+              "on by themselves). The list: https://github.com/uscongressvsvoters/congress-congruence/blob/main/config/reminders.yaml"]
     msg.set_content("\n".join(lines))
     return msg
 
