@@ -83,13 +83,18 @@ case "$job" in
         exec >>"$log" 2>&1
         run flock -n "$lock" scripts/publish_web.sh pages
         ;;
+    published)
+        # Every change saved to GitHub over a day ago has reached the live site.
+        exec >>"$log" 2>&1
+        run scripts/check_published.sh
+        ;;
     site)
         # The public site answers, end to end: DNS, nginx, the certificate, the API and the database.
         exec >>"$log" 2>&1
         run curl -fsS --max-time 20 -o /dev/null https://uscongressvsvoters.org/api/v1/health
         ;;
     *)
-        echo "usage: $0 members|house|senate|senate-voteview|backup|survey-watch|bills|reminders|pages|site" >&2
+        echo "usage: $0 members|house|senate|senate-voteview|backup|survey-watch|bills|reminders|pages|site|published" >&2
         exit 2
         ;;
 esac

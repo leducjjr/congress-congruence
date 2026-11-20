@@ -199,6 +199,7 @@ fails or doesn't report on time (which also catches the server being down).
    | reminders | the reminder emails | `0 13 * * *` | 1 hour |
    | pages | weekly member and state page rebuild | `50 7 * * 0` | 2 hours |
    | survey-watch | new survey and Census releases | `25 7 1 * *` | 1 day |
+   | published | every change saved to GitHub over a day ago is on the live site (`scripts/check_published.sh`) | `30 14 * * *` | 1 hour |
 
 3. Add each check's ping URL to `.env` (`nano .env`), one line each. Treat the URLs like passwords:
    anyone who has one can mark that check as fine.
@@ -214,6 +215,7 @@ fails or doesn't report on time (which also catches the server being down).
    HEALTHCHECK_REMINDERS=https://hc-ping.com/...
    HEALTHCHECK_PAGES=https://hc-ping.com/...
    HEALTHCHECK_SURVEY_WATCH=https://hc-ping.com/...
+   HEALTHCHECK_PUBLISHED=https://hc-ping.com/...
    ```
 
 4. Install the schedule (it adds the `site` check): `crontab scripts/crontab.txt`, then test one:

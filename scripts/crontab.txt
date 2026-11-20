@@ -33,3 +33,6 @@
 
 # Public site check: every 30 minutes, so an alert comes soon after the site stops answering.
 */30 * * * *    $HOME/congress-congruence/scripts/run_job.sh site
+
+# Unpublished changes: daily, alerts when a change saved to GitHub over a day ago isn't live yet.
+30 14 * * *     $HOME/congress-congruence/scripts/run_job.sh published
