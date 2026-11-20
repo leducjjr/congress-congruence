@@ -182,27 +182,44 @@ Each scheduled job can report to healthchecks.io, which emails you when a job
 fails or doesn't report on time (which also catches the server being down).
 
 1. Sign up at https://healthchecks.io (free plan).
-2. Create one check per job, with these schedules (cron, UTC) and a grace time:
+2. Create one check per job. For each: **Add Check**, give it the name below, then **Edit**
+   the schedule: choose **Cron**, enter the expression, set the time zone to **UTC** and the grace
+   time. (A check that misses its window turns red and emails you, which also catches the server
+   being down.)
 
-   | Check name | Schedule | Grace |
-   | --- | --- | --- |
-   | backup | `40 5 * * *` | 1 hour |
-   | members | `10 6 * * *` | 1 hour |
-   | house | `17 */2 * * *` | 1 hour |
-   | senate-voteview | `40 6 * * *` | 1 hour |
-   | survey-watch | `25 7 1 * *` | 1 day |
-   | bills | `5 7 * * *` | 1 hour |
+   | Check name | What it watches | Schedule (cron, UTC) | Grace |
+   | --- | --- | --- | --- |
+   | site | the public site answers (DNS, nginx, certificate, API, database) | `*/30 * * * *` | 30 minutes |
+   | house | new House votes | `17 */2 * * *` | 1 hour |
+   | backup | nightly database backup | `40 5 * * *` | 1 hour |
+   | members | member list | `10 6 * * *` | 1 hour |
+   | senate | Senate votes from senate.gov | `20 6 * * *` | 1 hour |
+   | senate-voteview | Senate votes from Voteview | `40 6 * * *` | 1 hour |
+   | bills | bill titles and subjects | `5 7 * * *` | 1 hour |
+   | reminders | the reminder emails | `0 13 * * *` | 1 hour |
+   | pages | weekly member and state page rebuild | `50 7 * * 0` | 2 hours |
+   | survey-watch | new survey and Census releases | `25 7 1 * *` | 1 day |
 
-3. Add each check's ping URL to `.env`:
+3. Add each check's ping URL to `.env` (`nano .env`), one line each. Treat the URLs like passwords:
+   anyone who has one can mark that check as fine.
 
    ```
-   HEALTHCHECK_BACKUP=https://hc-ping.com/your-uuid-1
-   HEALTHCHECK_MEMBERS=https://hc-ping.com/your-uuid-2
-   HEALTHCHECK_HOUSE=https://hc-ping.com/your-uuid-3
-   HEALTHCHECK_SENATE_VOTEVIEW=https://hc-ping.com/your-uuid-4
-   HEALTHCHECK_SURVEY_WATCH=https://hc-ping.com/your-uuid-5
-   HEALTHCHECK_BILLS=https://hc-ping.com/your-uuid-6
+   HEALTHCHECK_SITE=https://hc-ping.com/...
+   HEALTHCHECK_HOUSE=https://hc-ping.com/...
+   HEALTHCHECK_BACKUP=https://hc-ping.com/...
+   HEALTHCHECK_MEMBERS=https://hc-ping.com/...
+   HEALTHCHECK_SENATE=https://hc-ping.com/...
+   HEALTHCHECK_SENATE_VOTEVIEW=https://hc-ping.com/...
+   HEALTHCHECK_BILLS=https://hc-ping.com/...
+   HEALTHCHECK_REMINDERS=https://hc-ping.com/...
+   HEALTHCHECK_PAGES=https://hc-ping.com/...
+   HEALTHCHECK_SURVEY_WATCH=https://hc-ping.com/...
    ```
+
+4. Install the schedule (it adds the `site` check): `crontab scripts/crontab.txt`, then test one:
+   `scripts/run_job.sh site`. Its check should turn green within a minute.
+5. Under **Integrations**, keep the account's email and add where you'll actually see an alert:
+   a personal email address, or a phone app (ntfy, or the healthchecks.io mobile options).
 
 Jobs report "started" and then "succeeded" or "failed" with their exit code.
 No `.env` line means no reporting for that job; nothing else changes.
